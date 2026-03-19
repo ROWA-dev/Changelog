@@ -1,64 +1,28 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
+type wepTyp = wepType.myself
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 10,
-		stun     = 0.68,
-		posMult  = 1,
-		onHit    = require(script.hit)
-	},
-	multiple = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 2,
-		stun     = 0.2,
-		posMult  = 1,
-		onHit    = require(script.hit),
-		stunMeOnParried = 0
-		--parryH   = 0.4
-	},
-	heavy = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
-		stun     = 0.66,
-		posMult  = 3.5,
-		onHit    = require(script.hit)
-	},
-	heavySecond = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
-		stun     = 0.66,
-		posMult  = 1.5,
-		onHit    = require(script.hit)
-	},
-	heavyPunch = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 5,
-		stun     = 0.66,
-		posMult  = 1.5,
-		onHit    = require(script.hit)
-	},
-	heavyFlourish = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
-		stun     = 0.66,
-		posMult  = 1.5,
-		onHit    = require(script.hit)
-	},
-}
-
-deepFreeze(config)
-return config
+return function(this:wepTyp&any): wepType.atkResult	
+	local humObj = this._humObj
+	local function indicator()
+		humObj.limbTrails:indicatorLeft()
+	end
+	
+	return this.basicAtks.sprint(
+		this,
+		script.sprintAtk, -- anim
+		dmgConfig.m1, -- dmgtbl
+		0.52, -- windup
+		9, -- force
+		0.48, -- force duration
+		CFrame.new(0, 0, -4.5), -- hitboxoffset
+		Vector3.new(5, 5, 6), -- hitbox sz
+		indicator,
+		-- anim stuff
+		0.08, -- fadetime
+		1,   -- weight
+		2 -- speed
+	)
+end

@@ -1,42 +1,28 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
+type wepTyp = wepType.myself
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 17,
-		stun     = 0.76,
-		posMult  = 1.4,
-		onHit    = require(script.hammer),
-		
-		parryH   = -0.03
-	},
-	cannon = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.magic, dmgFlag.weaponM1),
-		dmg      = 24,
-		stun     = 1,
-		posMult  = 2,
-		onHit    = require(script.hammer)
-	},
-	heavy = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 24,
-		stun     = 1,
-		posMult  = 3,
-		onHit    = require(script.hammer),
-		
-		--parryH   = -0.1
-	}
-}
-
-deepFreeze(config)
-return config
+return function(this:wepTyp): wepType.atkResult	
+	local humObj = this._humObj
+	local function indicator()
+		humObj.limbTrails:indicatorLeft()
+	end
+	
+	return this.basicAtks.sprint(
+		this,
+		script.sprintAtk, -- anim
+		dmgConfig.m1, -- dmgtbl
+		0.6, -- windup
+		10, -- force
+		0.5, -- force duration
+		CFrame.new(0, 0, -4), -- hitboxoffset
+		Vector3.new(5, 5, 6), -- hitbox sz
+		indicator,
+		-- anim stuff
+		0.08, -- fadetime
+		1,   -- weight
+		0.8 -- speed
+	)
+end

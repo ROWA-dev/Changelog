@@ -1,64 +1,44 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
+local dmgConfig = require(script.Parent.Parent.Parent.dmgConfig)
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+return function(this:wepBase.myself&any)
+	this:stopLastAnim()
+	this.lastAttacked = tick()
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 10,
-		stun     = 0.68,
-		posMult  = 1,
-		onHit    = require(script.hit)
-	},
-	multiple = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 2,
-		stun     = 0.2,
-		posMult  = 1,
-		onHit    = require(script.hit),
-		stunMeOnParried = 0
-		--parryH   = 0.4
-	},
-	heavy = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
-		stun     = 0.66,
-		posMult  = 3.5,
-		onHit    = require(script.hit)
-	},
-	heavySecond = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
-		stun     = 0.66,
-		posMult  = 1.5,
-		onHit    = require(script.hit)
-	},
-	heavyPunch = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 5,
-		stun     = 0.66,
-		posMult  = 1.5,
-		onHit    = require(script.hit)
-	},
-	heavyFlourish = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
-		stun     = 0.66,
-		posMult  = 1.5,
-		onHit    = require(script.hit)
-	},
-}
+	local humObj   = this._humObj
+	local hurtbox  = humObj.HurtBox
 
-deepFreeze(config)
-return config
+	local anim = script.anim
+	local track = this:PlayAnim(anim, 0, 1, 1.2)
+	if track then
+		track.Priority = Enum.AnimationPriority.Action2
+	end
+
+	this:indicateAtk()
+	if this:feintWait(0.55) then return end
+
+	local hitboxOffset = CFrame.new(0,0,-4)
+	local hitboxSize   = Vector3.new(6,6,6)
+	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
+
+	local hitLanded = false
+	for _,enemhum in pairs(hits) do
+		local attack = this:makeAtk(
+			dmgConfig.m1,
+			enemhum,
+			hurtbox.CFrame.LookVector
+		)
+		attack.hitbox = hitbox
+		this:executeAttack(attack)
+
+		if attack:isParried() then
+			this:stopLastAnim()
+		elseif attack:isHit() then
+			hitLanded = true
+		end
+	end
+
+	this.m1last = tick() + 0.05
+	return hitLanded
+end

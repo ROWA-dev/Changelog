@@ -1,22 +1,32 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
+local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+return function(this:wepBase.myself): wepBase.atkResult
+	local humObj = this._humObj
+	local function indicator()
+		local m1cycle = this.m1cycle
+		if m1cycle == 1 then
+			humObj.limbTrails:indicatorRight()
+		elseif m1cycle == 2 then
+			humObj.limbTrails:indicatorLeft()
+		elseif m1cycle == 3 then
+			humObj.limbTrails:indicatorRight()
+		elseif m1cycle == 4 then
+			humObj.limbTrails:indicatorLeft()
+		elseif m1cycle == 0 then
+			humObj.limbTrails:indicatorRightLeg()
+		end
+	end
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Light,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 9,
-		stun     = 0.6,
-		posMult  = 1.2,
-		onHit    = require(script:WaitForChild("punch"))
-	}
-}
-
-deepFreeze(config)
-return config
+	return this.basicAtks.m1(
+		this,
+		script, -- animsParent
+		5, -- m1CycleCount
+		dmgConfig.m1,
+		0.44, -- windup
+		CFrame.new(0, 0, -2), -- hitboxoffset
+		Vector3.new(5,6,5), -- hitbox sz
+		indicator
+	)
+end

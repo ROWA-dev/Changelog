@@ -1,40 +1,26 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
+type wepTyp = wepType.myself
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+local dmgConfig = require(script.Parent.Parent.dmgConfig)
+local hitboxClass = require(game.ServerStorage.ROWA.Class.HitboxClass)
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
-		dmg      = 13,
-		stun     = 0.7,
-		posMult  = 1,
-		onHit    = require(script.slash)
-	},
-	punch = {
-		weight   = weighEnum.Light,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 10,
-		stun     = 0.6,
-		posMult  = 1.2,
-		onHit    = require(script:WaitForChild("punch"))
-	},
-	heavy = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 36,
-		stun     = 0.8,
-		posMult  = 3,
-		parryH   = -0.1,
-		dodgeH   = -0.1,
-		onHit    = require(script.heavy)
-	}
-}
+local atkTypeEnums = require(game.ServerStorage.ROWA.Weps.Utils.atkTypeEnums)
 
-deepFreeze(config)
-return config
+return function(this:wepTyp&any): wepType.atkResult
+	if this:canTriggerCD("heavy") == false then return end
+	this:triggerCD("heavy")
+	this.m1cycle = 0
+	local spearState = this.spearState
+	if spearState == 1 then
+		this.spearState = 2
+		this._model.mtr.Enabled = false
+		this._model.Hold.CanCollide = true
+	else
+		this.spearState = 1
+		this._model.mtr.Enabled = true
+		this._model.Hold.CanCollide = false
+	end
+	print("RAH heavy", this.spearState)
+	return
+end

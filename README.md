@@ -1,2 +1,2 @@
-# weps folders reformat with dmg config
+# weps folders including attack modules
 description

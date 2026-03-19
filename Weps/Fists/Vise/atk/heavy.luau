@@ -1,46 +1,100 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
+local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+return function(this:wepBase.myself): wepBase.atkResult
+	if this:canTriggerCD("heavy") == false then return end
+	local humObj   = this._humObj
+	local hurtbox  = humObj.HurtBox
+	
+	local anim = this:PlayAnim(script.anim,0,1,0.9)
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Light,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 9,
-		stun     = 0.6,
-		posMult  = 1.2,
-		onHit    = require(script:WaitForChild("punch"))
-	},
-	heavy = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 4,
-		stun     = 0.6,
-		posMult  = 7,
-		onHit    = require(script:WaitForChild("punch"))
-	},
-	smash = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 16,
-		stun     = 0.6,
-		posMult  = 6,
-		onHit    = require(script:WaitForChild("punch"))
-	},
-	throw = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 4,
-		stun     = 0.6,
-		posMult  = 30,
-		onHit    = require(script:WaitForChild("punch"))
-	},
-}
+	humObj.limbTrails:indicatorLeft()
+	humObj.walkSpeed:SetMod("stopMoving", -100)
 
-deepFreeze(config)
-return config
+	local atkrate = this.atkRate.Value
+	if this:feintWait(0.6) then humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
+	this:triggerCD("heavy")
+	humObj.walkSpeed:RemoveMod("stopMoving")
+	
+	local hitboxOffset = CFrame.new(0,0,-4)
+	local hitboxSize   = Vector3.new(6,7,6)
+	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
+
+	if anim then
+		anim:AdjustSpeed(0)
+	end
+	local isHit = nil
+	for _,enemhum in pairs(hits) do
+		local attack = this:makeAtk(
+			dmgConfig.heavy,
+			enemhum,
+			hurtbox.CFrame.LookVector
+		)
+		attack.hitbox = hitbox
+
+		this:executeAttack(attack)
+		if attack:isHit() then
+			isHit = attack
+		end
+	end
+	if anim then
+		anim:AdjustSpeed(1)
+	end
+	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("windShock", hurtbox)
+	if isHit and isHit:isHit() then
+		humObj.walkSpeed:SetMod("stopMoving", -100)
+		local victimHumObj = isHit.enemyEntity
+		local victimHum = victimHumObj.Hum
+		local victimAnim = victimHumObj:LoadAnimation(script.victim)
+		victimHumObj:TrueStun(1.7)
+		local grabClass = victimHumObj.grab
+		local grab = grabClass:grab(humObj)
+		grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0.5,3)
+		victimAnim:Play()
+		if this:feintWait(0.55) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
+		
+		local attack = this:makeAtk(
+			dmgConfig.smash,
+			victimHum,
+			hurtbox.CFrame.LookVector
+		)
+		game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("smallGroundSmash", hurtbox)
+		task.spawn(this.executeAttack, this, attack)
+		--this:executeAttack(attack)
+		
+		if this:feintWait(1) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
+		
+		grabClass:release()
+		local attack = this:makeAtk(
+			dmgConfig.throw,
+			victimHum,
+			hurtbox.CFrame.LookVector
+		)
+		local newkb = this:knockback(
+			attack.atkDir*16 + Vector3.new(0,4,0),
+			0.1,
+			false,
+			-1
+		)
+
+		attack.knockback = newkb
+
+		--game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("smallGroundSmash", hurtbox)
+		task.spawn(function()
+			this:executeAttack(attack)
+			if attack:isHit() then
+				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir*10)
+			end
+		end)
+		
+		humObj.walkSpeed:RemoveMod("stopMoving")
+		this:endLag(0.15)
+	elseif anim then
+		anim:AdjustWeight(1)
+		anim:Stop(0.7)
+		this:endLag(0.4)
+	end
+	
+	return isHit ~= nil
+end

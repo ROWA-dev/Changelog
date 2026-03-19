@@ -1,32 +1,26 @@
 --!strict
-local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
-local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
+local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
+type wepTyp = wepType.myself
 
-local weighEnum = dmgUtils.weighEnum
-local dmgFlag = dmgUtils.dmgFlags
+local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
--- must follow {[string]: dmgUtils.dmgType}
-type configs = {[string]: dmgUtils.dmgType}
-local config:configs = {
-	m1 = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 20,
-		stun     = 1,
-		posMult  = 2,
-		onHit    = require(script.hammer)
-	},
-	heavy = {
-		weight   = weighEnum.Heavy,
-		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 32,
-		stun     = 1,
-		posMult  = 2,
-		onHit    = require(script.hvy),
-		
-		parryH   = -0.04
-	}
-}
+return function(this:wepTyp): wepType.atkResult
+	local function indicator()
+		this:indicateAtk()
+	end
 
-deepFreeze(config)
-return config
+	return this.basicAtks.arial(
+		this,
+		script.arial, -- anim
+		dmgConfig.m1, -- dmgtbl
+		0.9, -- windup
+		9, -- force
+		0.8, -- force duration
+		CFrame.new(0, -2, -7), -- hitboxoffset
+		Vector3.new(6, 6, 10), -- hitbox sz
+		indicator,
+		0.08, -- fadetime
+		1,    -- weight
+		0.6     -- speed
+	)
+end
