@@ -1,15 +1,11 @@
 --!strict
-local baseWep = require(script.Parent.WepBase)
+local baseWep = require(script.Parent)
 
 export type myself = baseWep.myself & {
-	m1last: number,
-	m1cycle: number,
-	lastAttacked: number,
 }
 
 local module = {
-	Name = "lightwep",
-	postureGain = 0
+	Name = "fist",
 }
 module.__tostring = baseWep.__tostring
 module.__index = module
@@ -18,9 +14,7 @@ setmetatable(module, { __index = baseWep })
 function module.new(): myself&any
 	local abstract = baseWep.new() :: baseWep.myself
 	local self = setmetatable(abstract, module) :: myself&any
-	self.m1cycle = 0
-	self.m1last = 0
-	self.lastAttacked = 0
+	-- fist stuff here
 	return self
 end
 
@@ -29,9 +23,16 @@ function module.destroy(self:myself)
 	baseWep.destroy(self)
 end
 
-
-function module.onParried(self:myself, atkType:baseWep.atkType)
-	self.m1last = tick() + 0.1 -- cant m1 instantly right after
+--methods
+--- wield
+function module.wield(self:myself&any)
+	-- equip stuff here
+	local humobj = self._humObj
+	humobj.cooldowns:setCooldown("heavy", 6)
+	baseWep.wield(self)
 end
+
+--- attack
+module.attack = require(script.attack)
 
 return table.freeze(module)
