@@ -1,64 +1,34 @@
 --!strict
-local baseWep = require(script.Parent)
+local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
+local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
 
-export type myself = baseWep.myself & {
+local weighEnum = dmgUtils.weighEnum
+local dmgFlag = dmgUtils.dmgFlags
+
+-- must follow {[string]: dmgUtils.dmgType}
+type configs = {[string]: dmgUtils.dmgType}
+local config:configs = {
+	m1 = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
+		dmg      = 16,
+		stun     = 0.76,
+		posMult  = 1.4,
+		onHit    = require(script.hammer),
+		
+		parryH   = -0.03
+	},
+	heavy = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 24,
+		stun     = 1,
+		posMult  = 2,
+		onHit    = require(script.hvy),
+		
+		--parryH   = -0.03
+	}
 }
 
-local module = {
-	Name = "Hammer",
-}
-module.__tostring = baseWep.__tostring
-module.__index = module
-setmetatable(module, { __index = baseWep })
-
-function module.new(): myself&any
-	local abstract = baseWep.new() :: baseWep.myself
-	local self = setmetatable(abstract, module) :: myself&any
-	return self
-end
-
-function module.destroy(self:myself)
-	self:unequip()
-	baseWep.destroy(self)
-end
-
---methods
---- wield
-function module.wield(self:myself&any)
-	-- wield stuff here
-	local humobj = self._humObj
-	humobj.cooldowns:setCooldown("heavy", 6)
-	
-	local char:any = humobj.Hum.Parent
-	local model = script.Model:Clone()
-	model.Motor6D.Part0 = char["Right Arm"]
-	model.Motor6D.Part1 = model.Hold
-	model.Parent = char
-	
-	self._model = model
-	self._trail = model:WaitForChild("Trail1")
-	baseWep.wield(self)
-end
-
---- unwield
-function module:unwield()
-	-- unwield stuff here
-	if self.lastAnim then
-		self.lastAnim:Stop()
-	end
-
-	local model = self._model
-	if model then
-		model.Parent = script
-	end
-
-	baseWep.unwield(self)
-end
-
-
---- attack
-module.attack = require(script.attack)
-
-
-
-return table.freeze(module)
+deepFreeze(config)
+return config

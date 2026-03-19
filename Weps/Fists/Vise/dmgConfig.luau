@@ -1,39 +1,46 @@
 --!strict
-local baseWep = require(script.Parent)
+local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
+local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
 
-export type myself = baseWep.myself & {
+local weighEnum = dmgUtils.weighEnum
+local dmgFlag = dmgUtils.dmgFlags
+
+-- must follow {[string]: dmgUtils.dmgType}
+type configs = {[string]: dmgUtils.dmgType}
+local config:configs = {
+	m1 = {
+		weight   = weighEnum.Light,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
+		dmg      = 9,
+		stun     = 0.6,
+		posMult  = 1.2,
+		onHit    = require(script:WaitForChild("punch"))
+	},
+	heavy = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 4,
+		stun     = 0.6,
+		posMult  = 7,
+		onHit    = require(script:WaitForChild("punch"))
+	},
+	smash = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 16,
+		stun     = 0.6,
+		posMult  = 6,
+		onHit    = require(script:WaitForChild("punch"))
+	},
+	throw = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 4,
+		stun     = 0.6,
+		posMult  = 30,
+		onHit    = require(script:WaitForChild("punch"))
+	},
 }
 
-local module = {
-	Name = "vise",
-	idleAnim = script:WaitForChild("idle")
-}
-module.__tostring = baseWep.__tostring
-module.__index = module
-setmetatable(module, { __index = baseWep })
-
-function module.new(): myself&any
-	local abstract = baseWep.new() :: baseWep.myself
-	local self = setmetatable(abstract, module) :: myself&any
-	-- fist stuff here
-	return self
-end
-
-function module.destroy(self:myself)
-	self:unequip()
-	baseWep.destroy(self)
-end
-
---methods
---- wield
-function module.wield(self:myself&any)
-	-- equip stuff here
-	local humobj = self._humObj
-	humobj.cooldowns:setCooldown("heavy", 3)
-	baseWep.wield(self)
-end
-
---- attack
-module.attack = require(script.attack)
-
-return table.freeze(module)
+deepFreeze(config)
+return config

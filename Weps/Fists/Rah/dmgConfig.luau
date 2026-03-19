@@ -1,46 +1,38 @@
 --!strict
-local baseWep = require(script.Parent)
+local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
+local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
 
-export type myself = baseWep.myself & {
+local weighEnum = dmgUtils.weighEnum
+local dmgFlag = dmgUtils.dmgFlags
+
+-- must follow {[string]: dmgUtils.dmgType}
+type configs = {[string]: dmgUtils.dmgType}
+local config:configs = {
+	m1 = {
+		weight   = weighEnum.Light,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
+		dmg      = 9.5,
+		stun     = 0.65,
+		posMult  = 1.2,
+		onHit    = require(script:WaitForChild("punch"))
+	},
+	heavy = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 3,
+		stun     = 0.6,
+		posMult  = 6,
+		onHit    = require(script:WaitForChild("punch"))
+	},
+	smash = {
+		weight   = weighEnum.Heavy,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 24,
+		stun     = 0.6,
+		posMult  = 6,
+		onHit    = require(script:WaitForChild("punch"))
+	}
 }
 
-local module = {
-	Name = "Rah",
-	idleAnim = script:WaitForChild("idle")
-}
-module.__tostring = baseWep.__tostring
-module.__index = module
-setmetatable(module, { __index = baseWep })
-
-function module.new(): myself&any
-	local abstract = baseWep.new() :: baseWep.myself
-	local self = setmetatable(abstract, module) :: myself&any
-	-- fist stuff here
-	return self
-end
-
-function module.destroy(self:myself)
-	self:unequip()
-	baseWep.destroy(self)
-end
-
---methods
---- wield
-function module.wield(self:myself&any)
-	-- equip stuff here
-	local humobj = self._humObj
-	humobj.cooldowns:setCooldown("heavy", 3)
-	baseWep.wield(self)
-end
-
-
---- unequip
-function module:unequip()
-	-- uequip stuff here
-	baseWep.unequip(self)
-end
-
---- attack
-module.attack = require(script.attack)
-
-return table.freeze(module)
+deepFreeze(config)
+return config
