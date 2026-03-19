@@ -1,2 +1,2 @@
-# weps folders reformat
+# weps folders reformat with dmg config
 description
