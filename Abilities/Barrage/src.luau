@@ -91,6 +91,9 @@ local function useFunc(this:myself)
 				if attack:isHit() then
 					hitlanded = true
 				elseif attack:isParried() then
+					if attack.enemyEntity.attacking and attack.enemyEntity.attacking.Value == true then
+						dmgTbl.stunMeOnParried = 0.1
+					end
 					hitlanded = false
 					dmgTbl.parryH = 1
 				end
@@ -125,10 +128,6 @@ local function useFunc(this:myself)
 		if i == 14 then
 			--FxRemote:FireAllClients("showArms", Char)
 		end
-	end
-	
-	if hitlanded == false then
-		this:endLag(0.2)
 	end
 
 	--
