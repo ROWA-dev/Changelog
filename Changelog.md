@@ -1,7 +1,7 @@
-# Changelog
-
 ### ⚠️ This is a community-maintained changelog and may be updated slower than [README.md].
 For any contributors wanting to help push changes faster, check the [guidelines].
+
+# Changelog
 
 ## 1.1 - The Swap Ends Here
 
