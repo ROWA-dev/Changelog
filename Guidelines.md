@@ -19,7 +19,7 @@ If there is no changes in a category, do not add that category to the changes.
 Here is an example:
 ### Added ✅
 (Added would not be in the change but I added it for example sake)
-### Fixed 🛠️
+### Changes 🛠️
 - Removed ability to unequip weapons during attack
   - This fixes crit cooldown swapping by proxy
 - Blocking is now angle and position based
@@ -27,5 +27,15 @@ Here is an example:
 
 ### Removed ❌
 (Removed would not be in the change but I added it for example sake)
+
+Finally, the date.
+
+Time should be formatted like this: `<sub>YYYY-MM-DD</sub>` and placed at the bottom of the page with a line break (`<br>`).
+
+Example:
+
+`<br><sub>2026-03-20</sub>` results in
+
+<br><sub>2026-03-20</sub>
 
 [Changelog]: ./CHANGELOG.md
