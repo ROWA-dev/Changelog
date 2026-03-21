@@ -1,9 +1,6 @@
-# The Swap Ends Here
-Update 1.1
+# Strong Left Too OP
+Update 1.2
 
-Not able Unequip Weapon during an attack anymore
-- should also fix the crit cooldown swapping tricks
++ Fire Stab
 
-Blocking attacks is angle and position based now...
-
-Barrage stops if parrying victim attacks user
+strongleft bit easier to parry
