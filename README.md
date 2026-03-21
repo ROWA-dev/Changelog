@@ -1,6 +1,5 @@
-# Strong Left Too OP
-Update 1.2
+# pushed humobj code
+Update 1.3
 
-+ Fire Stab
-
-strongleft bit easier to parry
+publish plugin changes
+and buni change
