@@ -3,19 +3,35 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.5 - The Gutter
+
+> Note: Versions 1.3 and 1.4 were omitted because they harbor no significance towards the actual game, only the changelog repository.
+
+### Changes 🛠️
+- Strong Left parry window increased again (by 0.02s)
+- Canine heavy attack damage decreased (20 -> 18)
+- Rah heavy attack damage decreased (24 -> 21)
+- Rapier M1 range decreased (-0.5 studs)
+- Spear M1 range decreased (-1 stud)
+- Katana charged heavy attack damage decreased (54 -> 45)
+- Barrage has endlag on miss (0.2s)
+- Bunny eating animation fixed 🥕
+
+<br><sub>2026-03-22</sub>
+
 ## 1.2 - Strong Left Too OP
 
 ### Added ✅
 - Ported Fire Stab over from ROWA
 
 ### Changes 🛠️
-- Strong Left is now a bit easier to parry
+- Strong Left is now a bit easier to parry (by 0.02s)
 
 <br><sub>2026-03-21</sub>
 
 ## 1.1 - The Swap Ends Here
 
-> Note: Although this update is the first in the changelog, ROWA 2 has been updated consistently since 08-21-2025.
+> Note: Although this update is the first in the changelog, ROWA 2 has been updated consistently since 2025-08-21.
 
 ### Changes 🛠️
 
