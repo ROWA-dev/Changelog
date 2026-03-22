@@ -130,7 +130,10 @@ local function useFunc(this:myself)
 		end
 	end
 
-	--
+	if hitlanded == false then
+		this:endLag(0.2)
+	end
+	
 	return true
 end
 

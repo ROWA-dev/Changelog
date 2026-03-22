@@ -677,7 +677,7 @@ function module.UseAbility(self:myself, newAbility: abilityTyp)
 	end
 	
 	local nearAbtToHit = (self.attackAt - tick())
-	if nearAbtToHit > 0.1 then
+	if nearAbtToHit > 0.06 then
 		task.spawn(self.feint, self)
 	end
 	
@@ -733,7 +733,7 @@ function module.isParry(self:myself, atk:atkTyp?)
 			end
 		end
 	end
-	
+	-- TODO maybe clamp parrywindow...
 	return tick() <= self.cooldowns:lastUsedAt("parry") + window
 end
 

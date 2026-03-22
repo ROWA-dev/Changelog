@@ -81,7 +81,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		dmgConfig.m1,
 		0.46, -- windup
 		CFrame.new(0, 0, -3), -- hitboxoffset
-		Vector3.new(4,6,7), -- hitbox sz
+		Vector3.new(4,6,6.5), -- hitbox sz
 		indicator,
 		-- anim stuff
 		0.08, -- fadetime

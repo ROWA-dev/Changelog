@@ -95,7 +95,7 @@ local function useFunc(this:myself)
 		dmg      = 20,
 		stun     = 1,
 		posMult  = 3,
-		parryH   = -0.06,
+		parryH   = -0.04,
 		onHit    = function(attack, source)
 			local eroot = attack.enemyEntity.HRootPart
 			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("strpunch", eroot)
