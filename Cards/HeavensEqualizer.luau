@@ -21,7 +21,9 @@ function module.new(humObj):myself
 		error("plr is already experienced")
 	end
 	
-	humObj.parryWindow.Value += 0.04
+	local scale = 0.04 * (1 - (plrData.wins / 30))
+	humObj.parryWindow.Value += scale--0.04
+	
 	if plrData.wins < 2 then
 		self:addConnection(
 			humObj.beforeAttacked:Connect(function(atk)

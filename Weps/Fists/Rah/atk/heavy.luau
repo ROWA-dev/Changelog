@@ -18,7 +18,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	this:triggerCD("heavy")
 	humObj.walkSpeed:RemoveMod("stopMoving")
 	
-	local hitboxOffset = CFrame.new(0,0,-3)
+	local hitboxOffset = CFrame.new(0,0,-2.5)
 	local hitboxSize   = Vector3.new(5,5,5)
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 

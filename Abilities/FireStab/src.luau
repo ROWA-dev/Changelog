@@ -38,10 +38,13 @@ local function useFunc(this:myself & any)
 	) -- LAMBDA OF DOOM	
 
 	local feinted = this:feintWait(0.5)
+	local cd = 10
+
 	if feinted then
 		if anim then
 			anim:Stop()
 		end
+		this._lastUsed = math.max(this._lastUsed, tick() - cd*0.5)
 		return
 	end
 	vfx:FireAllClients("fstabb", root)
@@ -50,7 +53,6 @@ local function useFunc(this:myself & any)
 
 	-- rem cd
 	local now = tick()
-	local cd = 10
 
 	local elapsed = now - (this._lastUsed or 0)
 	local remaining = math.max(0, cd - elapsed)

@@ -25,8 +25,7 @@ local function useFunc(this:myself)
 	local humObj = this._humObj
 	local now = tick()
 	
-	local sinceLastStunned = (now - humObj.stun.Value)
-	if sinceLastStunned < 0.4 then -- cant counter 0.4s after stun
+	if now < humObj.stun.Value + 0.4 then -- cant counter 0.4s after stun
 		return
 	end
 	
@@ -60,7 +59,7 @@ local function useFunc(this:myself)
 	end
 	
 	if triggeredBy == nil then
-		this:atkWait(0.5) -- 0.5s time to punish this guy lol
+		this:atkWait(0.7) -- 0.7s time to punish this guy lol
 		humObj.walkSpeed:RemoveMod("stopMoving")
 		return
 	end
