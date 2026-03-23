@@ -20,7 +20,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 ### Changes 🛠️
 - Strong Left parry window increased again (by 0.02s)
 - Canine heavy attack damage decreased (20 -> 18)
-- Rah heavy attack damage decreased (24 -> 21)
+- Rah heavy attack damage decreased (27 -> 24)
 - Rapier M1 range decreased (-0.5 studs)
 - Spear M1 range decreased (-1 stud)
 - Katana charged heavy attack damage decreased (54 -> 45)
