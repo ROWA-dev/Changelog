@@ -3,6 +3,16 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.6 - Minimal Changes
+### Changes 🛠️
+- Feinting Fire Stab now puts the move on half cooldown after you use it
+  - This is to stop people from feinting > using fire stab > using fire stab again
+- ToshiCounter punish window increased (0.5s -> 0.7s)
+- Heaven's Equalizer (new player buff) now scales based on number of player's wins instead of being a flat parry window buff
+- Rah heavy attack range nerfed (3 studs -> 2.5 studs)
+
+<br><sub>2026-03-23</sub>
+
 ## 1.5 - The Gutter
 
 > Note: Versions 1.3 and 1.4 were omitted because they harbor no significance towards the actual game, only the changelog repository.
@@ -34,7 +44,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 > Note: Although this update is the first in the changelog, ROWA 2 has been updated consistently since 2025-08-21.
 
 ### Changes 🛠️
-
 - Removed ability to unequip weapons during attack
   - This fixes crit cooldown swapping by proxy
 - Blocking is now angle and position based
