@@ -72,7 +72,7 @@ local function useFunc(this:myself)
 
 	local Char = hurtbox.Parent
 	local FxRemote = game.ReplicatedStorage.RemoteEvents.VFX
-	--FxRemote:FireAllClients("hideArms", Char)
+	FxRemote:FireAllClients("hideArms", Char)
 	local hitlanded = false
 	for i = 1,18 do
 		FxRemote:FireAllClients("brrgArms", Char)
@@ -104,6 +104,7 @@ local function useFunc(this:myself)
 		if humObj:inStun() then
 			if anim then anim:Stop() end
 			if sound then sound:Stop() end
+			FxRemote:FireAllClients("showArms", Char)
 			return true
 		end
 		local wantedFeint = this.isFeinted
@@ -119,6 +120,9 @@ local function useFunc(this:myself)
 			if wantedFeint and now > st + 0.18 then
 				game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("feintfx", this._humObj.Hum.Parent)
 			end
+			
+			FxRemote:FireAllClients("showArms", Char)
+			
 			if hitlanded == false then
 				this:endLag(0.2)
 			end
@@ -126,7 +130,8 @@ local function useFunc(this:myself)
 		end
 
 		if i == 14 then
-			--FxRemote:FireAllClients("showArms", Char)
+			print("SHOW ARMS!")
+			FxRemote:FireAllClients("showArms", Char)
 		end
 	end
 

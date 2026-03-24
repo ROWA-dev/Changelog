@@ -1,5 +1,6 @@
 # Minimal Changes
-Update 1.6
+Update 1.7
 
-rah range nerf
-and some other stuff i forgot
+rah crit dmg nerf
+sum vfx stuff
+and prep atmos lighting stuff
