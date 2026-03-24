@@ -3,13 +3,23 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.7 - The Much Needed Rah Nerf
+### Added ✅
+- Barrage now hides arms while punching
+
+### Changes 🛠️
+- Rah heavy attack damage decreased (24 -> 20)
+- Rah heavy attack cooldown increased (3s -> 4s)
+
+<br><sub>2026-03-23</sub>
+
 ## 1.6 - Minimal Changes
 ### Changes 🛠️
 - Feinting Fire Stab now puts the move on half cooldown after you use it
   - This is to stop people from feinting > using fire stab > using fire stab again
 - ToshiCounter punish window increased (0.5s -> 0.7s)
 - Heaven's Equalizer (new player buff) now scales based on number of player's wins instead of being a flat parry window buff
-- Rah heavy attack range nerfed (3 studs -> 2.5 studs)
+- Rah heavy attack range decreased (3 studs -> 2.5 studs)
 
 <br><sub>2026-03-23</sub>
 
