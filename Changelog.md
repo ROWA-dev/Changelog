@@ -3,6 +3,16 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.8 - ROWA Sunset
+### Added ✅
+- /time command
+- WIP character stat UI
+
+### Changes 🛠️
+- Fixed memory leaks
+- Slot optimization; Slot data is wiped
+  - Wipe is not significant because game has no progression
+
 ## 1.7 - The Much Needed Rah Nerf
 ### Added ✅
 - Barrage now hides arms while punching
