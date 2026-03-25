@@ -44,7 +44,7 @@ local function useFunc(this:myself & any)
 		if anim then
 			anim:Stop()
 		end
-		this._lastUsed = math.max(this._lastUsed, tick() - cd*0.5)
+		this._lastUsed = math.max(this._lastUsed or 0, tick() - cd*0.5)
 		return
 	end
 	vfx:FireAllClients("fstabb", root)

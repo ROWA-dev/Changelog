@@ -25,7 +25,6 @@ function module.destroy(self:myself)
 	if self._model then
 		self._model:Destroy()
 	end
-	self:unequip()
 	baseWep.destroy(self)
 end
 

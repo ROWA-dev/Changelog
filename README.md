@@ -1,6 +1,8 @@
 # Minimal Changes
-Update 1.7
+Update 1.8
 
-rah crit dmg nerf
-sum vfx stuff
-and prep atmos lighting stuff
+mem leaks fixed
+/time command
+
+compressing all slots in one buffer instead of holding each seperately
+and only decompressing on save/load request

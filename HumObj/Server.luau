@@ -27,15 +27,15 @@ export type myself = baseClass.myself & {
 	plrObj: any?,
 	wielding_weapon: weaponBase.myself?,
 	using_ability:  abilityTyp?,
-	
+
 	dmgRecord:      dmgRecord.myself,
 	cards:          cardLoader.myself,
 	ragdoll:        rowaRagdoll.myself,
 	grab:           grabClass.myself,
-	
+
 	hurtboxSize: AdditiveValue.myself,
 	HurtBox:     BasePart,
-	
+
 	--stopW: boolean?, -- set to true to cancel windup
 	isDead: boolean?,
 	canAtkThreshold: number,
@@ -44,16 +44,16 @@ export type myself = baseClass.myself & {
 	dodgeWindow: number,
 
 	attackAt: number,
-	
+
 	-- Methods
 	HandleAttack: (self:myself, attack:atkTyp, atkSource:any?) -> number,
-	
+
 	canAttack: (self: myself) -> boolean,
 	canBlock:  (self: myself) -> boolean,
 	isParry: (self: myself, atk:atkTyp?) -> boolean,
 	isBlock: (self: myself, atk:atkTyp?) -> boolean,
 	isDodge: (self: myself, atk:atkTyp?, offset:number?) -> boolean,
-	
+
 	GuardBreak: (self:myself)->(),
 	GetBlade: (self:myself)->Instance?,
 	feint: (self:myself)->boolean,
@@ -76,17 +76,17 @@ export type myself = baseClass.myself & {
 	stopAbilityAnims: (self:myself)->(),
 	ChangeBlocking:   (self:myself, setTo:boolean) -> boolean,
 	ChangeState:      (self:myself, state:Enum.HumanoidStateType)->(),
-	
+
 	bodyForce: (self:myself, forceVector:Vector3, t: number, isRootRelative:boolean?, decayT:number?, decayBias: number?) -> knockForce.myself,
 	FireVFXClient: (self:myself, any) -> (),
 
 	initReplicateServer: (self: myself, remoteEvent:RemoteEvent, plr:Player) -> (),
-	
+
 	onAttackWindup: Signal.Signal<number>,
 	onStunned: Signal.Signal<number>,
-	
+
 	SubscribedEventCB: ((id:number, value: any)->())?,
-	
+
 	_emoteInstance: emoteBase.myself?,
 	destroy: (self: myself) -> (),
 	--new:     (hum: Humanoid) -> myself,
@@ -140,7 +140,7 @@ function module.new(hum: Humanoid): myself
 	self.canAtkThreshold = 0
 	self.dodgeThreshold  = 0
 	self.dodgeWindow     = 0.3
-	
+
 	self.attackAt        = 0
 
 	self.equippedWeapons = {}
@@ -149,7 +149,7 @@ function module.new(hum: Humanoid): myself
 
 	self.onAttackWindup = Signal.new()
 	self.onStunned      = Signal.new()
-	
+
 	local function blockedOrHit(attack:atkTyp)		
 		local myEntity = self--attack.enemyEntity
 		landHitSpeedBuff(myEntity)
@@ -157,10 +157,10 @@ function module.new(hum: Humanoid): myself
 		-- TODO turn this into blade Dancer card (resets dash after landing a hit)
 		myEntity.cooldowns:Reset("dash")
 		myEntity.cooldowns:Reset("dashCancel")
-		
+
 		local enemyEntity = attack.enemyEntity
 		local enemyhum = enemyEntity.Hum
-				
+
 		-- continue air combo
 		if enemyEntity.floating and enemyhum.FloorMaterial == Enum.Material.Air and myEntity.Hum.FloorMaterial == Enum.Material.Air and myEntity:isSwimming() == false and enemyEntity:isSwimming() == false then
 			local keepfloating = 0.2 + attack.dmgTbl.stun
@@ -173,7 +173,7 @@ function module.new(hum: Humanoid): myself
 			myEntity.targetFloatY.Value = enemyEntity.HurtBox or enemyEntity.HRootPart
 		end
 	end
-	
+
 	self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
 		if attack:isBlocked() then
 			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("block",
@@ -186,7 +186,7 @@ function module.new(hum: Humanoid): myself
 			self.cooldowns:Reset("parry")
 			self.stun.Value = 0    -- reset stun so they can attack back
 			self.canAtkThreshold = 0
-			
+
 			self.ragdoll:unragdoll()
 		elseif attack:isHit() then
 			local now = tick()
@@ -194,7 +194,7 @@ function module.new(hum: Humanoid): myself
 				local equippedWep:any = self.wielding_weapon
 				equippedWep:stopLastAnim(true)
 			end
-			
+
 			-- YOUR FEINT WAS READ!! HAHAH
 			local lastUsedFeint = self.cooldowns:lastUsedAt("feint")
 			if now > lastUsedFeint + 0.2 -- 0.2 is too fast for a read..
@@ -208,10 +208,10 @@ function module.new(hum: Humanoid): myself
 				mambo.TimePosition = 0.1
 				game.Debris:AddItem(mambo, 4)
 			end
-			
+
 			--
 			local totalBleed = math.ceil(attack.dmgTbl.dmg/2)
-			
+
 			local attackIsSlash = attack:hasDmgFlag(DmgUtils.dmgFlags.slash)
 			local extraVelo = attack.atkDir
 			local emitcount = if attackIsSlash then totalBleed else math.floor(totalBleed/2)
@@ -219,7 +219,7 @@ function module.new(hum: Humanoid): myself
 				extraVelo = attack.knockback.force*2
 				emitcount += math.floor(attack.knockback.force.Magnitude^0.5)
 			end
-			
+
 			if self.Hum and self.Hum.Parent and self.Hum.Parent:FindFirstChild("Torso") then
 				local newDmg = attack:CalculateDamage()
 				if attackIsSlash == false then
@@ -242,7 +242,7 @@ function module.new(hum: Humanoid): myself
 				local totalBleed2 = math.clamp(newDmg/4,2,300)
 				bfx:Emit(totalBleed1)
 				bfx2:Emit(totalBleed2)
-				
+
 				local relativeAtkDir = myTorso.CFrame:VectorToObjectSpace(attack.atkDir)
 				local allHitAnims = script.HitAnims:GetChildren()
 				local hitAnim = allHitAnims[math.random(1,#allHitAnims)]
@@ -254,7 +254,7 @@ function module.new(hum: Humanoid): myself
 				end
 				self.lastAbilityAnim = hitTrack
 			end
-			
+
 			local charSize = self.charSize.Value
 			game.ReplicatedStorage.FastRemotes.blood:FireAllClients(
 				emitcount,
@@ -265,11 +265,11 @@ function module.new(hum: Humanoid): myself
 				extraVelo
 			)
 		end
-		
+
 		if hum.Health > 0 then return end -- still alive return
 		onDied(self, atkSource)
 	end)
-	
+
 	self.onAttack:Connect(function(attack, returnValue: number, atkSource: any?) 
 		if attack:isHit() then
 			if attack:isWep() then
@@ -277,25 +277,25 @@ function module.new(hum: Humanoid): myself
 				local mana = self.mana
 				mana.Value = math.min(mana.Value + attack:CalculateDamage() / 4, maxMana) -- increase mana
 			end
-			
+
 			blockedOrHit(attack)
 		elseif attack:isBlocked() then
 			blockedOrHit(attack)
 		end	
 	end)
 	--
-	
+
 	hum.Died:Connect(function() 
 		self:Die()
 	end)
-	
+
 	local character:Model = self.HRootPart.Parent::any
 	local hurtbox = character:FindFirstChild("hurtbox") or script.hurtbox:Clone()
 	hurtbox:WaitForChild("Weld").Part0 = self.HRootPart
 	hurtbox.Weld.Part1 = hurtbox
 	hurtbox.Parent = character
 	self.HurtBox = hurtbox
-	
+
 	do
 		local ogHBSize = self.HurtBox.Size
 		local function hurtboxSzChange()
@@ -306,7 +306,7 @@ function module.new(hum: Humanoid): myself
 		self.hurtboxSize.onSet:Connect(hurtboxSzChange)
 		self.hurtboxSize.onRemove:Connect(hurtboxSzChange)
 	end
-	
+
 	do
 		local charSizeChanged = function(key: string) 
 			local hroot:any = self.HRootPart
@@ -315,7 +315,7 @@ function module.new(hum: Humanoid): myself
 		self.charSize.onSet:Connect(charSizeChanged)
 		self.charSize.onRemove:Connect(charSizeChanged)
 	end
-	
+
 	do
 		self.floating.Changed:Connect(function(v)
 			if v > 0 and self.isDead ~= true then
@@ -329,7 +329,7 @@ function module.new(hum: Humanoid): myself
 			end
 		end)
 	end
-	
+
 	do
 		local function stopEmote()
 			if self._emoteInstance then
@@ -337,17 +337,17 @@ function module.new(hum: Humanoid): myself
 				self._emoteInstance = nil
 			end
 		end
-		
+
 		self.onStunned:Connect(function(a0: number) 
 			if a0 <= 0 then return end
 			stopEmote()
 		end)
-		
+
 		self.attacking.Changed:Connect(function(attacking: boolean) 
 			if attacking == false then return end
 			stopEmote()
 		end)
-		
+
 		self.blocking.Changed:Connect(stopEmote)
 		--self.onDash:Connect(stopEmote)
 	end
@@ -368,25 +368,25 @@ function module.new(hum: Humanoid): myself
 			Humanoid.HealthChanged:Wait()
 		end
 	end)
-	
+
 	-- TODO move this out -- and yes the nested while throttled by a changed:Wait is optimal
 	task.spawn(function()
-		while self and self.isActive do
+		while  self.isActive do
 			while self.isActive and self.floating.Value > 0 do
 				local dt = task.wait()
-				if self and self.floating then
+				if self.floating then
 					self.floating.Value = math.clamp(self.floating.Value-dt, 0, 2)
 				end
 			end
-			self.floating.Changed:Wait()
+			if self.isActive then self.floating.Changed:Wait() end
 		end
 	end)
 	task.spawn(function()
-		while self and self.isActive do
+		while self.isActive do
+			self.posture.Changed:Wait()
 			local posture:any = self.posture
-			
 			local maxPosture:any = self.maxPosture
-			while posture.Value < maxPosture.Value do
+			while self.isActive and posture.Value < maxPosture.Value do
 				local dt = wait()
 				if self and self.isActive then
 					local postureHeal = self.postureHeal.Value
@@ -394,17 +394,17 @@ function module.new(hum: Humanoid): myself
 					rawset(posture, "v", newPostureValue)
 				end
 			end
-			self.posture.Changed:Wait()
+			if self.isActive then self.posture.Changed:Wait() end
 		end
 	end)
 	task.spawn(function()
-		while self and self.isActive do
+		while self.isActive do
+			self.mana.Changed:Wait()
 			local mana:any = self.mana
-
 			local maxMana:any = self.maxMana
-			while mana.Value < maxMana.Value do
+			while self.isActive and mana.Value < maxMana.Value do
 				local dt = wait()
-				if self and self.isActive then
+				if self.isActive then
 					local baseGain = 4
 					local ration = mana.v / maxMana.Value
 					local manaGain = baseGain * (1 - ration)^3
@@ -412,10 +412,10 @@ function module.new(hum: Humanoid): myself
 					rawset(mana, "v", newManaValue)
 				end
 			end
-			self.mana.Changed:Wait()
+			if self.isActive then self.mana.Changed:Wait() end
 		end
 	end)
-	
+
 	return self
 end
 
@@ -463,13 +463,13 @@ function module.destroy(self:myself&any)
 	self.onAttackWindup:Destroy()
 	self.onStunned:Destroy()
 	self.cooldowns:Destroy()
-	
+
 	self.hurtboxSize:destroy()
 	self.dmgRecord:destroy()
 	self.cards:destroy()
-	--self.ragdoll:destroy()
+	self.ragdoll:destroy()
 	self.grab:destroy()
-	
+
 	baseClass.destroy(self)
 end
 
@@ -485,11 +485,11 @@ local returnEnums = DmgUtils.returnEnum
 function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 	local myEntity    = attack.myEntity
 	local enemyEntity = attack.enemyEntity
-	
+
 	local myhum    = myEntity.Hum
 	local enemyhum = enemyEntity.Hum
 	local dmgtbl   = attack.dmgTbl
-	
+
 	if self.isDead then
 		return nil
 	end
@@ -549,7 +549,7 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 	if enemyEntity.isBlock and enemyEntity:isBlock(attack) then
 		enemyEntity.posture.Value -= atkPostureDMG
 		if enemyEntity.posture.Value > 0 then
-			
+
 			-- todo prob move the to client fx
 			local blocksound = nil
 			if dmgtbl.weight == DmgUtils.weighEnum.Heavy then
@@ -634,7 +634,7 @@ function module.EquipWeapon(self:myself, newWeapon: weaponBase.myself): boolean
 		error("attempted to :EquipWeapon(nil). u forgot to put a weapon stupid!")
 	end
 	_clearWieldedWeapon(self)
-	
+
 	local alreadyIndex = nil
 	for i, w in ipairs(self.equippedWeapons) do
 		if w == newWeapon then
@@ -645,7 +645,7 @@ function module.EquipWeapon(self:myself, newWeapon: weaponBase.myself): boolean
 	if alreadyIndex then
 		table.remove(self.equippedWeapons, alreadyIndex) -- remove old spot
 	end
-	
+
 	local maxEquippedSlots = 2
 
 	--print(self.equippedWeapons)
@@ -656,7 +656,7 @@ function module.EquipWeapon(self:myself, newWeapon: weaponBase.myself): boolean
 			oldest:unequip()
 		end
 	end
-	
+
 	table.insert(self.equippedWeapons, newWeapon)
 	newWeapon:equip(self)
 	newWeapon:wield()
@@ -675,12 +675,12 @@ function module.UseAbility(self:myself, newAbility: abilityTyp)
 	if newAbility._humObj ~= self then
 		error("tried to use another humObj("..tostring(newAbility._humObj)..") ability")
 	end
-	
+
 	local nearAbtToHit = (self.attackAt - tick())
 	if nearAbtToHit > 0.06 then
 		task.spawn(self.feint, self)
 	end
-	
+
 	local atking = self.attacking
 	if atking.Value == true then
 		atking.Changed:Wait()
@@ -694,7 +694,7 @@ function module.UseAbility(self:myself, newAbility: abilityTyp)
 		end
 		task.wait()
 	end
-	
+
 end
 
 function module.inCombat(self:myself): boolean
@@ -706,7 +706,7 @@ end
 function module.isParry(self:myself, atk:atkTyp?)
 	local ogWindow = self.parryWindow.Value/self.timeScale.Value
 	local window = ogWindow
-	
+
 	local inStun = self:inStun()
 	if inStun then
 		-- harder to parry in stun
@@ -716,15 +716,15 @@ function module.isParry(self:myself, atk:atkTyp?)
 		if atk.dmgTbl.parryH then
 			window += atk.dmgTbl.parryH
 		end
-			
+
 		local enemyEntity = atk.myEntity
 		local enemyRoot:BasePart = enemyEntity.HurtBox or enemyEntity.HRootPart
 		local humRoot:BasePart   = self.HurtBox or self.HRootPart
 		local dot = humRoot.CFrame.LookVector:Dot(enemyRoot.CFrame.LookVector)
-		
+
 		if dot > 0.1 then -- is behind via angle
 			--harder to parry if attacked from behind
-			
+
 			local toEnemy = (enemyRoot.Position - humRoot.Position).Unit
 			local facingDot = humRoot.CFrame.LookVector:Dot(toEnemy)
 			--print(facingDot)
@@ -744,7 +744,7 @@ function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
 		local dif = velo.Unit:Dot(atk.atkDir)
 		-- dif is -1 if moving opposite of atk dir
 		-- dif is 1 if moving same dir as atk
-		
+
 		if velo.Magnitude > 8 then
 			self.dodgeThreshold -= dif*0.1
 		end
@@ -762,7 +762,7 @@ function module.isBlock(self:myself, atk:atkTyp?)
 		local enemyRoot:BasePart = enemyEntity.HurtBox or enemyEntity.HRootPart
 		local humRoot:BasePart   = self.HurtBox or self.HRootPart
 		local dot = humRoot.CFrame.LookVector:Dot(enemyRoot.CFrame.LookVector)
-		
+
 		if dot > 0.1 then -- is behind via angle
 			local toEnemy = (enemyRoot.Position - humRoot.Position).Unit
 			local facingDot = humRoot.CFrame.LookVector:Dot(toEnemy)
@@ -773,7 +773,7 @@ function module.isBlock(self:myself, atk:atkTyp?)
 	if self.ragdoll:inRagdoll() then -- cannot block in ragdoll
 		return false
 	end
-	
+
 	return 
 		isBlockingValue
 		or tick() <= self.cooldowns:lastUsedAt("parry") + self.parryWindow.Value + 0.2 -- 0.2s of ending block frames...
@@ -782,13 +782,13 @@ end
 function module.canAttack(self:myself)
 	local now = tick()
 	local lastDashed = math.min(self.cooldowns:lastUsedAt("dash")+0.2, self._lastDashed + 0.3/self.timeScale.Value)
-	
+
 	return (
 		not self:inStun() -- cant attack in stun
 			--and self:isDodge() == false
 			and now > lastDashed
 			and now > self.canAtkThreshold
-			--and now > self.cooldowns:lastUsedAt("parry")+0.4 -- cant attack right after missing a parry for 0.4s
+		--and now > self.cooldowns:lastUsedAt("parry")+0.4 -- cant attack right after missing a parry for 0.4s
 	)
 end
 
@@ -878,9 +878,9 @@ function module.setTransparency(self: myself & { _ogTransparency: ogTransparency
 	local ogTransparency = self._ogTransparency
 	local char = self.HRootPart and self.HRootPart.Parent
 	if not char then return end
-	
+
 	print("set transparency", transparency)
-	
+
 	if transparency == nil or transparency == 0 then
 		for inst:any, value in pairs(ogTransparency) do
 			if inst and inst.Parent then
@@ -977,7 +977,7 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 	--setTo = self._wantblock
 	if self.blocking.Value ~= setTo then
 		self._lastBlocked = tick()
-		
+
 	end
 	self.blocking.Value = setTo
 	if setTo == true then
@@ -989,7 +989,7 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 		if wep and self.blockAnim and self.parryAnim then
 			self.blockAnim:Stop()
 			self:PlayTrack(self.parryAnim)
-			self:AddConnection(self.parryAnim.Stopped:Once(function() 
+			self:AddConnection(self.parryAnim.Stopped:Once(function()  -- field upvalue from table field 'parryAnim'
 				if self.blocking.Value == true then
 					self:PlayTrack(self.blockAnim)
 					self:RemConnection("onParryStop")
@@ -1040,7 +1040,7 @@ function module.bodyForce(self:myself, forceVector:Vector3, t: number, isRootRel
 	if decayT then
 		decayT *= iTimeScale
 	end
-	
+
 	return knockForce(forceVector, self.HRootPart, t, isRootRelative, decayT, decayBias)
 end
 
@@ -1054,7 +1054,7 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 	self.postureHeal:initReplicateServer(17, remoteEvent, plr)
 	self.slideSpeed:initReplicateServer(18, remoteEvent, plr)
 	self.charSize:initReplicateServer(19, remoteEvent, plr)
-	
+
 	self.stun.Changed:Connect(function(number: number) 
 		local duration = self.timeStunned--number-tick()
 		if number == 0 then
@@ -1064,6 +1064,7 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		remoteEvent:FireClient(plr, 1, duration)
 	end)
 	self.attacking.Changed:Connect(function(boolean: boolean)
+		--print("RAH", boolean)
 		remoteEvent:FireClient(plr, 2, boolean)
 	end)
 	self.blocking.Changed:Connect(function(boolean: boolean) 

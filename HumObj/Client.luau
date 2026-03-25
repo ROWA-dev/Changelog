@@ -171,8 +171,8 @@ function module.new(hum: Humanoid):myself
 end
 
 function module.destroy(self:myself)
+	self.isActive = false
 	self.cooldowns:Destroy()
-	
 	self.parryWindow:destroy()
 	self.walkSpeed:destroy()
 	self.slideSpeed:destroy()
@@ -180,7 +180,9 @@ function module.destroy(self:myself)
 	self.timeScale:destroy()
 	self.stun:destroy()
 	self.posture:destroy()
+	self.mana:destroy()
 	self.postureHeal:destroy()
+	self.maxMana:destroy()
 	self.maxPosture:destroy()
 	self.trueStun:destroy()
 	self.floating:destroy()
@@ -577,6 +579,7 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 
 	
 	local rcon = remoteEvent.OnClientEvent:Connect(function(id:number, value:any, ...) 
+		--print("from HUMOBJCLI", id, value)
 		if id == 1 then
 			--self.stun.Value = value
 			if value == 0 then
