@@ -106,7 +106,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		4, -- m1CycleCount
 		dmgConfig.m1,
 		0.5, -- windup
-		CFrame.new(0,0,-4.5), -- hitboxoffset
+		CFrame.new(0,0,-2.5), -- hitboxoffset
 		Vector3.new(6,6,6), -- hitbox sz
 		indicator,
 		-- anim stuff
