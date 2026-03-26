@@ -3,6 +3,14 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.9 - Grabbing Guts
+### Changes 🛠️
+- Rah heavy attack hitbox reduced (-0.5 studs)
+- Vise heavy attack hitbox reduced (-0.5 studs)
+- Vise heavy attack hitbox offset reduced (-0.5 studs)
+- Bo Staff heavy attack hitbox reduced (-0.5 studs)
+- Bo Staff M1 hitbox offset reduced (-4.5 studs -> -2.5 studs)
+
 ## 1.8 - ROWA Sunset
 ### Added ✅
 - /time command
@@ -41,8 +49,8 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Strong Left parry window increased again (by 0.02s)
 - Canine heavy attack damage decreased (20 -> 18)
 - Rah heavy attack damage decreased (27 -> 24)
-- Rapier M1 range decreased (-0.5 studs)
-- Spear M1 range decreased (-1 stud)
+- Rapier M1 hitbox reduced (-0.5 studs)
+- Spear M1 hitbox reduced (-1 stud)
 - Katana charged heavy attack damage decreased (54 -> 45)
 - Barrage has endlag on miss (0.2s)
 - Bunny eating animation fixed 🥕
