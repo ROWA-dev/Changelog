@@ -64,7 +64,7 @@ local function flourish(this:wepBase.myself&any)
 		hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 		for _,enemhum in pairs(hits) do
 			local attack = this:makeAtk(
-				dmgConfig.heavy,
+				dmgConfig.flourish,
 				enemhum,
 				hurtbox.CFrame.LookVector
 			)

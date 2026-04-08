@@ -387,6 +387,7 @@ function module.canDash(self:myself, offset:number?): boolean
 		and self.attacking.Value == false
 end
 
+
 local dashfx = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("dashFx"))
 function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 	if self:canDash() == false then return false end

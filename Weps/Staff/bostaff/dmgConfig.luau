@@ -26,6 +26,14 @@ local config:configs = {
 		stunMeOnParried = 0
 		--parryH   = 0.4
 	},
+	flourish = {
+		weight   = weighEnum.Medium,
+		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
+		dmg      = 6,
+		stun     = 0.6,
+		posMult  = 2,
+		onHit    = require(script.hit)
+	},
 	heavy = {
 		weight   = weighEnum.Medium,
 		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
@@ -53,7 +61,7 @@ local config:configs = {
 	heavyFlourish = {
 		weight   = weighEnum.Medium,
 		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 9,
+		dmg      = 6,
 		stun     = 0.66,
 		posMult  = 1.5,
 		onHit    = require(script.hit)

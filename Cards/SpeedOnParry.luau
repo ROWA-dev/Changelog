@@ -19,7 +19,9 @@ function module.new(humObj):myself
 			if attack:isParried() then
 				humObj.walkSpeed:SetMod("parry", 4)
 				task.wait(1) -- TODO why this hold heap?
-				humObj.walkSpeed:RemoveMod("parry")
+				if humObj and humObj.isActive then
+					humObj.walkSpeed:RemoveMod("parry")
+				end
 			end
 		end),
 		"speedOnParry"

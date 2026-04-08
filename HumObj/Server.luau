@@ -383,7 +383,6 @@ function module.new(hum: Humanoid): myself
 	end)
 	task.spawn(function()
 		while self.isActive do
-			self.posture.Changed:Wait()
 			local posture:any = self.posture
 			local maxPosture:any = self.maxPosture
 			while self.isActive and posture.Value < maxPosture.Value do
@@ -399,7 +398,6 @@ function module.new(hum: Humanoid): myself
 	end)
 	task.spawn(function()
 		while self.isActive do
-			self.mana.Changed:Wait()
 			local mana:any = self.mana
 			local maxMana:any = self.maxMana
 			while self.isActive and mana.Value < maxMana.Value do
@@ -915,11 +913,19 @@ end
 
 
 function module.Dash(self:myself, dir:Vector3, fromSS:boolean?): boolean
-	if self:canDash() == false then return false end
+	local canDash = self:canDash()
+	
+	if fromSS == true and canDash == false and self.attacking.Value == true then
+		warn(self,"dashing while attack... punish?")
+		self.cooldowns:trigger("dashCancel")
+	end
+	--print("SS DASH", fromSS, canDash)
+	if canDash == false then return false end
+	
 	self.dodgeThreshold = tick() + self.dodgeWindow
 	self.ragdoll:unragdoll()
 	if self:isBlock() == true then
-		warn("RAH punish dash while blocking")
+		--warn("RAH punish dash while blocking")
 		self.cooldowns:trigger("dashCancel")
 		self:ChangeBlocking(false)
 	end
