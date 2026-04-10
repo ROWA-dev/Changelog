@@ -3,6 +3,18 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.10 - 
+### Changes 🛠️
+- Mace heavy attack damage decreased (24 -> 20)
+- Spear M1 damage decreased (13 -> 12)
+- Bo Staff flourish end damage decreased (9 -> 6)
+- Bo Staff heavy attack end damage decreased (9 -> 6)
+- Unvaulted Longsword
+- Fixed memory leak from Speed On Parry card
+- Attacking while dashing now cancels dash
+
+<br><sub>2026-04-08</sub>
+
 ## 1.9 - Grabbing Guts
 ### Changes 🛠️
 - Rah heavy attack hitbox reduced (-0.5 studs)
@@ -10,6 +22,8 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Vise heavy attack hitbox offset reduced (-0.5 studs)
 - Bo Staff heavy attack hitbox reduced (-0.5 studs)
 - Bo Staff M1 hitbox offset reduced (-4.5 studs -> -2.5 studs)
+
+<br><sub>2026-03-25</sub>
 
 ## 1.8 - ROWA Sunset
 ### Added ✅
@@ -20,6 +34,8 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Fixed memory leaks
 - Slot optimization; Slot data is wiped
   - Wipe is not significant because game has no progression
+
+<br><sub>2026-03-25</sub>
 
 ## 1.7 - The Much Needed Rah Nerf
 ### Added ✅
