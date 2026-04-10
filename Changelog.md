@@ -3,7 +3,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
-## 1.10 - 
+## 1.10 - Some Small Changes
 ### Changes 🛠️
 - Mace heavy attack damage decreased (24 -> 20)
 - Spear M1 damage decreased (13 -> 12)
