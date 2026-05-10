@@ -123,7 +123,7 @@ return function (this:wepTyp&any): wepType.atkResult
 			local lerpStart = root.Position
 			
 			humObj:FireVFXClient(
-				"slash",
+				"hamHit",
 				Vector3.new(0,0,-1.5)
 			)
 			
