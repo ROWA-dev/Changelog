@@ -3,6 +3,16 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.11 - ROWA 2 Might Be Back
+### Added ✅
+- New ability: Earth Shot
+
+### Changes 🛠️
+- Vaulted Longsword
+- Refactored destruction
+
+<br><sub>2026-05-12</sub>
+
 ## 1.10 - Some Small Changes
 ### Changes 🛠️
 - Mace heavy attack damage decreased (24 -> 20)
