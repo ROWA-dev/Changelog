@@ -8,7 +8,8 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - New ability: Earth Shot
 
 ### Changes 🛠️
-- Vaulted Longsword
+- Longsword heavy attack VFX changed
+- Vaulted Longsword (LOL)
 - Refactored destruction
 
 <br><sub>2026-05-12</sub>
