@@ -63,7 +63,7 @@ local function useFunc(this:myself)
 		weight   = dmgUtils.weighEnum.Light,
 		type     = bit32.bor(dmgFlag.blunt),
 		dmg      = 2.5,
-		stun     = 0.5,
+		stun     = 0.6,
 		posMult  = 0.5,
 		parryH   = 0.1,
 		stunMeOnParried = 0,

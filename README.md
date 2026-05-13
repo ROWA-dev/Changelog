@@ -1,4 +1,8 @@
-# destruction refactor
-Update 1.11
+# op dagger
+Update 1.12
 
-lazy
+slide jump has some momentum now and moves decently far...
+
+moved rowa1 dagger here
+
+and other stuff

@@ -306,19 +306,24 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 			self.walkSpeed:RemoveMod("slide")
 			
 			if slideModif then
-				if Hum.Jump and Hum.FloorMaterial ~= Enum.Material.Air then
+				local floor = workspace:FindPartOnRayWithIgnoreList(
+					Ray.new(root.Position, Vector3.new(0,-root.Size.Y*3,0)),
+					{root}
+				)
+				if Hum.Jump and floor ~= nil then
 					local slideJumpPower = math.max(slideModif, self.slideSpeed.Value)
 					if self._slideForce then
 						self._slideForce:Destroy()
 					end
 					
-					local dir = root.CFrame.LookVector
+					local dir = (root.CFrame.LookVector*Vector3.new(1,0,1)).Unit
 					local rDir = root.CFrame:VectorToObjectSpace(dir)
 					task.spawn(slidefx, root, rDir)
+					print("slide jump")
 					self._slideForce = bodyMover(
-						(dir+Vector3.new(0,0.3,0))*slideJumpPower*1.7*timeScale,
+						dir*slideJumpPower*1*timeScale,
 						root,
-						0.1*iTimeScale
+						0.4*iTimeScale
 					)
 				end
 				Hum.HipHeight += 1.5

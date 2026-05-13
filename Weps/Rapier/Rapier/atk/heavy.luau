@@ -66,11 +66,13 @@ return function(this:wepTyp&any): wepType.atkResult
 			task.spawn(this.executeAttack, this, attack)
 			if attack:isHit() then hitLanded = true end
 		end
-		this:atkWait(0.09)
+		if i < 5 then
+			this:atkWait(0.09)
+		end
 	end
 	
 	if hitLanded == false then
-		this:endLag(0.4)
+		this:endLag(0.2)
 	--else
 		--this:endLag(0.2)
 	end
