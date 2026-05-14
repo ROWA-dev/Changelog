@@ -3,6 +3,17 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.12 - Dagger? I Barely Know Her!
+### Added ✅
+- Slide jump has momentum now
+- New weapon: Dagger (from ROWA)
+
+### Changes 🛠️
+- Barrage stun increased (0.5s -> 0.6s)
+- Rapier heavy attack endlag decreased (0.4s -> 0.2s)
+
+<br><sub>2026-05-12</sub>
+
 ## 1.11 - ROWA 2 Might Be Back
 ### Added ✅
 - New ability: Earth Shot
@@ -12,7 +23,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Vaulted Longsword (LOL)
 - Refactored destruction
 
-<br><sub>2026-05-12</sub>
+<br><sub>2026-05-10</sub>
 
 ## 1.10 - Some Small Changes
 ### Changes 🛠️
