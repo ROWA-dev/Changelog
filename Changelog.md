@@ -3,6 +3,18 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.13 - Progression Preparation
+### Added ✅
+- More admin commands: /giveexp, /wipeslot
+- Updated UI to include EXP and level
+
+### Changes 🛠️
+- Dagger heavy attack range decreased (-1 stud)
+- Dagger heavy attack damage increased (5 -> 6)
+- Refactored more stuff in preparation for progression
+
+<br><sub>2026-05-21</sub>
+
 ## 1.12 - Dagger? I Barely Know Her!
 ### Added ✅
 - Slide jump has momentum now
