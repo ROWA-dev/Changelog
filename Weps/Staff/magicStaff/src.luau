@@ -5,8 +5,10 @@ export type myself = baseWep.myself & {
 }
 
 local module = {
-	postureGain = 4,
-	Name = "Executer",
+	Name = "magic staff",
+	idleAnim = script:WaitForChild("idle"),
+	blockAnim = script:WaitForChild("block"),
+	parryAnim = script:WaitForChild("parry"),
 }
 module.__tostring = baseWep.__tostring
 module.__index = module
@@ -21,35 +23,39 @@ function module.new(): myself&any
 end
 
 function module.destroy(self:myself)
-	self:unequip()
+	if self._model then
+		self._model:Destroy()
+	end
 	baseWep.destroy(self)
 end
 
 --methods
+
 --- wield
 function module.wield(self:myself&any)
 	-- wield stuff here
 	local humobj = self._humObj
-	humobj.cooldowns:setCooldown("heavy", 6)
-	
 	local char:any = humobj.Hum.Parent
-	local model = self._model-- script.Model:Clone()
-	model.Motor6D.Part0 = char["Right Arm"]
-	model.Motor6D.Part1 = model.Hold
+	local model = script.Model:Clone() -- that works too findFirstChildOfClass
+	model.mtr.Part0 = char["Right Arm"]
+	model.mtr.Part1 = model.Hold
 	model.Parent = char
-	
+
 	self._model = model
-	self._trail = model:WaitForChild("Trail1")
+	self._trail = model:WaitForChild("Trail")
+
+	--humobj.cooldowns:setCooldown("heavy", 6)
 	baseWep.wield(self)
 end
 
+
 --- unwield
-function module:unwield()
+function module.unwield(self:myself&any)
 	-- unwield stuff here
+
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end
-
 	local model = self._model
 	if model then
 		model.Parent = script
@@ -57,7 +63,6 @@ function module:unwield()
 
 	baseWep.unwield(self)
 end
-
 
 --- attack
 module.attack = require(script.attack)

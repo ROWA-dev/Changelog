@@ -6,7 +6,7 @@ export type myself = baseWep.myself & {
 
 local module = {
 	postureGain = 4,
-	Name = "Executer",
+	Name = "Stark Axe",
 }
 module.__tostring = baseWep.__tostring
 module.__index = module
@@ -33,13 +33,17 @@ function module.wield(self:myself&any)
 	humobj.cooldowns:setCooldown("heavy", 6)
 	
 	local char:any = humobj.Hum.Parent
-	local model = self._model-- script.Model:Clone()
+	local model = self._model --local model = script.Model--:Clone()
+	
+	model.strap.Enabled = false
+	model.Motor6D.Enabled = true
+	
 	model.Motor6D.Part0 = char["Right Arm"]
 	model.Motor6D.Part1 = model.Hold
 	model.Parent = char
 	
 	self._model = model
-	self._trail = model:WaitForChild("Trail1")
+
 	baseWep.wield(self)
 end
 
@@ -49,10 +53,16 @@ function module:unwield()
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end
-
+	local humobj = self._humObj
 	local model = self._model
+	
 	if model then
-		model.Parent = script
+		model.Motor6D.Enabled = false
+		model.strap.Enabled = true
+		
+		model.strap.Part1 = model.Hold
+		model.strap.Part0 = humobj.Hum.Parent["Torso"]
+		model.Parent = humobj.Hum.Parent
 	end
 
 	baseWep.unwield(self)

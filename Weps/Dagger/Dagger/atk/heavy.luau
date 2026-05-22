@@ -41,7 +41,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	local hitLanded = false
 
 
-	local hitboxOffset = CFrame.new(0, 0, -3)
+	local hitboxOffset = CFrame.new(0, 0, -2)
 	local hitboxSize   = Vector3.new(5,4,5)
 	
 	local aura = Hold.Parent:FindFirstChild("Blade").aura

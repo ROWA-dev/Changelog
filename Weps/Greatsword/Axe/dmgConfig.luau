@@ -9,29 +9,33 @@ local dmgFlag = dmgUtils.dmgFlags
 type configs = {[string]: dmgUtils.dmgType}
 local config:configs = {
 	m1 = {
-		weight   = weighEnum.Light,
+		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
-		dmg      = 9,
-		stun     = 0.5,
-		posMult  = 0.8,
-		onHit    = require(script.slash)
+		dmg      = 14,
+		stun     = 0.72,
+		posMult  = 1,
+		onHit    = require(script.gswordHit),
+		
+		parryH   = -0.01
 	},
-	punch = {
+	kick = {
 		weight   = weighEnum.Light,
 		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),
-		dmg      = 9,
-		stun     = 0.6,
+		dmg      = 10,
+		stun     = 0.64,
 		posMult  = 1.2,
-		onHit    = require(script:WaitForChild("punch"))
+		onHit    = require(script.kick)
 	},
 	heavy = {
-		weight   = weighEnum.Light,
+		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 6,
-		stun     = 0.6,
-		posMult  = 1,
-		onHit    = require(script.slash)
-	},
+		dmg      = 18,
+		stun     = 1,
+		posMult  = 3,
+		onHit    = require(script.hvy),
+		
+		parryH   = -0.01
+	}
 }
 
 deepFreeze(config)
