@@ -3,6 +3,18 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.14 - More Refactoring
+### Added ✅
+- Safer and better fast replication during combat or whatever that means
+- Slight client side prediction to mitigate unnoticeable loss
+
+### Changes 🛠️
+- Parry is cancelled on dash
+  - Parrying against Barrage, charged Katana heavy attack, or any multi-hit moves will cancel parry upon dodging away so good luck
+- Fist heavy attack movement force increased by 10%
+
+<br><sub>2026-05-24</sub>
+
 ## 1.13 - Progression Preparation
 ### Added ✅
 - More admin commands: /giveexp, /wipeslot
