@@ -786,7 +786,6 @@ function module.canAttack(self:myself)
 			--and self:isDodge() == false
 			and now > lastDashed
 			and now > self.canAtkThreshold
-		--and now > self.cooldowns:lastUsedAt("parry")+0.4 -- cant attack right after missing a parry for 0.4s
 	)
 end
 
@@ -923,6 +922,8 @@ function module.Dash(self:myself, dir:Vector3, fromSS:boolean?): boolean
 	if canDash == false then return false end
 	
 	self.dodgeThreshold = tick() + self.dodgeWindow
+	self.cooldowns:get("parry").lastUsed = 0 -- parry is cancelled on dash
+	
 	self.ragdoll:unragdoll()
 	if self:isBlock() == true then
 		--warn("RAH punish dash while blocking")

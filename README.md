@@ -1,13 +1,12 @@
-# serverside refactor
-Update 1.13
+# sum balancing and refactors
+Update 1.14
 
-refactored focusing serverside slots and plrobj classes
-focusing on networking (in preparation of progresion system)
+safer & better fast replication during combat? 240hrtx  -> 128hrtx unreliable remote speed slower
+but  slight client side prediction is implemented to mitigate unnoticable loss
 
-UI updates exp and level
+parry is cancelled on dash - this was awkward interaction... and will cancel all parry frames if u dash away for ex...
+parrying agaisnt barrage / charged katana crit will cancel the frames upon dodgign away
 
-/give exp {plr}
-/wipeslot {plr}
-commands for admin
+fist crit 10% more movement force
 
-and other stuff
+and more other stuff
