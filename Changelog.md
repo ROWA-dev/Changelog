@@ -3,6 +3,20 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.15 - Base Progression
+### Added ✅
+- Added weapon and elemental stats serverside base
+- Leveling up gives stat points
+- Points can be allocated
+- UI displays stats
+
+### Changes 🛠️
+- Tree M1s do more knockback
+- Tree heavy attack damage increased (32 > 50)
+- Tree heavy attack posture damage increased (x5)
+
+<br><sub>2026-05-24</sub>
+
 ## 1.14 - More Refactoring
 ### Added ✅
 - Safer and better fast replication during combat or whatever that means
