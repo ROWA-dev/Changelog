@@ -73,6 +73,8 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 			humObj.HRootPart.AssemblyLinearVelocity = Vector3.zero
 			force:destroy()
 		end
+		humObj.cooldowns:trigger("dash", 2)
+		humObj.cooldowns:trigger("slide", 2)
 		humObj.canAtkThreshold = 0
 		this:stopLastAnim(true)
 		return

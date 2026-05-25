@@ -19,9 +19,9 @@ local config:configs = {
 	heavy = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponHeavy),
-		dmg      = 32,
+		dmg      = 50,
 		stun     = 1,
-		posMult  = 2,
+		posMult  = 10,
 		onHit    = require(script.hvy),
 		
 		parryH   = -0.04

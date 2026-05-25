@@ -34,7 +34,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 		)
 
 		local newkb = this:knockback(
-			attack.atkDir*24,
+			attack.atkDir*60,
 			0.1
 		)
 
