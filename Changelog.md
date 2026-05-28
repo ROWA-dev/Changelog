@@ -2,6 +2,13 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.16 - Status Effects
+### Added ✅
+- Implemented base status effects class for entities
+- Fire Stab now applies burn status
+- Dagger crit now has an indicator
+
+<br><sub>2026-05-28</sub>
 
 ## 1.15 - Base Progression
 ### Added ✅
