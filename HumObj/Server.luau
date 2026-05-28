@@ -15,6 +15,7 @@ local DmgUtils        = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgRecord       = require(script.damageRecord)
 local cardLoader      = require(script.cardLoader)
 local rowaRagdoll     = require(script.RowaRagdoll)
+local statusEffects   = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local grabClass       = require(script.Grab)
 
 local knockForce = require(game.ServerScriptService.Knockback)
@@ -31,6 +32,7 @@ export type myself = baseClass.myself & {
 	dmgRecord:      dmgRecord.myself,
 	cards:          cardLoader.myself,
 	ragdoll:        rowaRagdoll.myself,
+	statusEffects:  statusEffects.myself,
 	grab:           grabClass.myself,
 
 	hurtboxSize: AdditiveValue.myself,
@@ -130,6 +132,7 @@ function module.new(hum: Humanoid): myself
 	self.dmgRecord      = dmgRecord.new()
 	self.cards          = cardLoader.new(self)
 	self.ragdoll        = rowaRagdoll.new(hum)
+	self.statusEffects  = statusEffects.new(self)
 	self.grab           = grabClass.new(hum)
 
 	-- defaults
@@ -466,6 +469,7 @@ function module.destroy(self:myself&any)
 	self.dmgRecord:destroy()
 	self.cards:destroy()
 	self.ragdoll:destroy()
+	self.statusEffects:destroy()
 	self.grab:destroy()
 
 	baseClass.destroy(self)
@@ -593,7 +597,7 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 	attack:ApplyKnockback()
 
 	local finalDamage = attack:CalculateDamage()
-	enemyhum.Health -= finalDamage
+	enemyEntity:Damage(finalDamage)
 
 	if dmgtbl["onHit"] then
 		dmgtbl.onHit(attack, atkSource)

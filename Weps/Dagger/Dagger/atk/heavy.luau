@@ -23,6 +23,8 @@ return function(this:wepTyp&any): wepType.atkResult
 	SlashFX.Weld.Part1 = humObj.HRootPart
 	SlashFX.Transparency = 1
 	
+	this:indicateAtk()
+	
 	if this:feintWait(0.3) then this:stopLastAnim(true) return end
 	this:triggerCD("heavy")
 	Hold.unsheatheReverb:Play()

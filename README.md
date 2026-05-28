@@ -1,9 +1,7 @@
-# .
-Update 1.15
+# status effect base
+Update 1.16
 
-implemented weapon stats and elemental stats serverside base
-leveling up gives alloc pts
-pts can be allocated
-ui now displays weapon n element stats
+implemented base status effects class for entities
+firestab applies burn now
 
 and other changes

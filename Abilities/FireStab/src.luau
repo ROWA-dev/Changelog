@@ -72,9 +72,9 @@ local function useFunc(this:myself & any)
 	local dmgTbl = {
 		weight   = dmgUtils.weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.fire),
-		dmg      = 12,
+		dmg      = 8,
 		stun     = 0.6,
-		posMult  = 2,
+		posMult  = 1,
 		parryH   = -0.04,
 		onHit = function(attack, source:any)
 			local eroot = attack.enemyEntity.HRootPart
@@ -93,8 +93,15 @@ local function useFunc(this:myself & any)
 			enemhum,
 			hurtbox.CFrame.LookVector
 		)
-
+		
 		this:executeAttack(attack)
+		if attack:isHit() then
+			attack.enemyEntity.statusEffects:apply(
+				humObj.statusEffects.Burn,
+				10, -- duration
+				6 -- dmg
+			)
+		end
 	end
 
 	this:endLag(0.1)
