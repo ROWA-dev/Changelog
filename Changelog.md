@@ -2,6 +2,23 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.17 - The Two Month Wait
+### Added ✅
+- New ability: Fulminate
+
+### Changes 🛠️
+- Fire Stab burn damage decreased (6 -> 3)
+- Blaze is now limited
+- Sprint speed increased (12 -> 14)
+- Cannot dash for 0.3s after attacking
+- Cannot dash for 0.1s after a feint
+- Fixed nasty hitbox bug
+- Axe heavy attack movement no longer sends you back I think
+- Hammer heavy attack hitbox reduced (-2 studs)
+- Claymore M1 hitbox reduced (-0.5 studs)
+
+<br><sub>2026-07-25</sub>
+
 ## 1.16 - Status Effects
 ### Added ✅
 - Implemented base status effects class for entities
