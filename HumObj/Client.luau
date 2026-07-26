@@ -50,6 +50,7 @@ export type myself = baseClass.entity & {
 
 
 	timeStunned:	 number,
+	_lastAttack:     number,
 	_numClimb:       number,
 	_dashForce:		 LinearVelocity,
 	_lastDashed: 	 number,
@@ -116,7 +117,7 @@ function module.new(hum: Humanoid):myself
 	self.mana        = numVal.new(0)
 
 	self.slideSpeed  = AdditiveValue.new(28)
-	self.sprintSpeed = AdditiveValue.new(12)
+	self.sprintSpeed = AdditiveValue.new(14)
 	self.maxPosture  = AdditiveValue.new(80)
 	self.maxMana     = AdditiveValue.new(100)
 	self.walkSpeed   = AdditiveValue.new(13)
@@ -130,6 +131,7 @@ function module.new(hum: Humanoid):myself
 	self.onDash       = Signal.new()
 	self.onDashCancel = Signal.new()
 
+	self._lastAttack = 0
 	self._numClimb = 0
 	self._lastDashed = 0
 	self._lastJumped = 0
@@ -163,6 +165,7 @@ function module.new(hum: Humanoid):myself
 
 	self.attacking.Changed:Connect(function(boolean: boolean) 
 		if boolean == true then
+			self._lastAttack = tick()
 			self:stopDash(true)
 		end
 	end)
@@ -384,11 +387,13 @@ end
 
 function module.canDash(self:myself, offset:number?): boolean
 	local now = tick() + (offset or 0)
+	local isLastAtk = (now - self._lastAttack) < 1
 	return 
 		self.cooldowns:canTrigger("dash", offset) == true
 		and self:inStun(offset) ~= true
-		and now > self.stun.Value + 0.1 -- can only dash 0.1s after stun ends
+		and now > self.stun.Value + (if isLastAtk then 0.3 else 0.1) -- can only dash 0.1s after stun ends
 		and now > self._lastDashed + 0.1
+		and now > self.cooldowns:lastUsedAt("feint") + 0.1 -- can only dash 0.1s after a feint
 		and self.attacking.Value == false
 end
 
@@ -396,7 +401,8 @@ end
 local dashfx = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("dashFx"))
 function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 	if self:canDash() == false then return false end
-
+	print((tick() - self._lastAttack))
+	
 	local hum = self.Hum
 	local rootpart = self.HRootPart
 	if rootpart == nil then

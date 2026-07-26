@@ -22,7 +22,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 
 
 	local hitboxOffset = CFrame.new(0, 0, -4)
-	local hitboxSize   = Vector3.new(10,10,10)
+	local hitboxSize   = Vector3.new(8,10,8)
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 
 	local landed = false

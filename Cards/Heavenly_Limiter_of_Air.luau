@@ -13,7 +13,7 @@ function module.new(humObj):myself
 	local self:myself = setmetatable(abstract, module) :: any
 
 
-	if humObj and humObj.Hum and humObj.Hum.Parent and humObj.Hum.Parent.Name == "Airzy_Az" then
+	if humObj and humObj.Hum and humObj.Hum.Parent and (humObj.Hum.Parent.Name == "Airzy_Az" or humObj.Hum.Parent.Name == "blazeshotgun111") then
 	else
 		error(tostring(humObj).." is not airzy, invalid...")
 		return self

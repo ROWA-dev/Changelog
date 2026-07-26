@@ -16,7 +16,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	--game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	task.wait(0.5)
 
-	local force = this:bodyForce(Vector3.new(0,75,-25), 0.6, true, 0.6, 1)
+	local force = this:bodyForce(Vector3.new(0,75,0), 0.6, true, 0.6, 1)
 	
 	local Hold = this._model.Hold
 	Hold.Parent.Trail1.Enabled = false

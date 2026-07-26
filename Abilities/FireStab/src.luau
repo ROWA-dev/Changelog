@@ -99,7 +99,7 @@ local function useFunc(this:myself & any)
 			attack.enemyEntity.statusEffects:apply(
 				humObj.statusEffects.Burn,
 				10, -- duration
-				6 -- dmg
+				3 -- dmg
 			)
 		end
 	end
