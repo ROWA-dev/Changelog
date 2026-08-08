@@ -10,6 +10,7 @@ local numVal        = require(packages.valueBase.numberValue)
 
 local weaponBase = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 local baseClass  = require(classes.HumObjClient)
+local Debug      = require(game.ReplicatedStorage.Modules.Debug)
 
 local DmgUtils        = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgRecord       = require(script.damageRecord)
@@ -96,7 +97,6 @@ export type myself = baseClass.myself & {
 
 local module = {
 	Name = "HumObj_Server",
-	__mode = "k"
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -114,16 +114,85 @@ local function landSpeed(humObj:any)
 	end
 end
 
-local function landHitSpeedBuff(humObj:any)
-	humObj.walkSpeed:SetMod("landhit", 4)
-	humObj._landHitExpire = time() + 2
+local function landHitSpeedBuff(humObj:any, extraTime:number)
+	humObj.walkSpeed:SetMod("landhit", 5+extraTime)
+	
+	local speedboostTime = 0.8+extraTime
+	print(speedboostTime)
+	humObj._landHitExpire = time() + speedboostTime
 	if not humObj._landHitTask then
 		humObj._landHitTask = task.spawn(landSpeed, humObj)
 	end
 end
 
 local onDied = require(script.onDeath)
+
+-- HandleAttack's branches (7C). Pure moves; see the dispatcher for the order.
+local resolveParry = require(script.resolution.resolveParry)
+local resolveBlock = require(script.resolution.resolveBlock)
+local resolveHit   = require(script.resolution.resolveHit)
+
+--[[ One regen loop, four call sites. (7D)
+
+	Preserves the exact `while active do while active and belowMax do step end
+	Changed:Wait() end` shape the four hand-written loops used -- that nested
+	idiom is deliberate throttling and is an explicit non-goal to change.
+
+	  changedSignal  what to wait on when the value is already full
+	  isBelowMax()   should we keep stepping?
+	  step(dt)       do one tick. Return FALSE to kill the loop entirely.
+	  stepTime       nil     = wait()      -- legacy ~30Hz, returns elapsed
+	                 number  = wait(n)
+	                 "frame" = task.wait() -- true per-frame
+
+	>>> wait() vs task.wait() IS A BALANCE DIFFERENCE, NOT A STYLE ONE.
+	>>> posture and mana used BARE wait(), which yields ~30Hz. floating used
+	>>> task.wait(), which is per-frame (~60Hz+). Since every one of these
+	>>> loops integrates `dt * rate`, swapping the two changes how much regen
+	>>> lands per second on a fast client. An earlier draft of this helper used
+	>>> task.wait() for all of them and would have silently doubled posture and
+	>>> mana regen. Each call site keeps the timer it actually had.
+
+	The `step` return value exists for health, which alone did
+	`if not active or isDead then RETURN end` -- exiting the whole loop rather
+	than just the inner one. Flattening that to a `break` would leave a dead
+	player's regen coroutine alive and waiting on HealthChanged forever.
+]]
+local function regenLoop(self: any, changedSignal: any, isBelowMax: () -> boolean, step: (number) -> boolean, stepTime: (number | string)?)
+	task.spawn(function()
+		while self.isActive do
+			while self.isActive and isBelowMax() do
+				local dt
+				if stepTime == "frame" then
+					dt = task.wait()
+				elseif stepTime then
+					dt = wait(stepTime :: number)
+				else
+					dt = wait()
+				end
+				if self.isActive ~= true then return end
+				if step(dt) == false then return end
+			end
+			if self.isActive then changedSignal:Wait() end
+		end
+	end)
+end
+
+--- HumObj GENUINELY REQUIRES a Humanoid, unlike EntityBase (P6).
+--  It is the full player-character surface: ragdoll, grab, CharController and
+--  the animation stack all take a Humanoid directly. So it refuses up front
+--  with a clear message instead of failing five subsystems deep.
+--  An odd-shaped entity should NOT be a HumObj -- subclass EntityBase and take
+--  Combatant's inert defaults instead (6A).
 function module.new(hum: Humanoid): myself
+	if typeof(hum) ~= "Instance" or not hum:IsA("Humanoid") then
+		error(
+			"HumObj requires a Humanoid, got " .. tostring(hum) .. ". "
+				.. "For an entity without a Humanoid, subclass EntityBase instead "
+				.. "and let Combatant's inert defaults cover parry/posture/dodge.",
+			2
+		)
+	end
 	local abstract = baseClass.new(hum) :: baseClass.myself
 	local self:myself = setmetatable(abstract, module) :: any
 
@@ -155,7 +224,7 @@ function module.new(hum: Humanoid): myself
 
 	local function blockedOrHit(attack:atkTyp)		
 		local myEntity = self--attack.enemyEntity
-		landHitSpeedBuff(myEntity)
+		landHitSpeedBuff(myEntity, attack.dmgTbl.stun*2)
 
 		-- TODO turn this into blade Dancer card (resets dash after landing a hit)
 		myEntity.cooldowns:Reset("dash")
@@ -177,7 +246,7 @@ function module.new(hum: Humanoid): myself
 		end
 	end
 
-	self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
+	self:AddConnection(self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
 		if attack:isBlocked() then
 			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("block",
 				self.HRootPart,
@@ -271,9 +340,9 @@ function module.new(hum: Humanoid): myself
 
 		if hum.Health > 0 then return end -- still alive return
 		onDied(self, atkSource)
-	end)
+	end), "onAttacked_juice")
 
-	self.onAttack:Connect(function(attack, returnValue: number, atkSource: any?) 
+	self:AddConnection(self.onAttack:Connect(function(attack, returnValue: number, atkSource: any?) 
 		if attack:isHit() then
 			if attack:isWep() then
 				local maxMana = self.maxMana.Value
@@ -285,14 +354,16 @@ function module.new(hum: Humanoid): myself
 		elseif attack:isBlocked() then
 			blockedOrHit(attack)
 		end	
-	end)
+	end), "onAttack_mana")
 	--
 
-	hum.Died:Connect(function() 
+	self:AddConnection(hum.Died:Connect(function() 
 		self:Die()
-	end)
+	end), "humDied")
 
-	local character:Model = self.HRootPart.Parent::any
+	-- self.Model, not HRootPart.Parent: the rootpart is not guaranteed to sit
+	-- directly under the model on a non-standard rig (P6 6D).
+	local character:Model = self.Model or self.HRootPart.Parent::any
 	local hurtbox = character:FindFirstChild("hurtbox") or script.hurtbox:Clone()
 	hurtbox:WaitForChild("Weld").Part0 = self.HRootPart
 	hurtbox.Weld.Part1 = hurtbox
@@ -306,31 +377,32 @@ function module.new(hum: Humanoid): myself
 			--print("HURTBOX CHANGE!", sz)
 			self.HurtBox.Size = ogHBSize*sz
 		end
-		self.hurtboxSize.onSet:Connect(hurtboxSzChange)
-		self.hurtboxSize.onRemove:Connect(hurtboxSzChange)
+		self:AddConnection(self.hurtboxSize.onSet:Connect(hurtboxSzChange), "hurtboxSz_set")
+		self:AddConnection(self.hurtboxSize.onRemove:Connect(hurtboxSzChange), "hurtboxSz_rem")
 	end
 
 	do
 		local charSizeChanged = function(key: string) 
-			local hroot:any = self.HRootPart
-			hroot.Parent:ScaleTo(self.charSize.Value)
+			-- self.Model, not HRootPart.Parent (P6 6D)
+			local model:any = self.Model or (self.HRootPart::any).Parent
+			model:ScaleTo(self.charSize.Value)
 		end
-		self.charSize.onSet:Connect(charSizeChanged)
-		self.charSize.onRemove:Connect(charSizeChanged)
+		self:AddConnection(self.charSize.onSet:Connect(charSizeChanged), "charSz_set")
+		self:AddConnection(self.charSize.onRemove:Connect(charSizeChanged), "charSz_rem")
 	end
 
 	do
-		self.floating.Changed:Connect(function(v)
+		self:AddConnection(self.floating.Changed:Connect(function(v)
 			if v > 0 and self.isDead ~= true then
 				self.ragdoll:unragdoll()
 				--[[if self.ragdoll:inRagdoll() then
-					print("STOP floatin!")
+					Debug.dprint("STOP floatin!")
 					self.ragdoll:unragdoll()
 					self.targetFloatY.Value = nil
 					self.floating.Value = 0
 				end]]
 			end
-		end)
+		end), "floating_unragdoll")
 	end
 
 	do
@@ -341,80 +413,69 @@ function module.new(hum: Humanoid): myself
 			end
 		end
 
-		self.onStunned:Connect(function(a0: number) 
+		self:AddConnection(self.onStunned:Connect(function(a0: number) 
 			if a0 <= 0 then return end
 			stopEmote()
-		end)
+		end), "emote_stun")
 
-		self.attacking.Changed:Connect(function(attacking: boolean) 
+		self:AddConnection(self.attacking.Changed:Connect(function(attacking: boolean) 
 			if attacking == false then return end
 			stopEmote()
-		end)
+		end), "emote_attacking")
 
-		self.blocking.Changed:Connect(stopEmote)
+		self:AddConnection(self.blocking.Changed:Connect(stopEmote), "emote_blocking")
 		--self.onDash:Connect(stopEmote)
 	end
-	-- passive healing
-	task.spawn(function()
-		local REGEN_PER_SEC = 0.5
-		local REGEN_STEP = 1
+	--[[ 7D: four near-identical regen loops -> one helper + four call sites.
 
-		local Humanoid = hum
+		The nested `while ... Changed:Wait()` throttling idiom is CORRECT and
+		is on the EXPLICIT NON-GOALS list -- this DEDUPES it, it does not
+		replace it. A flat Heartbeat loop would be strictly worse.
 
-		while self.isActive do
-			while self.isActive and Humanoid.Health < Humanoid.MaxHealth do
-				local dt = wait(REGEN_STEP)
-				if self.isActive ~= true or self.isDead then return end
-				local dh = dt*REGEN_PER_SEC
-				Humanoid.Health = math.min(Humanoid.Health + dh, Humanoid.MaxHealth)
-			end
-			Humanoid.HealthChanged:Wait()
+		The helper takes a STEP FUNCTION, not a rate, because the four are not
+		interchangeable: health uses constants and a real Humanoid, floating
+		counts DOWN and clamps to (0,2), and mana uses a nonlinear curve
+		`baseGain * (1 - ratio)^3`. A rate-only helper would silently flatten
+		mana's curve into a linear one.
+
+		`rawset(v, "v", ...)` dodges firing Changed on every tick -- it was
+		repeated as folklore in the posture and mana loops. It now lives in
+		exactly one place: the caller's step function still does it, but the
+		reason is documented here once.
+	]]
+	regenLoop(self, hum.HealthChanged, function()
+		return hum.Health < hum.MaxHealth
+	end, function(dt)
+		if self.isActive ~= true or self.isDead then return false end
+		hum.Health = math.min(hum.Health + dt * 0.5, hum.MaxHealth)
+		return true
+	end, 1) -- REGEN_STEP: health ticks once a second, unlike the others
+
+	regenLoop(self, self.floating.Changed, function()
+		return self.floating.Value > 0
+	end, function(dt)
+		if self.floating then
+			self.floating.Value = math.clamp(self.floating.Value - dt, 0, 2)
 		end
+		return true
+	end, "frame") -- floating alone used task.wait(); posture/mana used wait()
+
+	regenLoop(self, self.posture.Changed, function()
+		return self.posture.Value < self.maxPosture.Value
+	end, function(dt)
+		local posture:any, maxPosture:any = self.posture, self.maxPosture
+		rawset(posture, "v", math.min(posture.v + dt * self.postureHeal.Value, maxPosture.Value))
+		return true
 	end)
 
-	-- TODO move this out -- and yes the nested while throttled by a changed:Wait is optimal
-	task.spawn(function()
-		while  self.isActive do
-			while self.isActive and self.floating.Value > 0 do
-				local dt = task.wait()
-				if self.floating then
-					self.floating.Value = math.clamp(self.floating.Value-dt, 0, 2)
-				end
-			end
-			if self.isActive then self.floating.Changed:Wait() end
-		end
-	end)
-	task.spawn(function()
-		while self.isActive do
-			local posture:any = self.posture
-			local maxPosture:any = self.maxPosture
-			while self.isActive and posture.Value < maxPosture.Value do
-				local dt = wait()
-				if self and self.isActive then
-					local postureHeal = self.postureHeal.Value
-					local newPostureValue =  math.min(posture.v + dt*postureHeal, maxPosture.Value)
-					rawset(posture, "v", newPostureValue)
-				end
-			end
-			if self.isActive then self.posture.Changed:Wait() end
-		end
-	end)
-	task.spawn(function()
-		while self.isActive do
-			local mana:any = self.mana
-			local maxMana:any = self.maxMana
-			while self.isActive and mana.Value < maxMana.Value do
-				local dt = wait()
-				if self.isActive then
-					local baseGain = 4
-					local ration = mana.v / maxMana.Value
-					local manaGain = baseGain * (1 - ration)^3
-					local newManaValue =  math.min(mana.v + dt*manaGain, maxMana.Value)
-					rawset(mana, "v", newManaValue)
-				end
-			end
-			if self.isActive then self.mana.Changed:Wait() end
-		end
+	regenLoop(self, self.mana.Changed, function()
+		return self.mana.Value < self.maxMana.Value
+	end, function(dt)
+		local mana:any, maxMana:any = self.mana, self.maxMana
+		local ratio = mana.v / maxMana.Value
+		local manaGain = 4 * (1 - ratio)^3 -- nonlinear ON PURPOSE, do not flatten
+		rawset(mana, "v", math.min(mana.v + dt * manaGain, maxMana.Value))
+		return true
 	end)
 
 	return self
@@ -484,62 +545,42 @@ function module.Die(self:myself)
 end
 
 local returnEnums = DmgUtils.returnEnum
+--[==[ HandleAttack — the dispatcher. (PLAN_07 7C)
+
+	Resolution ORDER is the contract, and it is the one thing this function
+	still owns:  dead -> parry -> dodge -> block -> hit.
+	The combat test harness pins that order; if you reorder these, that suite
+	fails, which is the point.
+
+	Each branch lives in HumObj/resolution/. They are PURE MOVES -- the balance
+	numbers inside them (the parry stun fallback, the asymmetric posture trade,
+	the mutual-stun reset) were carried across verbatim.
+
+	dodge is still inline BECAUSE IT IS ONE LINE. Extracting a one-line branch
+	to match its siblings would be symmetry for its own sake and would add a
+	file to read for no information gained.
+
+	>>> THE BLOCK BRANCH CAN RETURN nil ON PURPOSE. A broken guard falls
+	>>> through to the hit branch, which is how guard-breaking works. Do not
+	>>> collapse `if blocked ~= nil then return blocked end` into
+	>>> `return blocked`.
+]==]
 function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
-	local myEntity    = attack.myEntity
 	local enemyEntity = attack.enemyEntity
 
-	local myhum    = myEntity.Hum
-	local enemyhum = enemyEntity.Hum
-	local dmgtbl   = attack.dmgTbl
-
+	-- 7B: was `return nil` under a `-> number` annotation, and AttackClass
+	-- forwarded that nil straight to the caller. A caller receiving nil cannot
+	-- tell "target was already dead" from "this function forgot to return",
+	-- and R3 says that ambiguity IS the bug. Routed through onAttackReturn so
+	-- attack.status is actually set.
 	if self.isDead then
-		return nil
+		return attack:onAttackReturn(returnEnums.aborted, atkSource)
 	end
 
 	local atkPostureDMG = attack:CalculatePostureDmg()
+
 	if enemyEntity.isParry and enemyEntity:isParry(attack) then
-		game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("parry",
-			enemyEntity.HRootPart,
-			myEntity.HRootPart,
-			dmgtbl.dmg,
-			attack.atkDir
-		)
-
-		-- stun attacker
-		local stunMeOnParried = dmgtbl.stunMeOnParried
-		if stunMeOnParried then
-			if stunMeOnParried ~= 0 then
-				myEntity:Stun(stunMeOnParried)
-			end
-		else
-			if attack.dmgTbl.weight == DmgUtils.weighEnum.Heavy then
-				myEntity.canAtkThreshold = tick() + 0.4
-				myEntity:Stun(0.3)
-			else
-				myEntity.canAtkThreshold = tick() + 0.5
-				myEntity:Stun(0.4)
-			end
-		end
-
-		local postureGain = 0
-		if atkSource and atkSource.onParried then
-			atkSource:onParried(attack)
-		end
-		if myEntity.wielding_weapon and DmgUtils.isWeaponAtk(dmgtbl.type) then
-			postureGain = myEntity.wielding_weapon.postureGain
-		end
-
-		-- posture trade
-		local humPosture   = myEntity.posture
-		local enemyPosture = enemyEntity.posture
-		local maxposture   = enemyEntity.maxPosture.Value
-
-		print("posturegain: ", postureGain)
-		local postureTransfer = atkPostureDMG - postureGain
-		enemyPosture.Value = math.clamp(enemyPosture.Value + postureTransfer/2, 0, maxposture) -- decrease posture
-		humPosture.Value = math.clamp(humPosture.Value - postureTransfer/1.5, 0, maxposture) -- increase posture
-
-		return attack:onAttackReturn(returnEnums.parried, atkSource)
+		return resolveParry(self, attack, atkSource, atkPostureDMG)
 	end
 
 	if enemyEntity.isDodge and enemyEntity:isDodge() then
@@ -549,70 +590,14 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 	--enemyEntity.HRootPart.AssemblyLinearVelocity = Vector3.new(0,0,0)
 	-- TODO make block motors like move when hit on client side
 	if enemyEntity.isBlock and enemyEntity:isBlock(attack) then
-		enemyEntity.posture.Value -= atkPostureDMG
-		if enemyEntity.posture.Value > 0 then
-
-			-- todo prob move the to client fx
-			local blocksound = nil
-			if dmgtbl.weight == DmgUtils.weighEnum.Heavy then
-				if DmgUtils.hasDmgFlag(dmgtbl.type, DmgUtils.dmgFlags.slash) then
-					blocksound = script.BlockSounds.blockheavy
-				else
-					blocksound = script.BlockSounds.blunt
-				end
-			elseif dmgtbl.weight == DmgUtils.weighEnum.Medium then
-				if DmgUtils.hasDmgFlag(dmgtbl.type, DmgUtils.dmgFlags.slash) then
-					blocksound = script.BlockSounds.blocklight
-				else
-					blocksound = script.BlockSounds.blunt
-				end
-			else
-				if DmgUtils.hasDmgFlag(dmgtbl.type, DmgUtils.dmgFlags.slash) then
-					blocksound = script.BlockSounds.blocklight
-				else
-					blocksound = script.BlockSounds.blunt
-				end
-			end
-
-			blocksound = blocksound:Clone()
-			blocksound.Parent = enemyEntity.HRootPart
-			blocksound:Play()
-			game.Debris:AddItem(blocksound, 4)
-
-			attack:ApplyKnockback()
-			if atkSource and atkSource.onBlocked then
-				atkSource:onBlocked(attack)
-			end
-			return attack:onAttackReturn(returnEnums.blocked, atkSource)
+		local blocked = resolveBlock(self, attack, atkSource, atkPostureDMG)
+		if blocked ~= nil then
+			return blocked
 		end
-
-		--- POSTURE BREAK
-		if enemyEntity.GuardBreak then enemyEntity:GuardBreak() end
+		-- guard broke: fall through
 	end
 
-	--[[if dmgtbl["onHit"] then
-		dmgtbl.onHit(attack, atkSource)
-	end]]
-
-	attack:ApplyKnockback()
-
-	local finalDamage = attack:CalculateDamage()
-	enemyEntity:Damage(finalDamage)
-
-	if dmgtbl["onHit"] then
-		dmgtbl.onHit(attack, atkSource)
-	end
-
-	enemyEntity.dmgRecord:addEntry(myEntity, finalDamage)
-	enemyEntity:Stun(dmgtbl.stun)
-
-	-- if both hit eachother then reset stun so they can both hit again
-	-- prevents awkward look at eachother while stunned...
-	if enemyEntity:inStun() and myEntity:inStun() then
-		enemyEntity.stun.Value = tick() + 0.1
-		myEntity.stun.Value    = tick() + 0.1
-	end
-	return attack:onAttackReturn(returnEnums.hit, atkSource)
+	return resolveHit(self, attack, atkSource)
 end
 
 
@@ -806,7 +791,7 @@ function module.GuardBreak(self:myself)
 	self.posture.Value = self.maxPosture.Value
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("postureBreak", self.HRootPart)
 
-	print(self, "POSTURE BROKEN!")
+	Debug.dprint(self, "POSTURE BROKEN!")
 
 	self:TrueStun(1.6) -- 1.6 second of posturebreak true stun
 	self:Stun(1.9)     -- 1.9 second of posturebreak stun
@@ -877,10 +862,10 @@ function module.setTransparency(self: myself & { _ogTransparency: ogTransparency
 	end
 
 	local ogTransparency = self._ogTransparency
-	local char = self.HRootPart and self.HRootPart.Parent
+	local char = self.Model or (self.HRootPart and self.HRootPart.Parent)
 	if not char then return end
 
-	print("set transparency", transparency)
+	Debug.dprint("set transparency", transparency)
 
 	if transparency == nil or transparency == 0 then
 		for inst:any, value in pairs(ogTransparency) do
@@ -983,7 +968,7 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 		if self:canBlock() == false then
 			return false
 		end
-		print("atkend", setTo)
+		Debug.dprint("atkend", setTo)
 	end
 	--setTo = self._wantblock
 	if self.blocking.Value ~= setTo then
@@ -1066,51 +1051,81 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 	self.slideSpeed:initReplicateServer(18, remoteEvent, plr)
 	self.charSize:initReplicateServer(19, remoteEvent, plr)
 
-	self.stun.Changed:Connect(function(number: number) 
+	self:AddConnection(self.stun.Changed:Connect(function(number: number) 
 		local duration = self.timeStunned--number-tick()
 		if number == 0 then
 			duration = 0
 		end
 		--print("STUN duration:",duration, number)
 		remoteEvent:FireClient(plr, 1, duration)
-	end)
-	self.attacking.Changed:Connect(function(boolean: boolean)
-		--print("RAH", boolean)
-		remoteEvent:FireClient(plr, 2, boolean)
-	end)
-	self.blocking.Changed:Connect(function(boolean: boolean) 
-		remoteEvent:FireClient(plr, 3, boolean)
-	end)
-	self.posture.Changed:Connect(function(number: number) 
-		remoteEvent:FireClient(plr, 4, number)
-	end)
-	self.parryWindow.Changed:Connect(function(number: number) 
-		remoteEvent:FireClient(plr, 7, number)
-	end)
-	self.onDash:Connect(function(dir: Vector3) 
-		remoteEvent:FireClient(plr, 8)
-	end)
-	self.onDashCancel:Connect(function(dir: Vector3) 
-		remoteEvent:FireClient(plr, 9)
-	end)
+	end), "repl_1_stun")
+	--[[ The plain "signal fired -> forward its value under an id" cases.
 
-	self.cooldowns.CooldownChanged:Connect(function(id: string, value: number) 
+		These six were six separate raw :Connect blocks that differed only by
+		which signal and which integer. Collapsed into a table so the id/field
+		pairing is READABLE IN ONE PLACE -- which is most of what 7F is asking
+		for, without yet touching the wire format or the client side.
+		Every connection is janitored (7A).
+
+		onDash/onDashCancel deliberately forward NO payload, matching the
+		original `FireClient(plr, 8)` with no third argument.
+	]]
+	--[[ NOTE the two lists. They are NOT interchangeable and must not be
+		merged with a `x.Changed or x` fallback:
+
+		  * attacking/blocking/posture/parryWindow are VALUE OBJECTS. The
+		    signal is `x.Changed` and it carries the new value.
+		  * onDash/onDashCancel are RAW Signals (HumObjClient:138-139). They
+		    are the signal, and they forward no payload.
+
+		Signal's __index ERRORS on an unknown member rather than returning nil
+		-- "Attempt to get Signal::Changed (not a valid member)" -- so
+		`entry.signal.Changed or entry.signal` does not degrade, it throws, and
+		it would have taken out initReplicateServer for every player.
+	]]
+	local valueRepl = {
+		{ value = self.attacking,   id = 2 },
+		{ value = self.blocking,    id = 3 },
+		{ value = self.posture,     id = 4 },
+		{ value = self.parryWindow, id = 7 },
+	}
+	for _, entry in valueRepl do
+		local id = entry.id
+		self:AddConnection(entry.value.Changed:Connect(function(value: any)
+			remoteEvent:FireClient(plr, id, value)
+		end), "repl_" .. id)
+	end
+
+	local pingRepl = {
+		{ signal = self.onDash,       id = 8 },
+		{ signal = self.onDashCancel, id = 9 },
+	}
+	for _, entry in pingRepl do
+		local id = entry.id
+		self:AddConnection(entry.signal:Connect(function()
+			remoteEvent:FireClient(plr, id)
+		end), "repl_" .. id)
+	end
+
+	-- bespoke: these two send an id AND a value, so they are not part of the
+	-- simpleRepl table above.
+	self:AddConnection(self.cooldowns.CooldownChanged:Connect(function(id: string, value: number) 
 		remoteEvent:FireClient(plr, 10, id, value)
-	end)
-	self.cooldowns.CooldownTriggered:Connect(function(id: string, value: number) 
+	end), "repl_10_cdChanged")
+	self:AddConnection(self.cooldowns.CooldownTriggered:Connect(function(id: string, value: number) 
 		remoteEvent:FireClient(plr, 11, id, value)
-	end)
-	self.floating.Changed:Connect(function(number: number)
+	end), "repl_11_cdTriggered")
+	self:AddConnection(self.floating.Changed:Connect(function(number: number)
 		remoteEvent:FireClient(plr, 12, number)
-	end)
-	self.targetFloatY.Changed:Connect(function(value: any?) 
+	end), "repl_12_floating")
+	self:AddConnection(self.targetFloatY.Changed:Connect(function(value: any?) 
 		remoteEvent:FireClient(plr, 20, value)
-	end)
+	end), "repl_20_targetFloatY")
 	self.timeScale:initReplicateServer(21, remoteEvent, plr)
 	self.maxMana:initReplicateServer(22, remoteEvent, plr)
-	self.mana.Changed:Connect(function(number: number) 
+	self:AddConnection(self.mana.Changed:Connect(function(number: number) 
 		remoteEvent:FireClient(plr, 23, number)
-	end)
+	end), "repl_23_mana")
 
 
 	--[[local rcon = remoteEvent.OnServerEvent:Connect(function(plr: Player, id:number, value: any)

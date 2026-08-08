@@ -72,7 +72,7 @@ local function useFunc(this:myself)
 	
 	local hitboxOffset = CFrame.new(0, 0, -4)
 	local hitboxSize   = Vector3.new(9,9,9)
-	local hits		   = this:hitbox(hitboxOffset, hitboxSize)
+	local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 	table.insert(hits, humObj.Hum)
 	
 	local dmgTbl = {
@@ -88,10 +88,10 @@ local function useFunc(this:myself)
 		end,
 	}
 	
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		local newkb = this:knockback(hurtbox.CFrame.LookVector*60 + Vector3.new(0,20,0), 0.1, false, -1)

@@ -26,10 +26,10 @@ return function(this:wepBase.myself): wepBase.atkResult
 		anim:AdjustSpeed(0)
 	end
 	local isHit = nil
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.heavy,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		attack.hitbox = hitbox

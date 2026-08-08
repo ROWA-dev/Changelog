@@ -62,7 +62,7 @@ local function cannonFxShot(this)
 end
 
 -- TODO REM these...
-local humanoids = require(game.ServerScriptService.Humanoids)
+local humanoids = require(game.ServerScriptService.Entities)
 local destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 local function cannonFlourish(this:wepBase.myself&any)
@@ -97,10 +97,10 @@ local function cannonFlourish(this:wepBase.myself&any)
 	destruction.Ellipsoid(plr, hurtbox.CFrame*destructionOffset, destructionSize, 3, velo)
 
 	local hitLanded = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.cannon,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		attack.hitbox = hitbox

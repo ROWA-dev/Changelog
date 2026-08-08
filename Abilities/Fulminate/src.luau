@@ -110,14 +110,14 @@ local function useFunc(this:myself)
 		local isStrong = strongt > tick()
 		local dmg = isStrong and strongDmg or weakDmg
 		
-		local hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
-			if alreadyHit[enemhum] then continue end
-			alreadyHit[enemhum] = true
+		local _, hits = this:hitbox(hitboxOffset, hitboxSize)
+		for _,enemy in pairs(hits) do
+			if alreadyHit[enemy] then continue end
+			alreadyHit[enemy] = true
 			
 			local attack = this:makeAtk(
 				dmg,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 			

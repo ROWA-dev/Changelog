@@ -45,12 +45,12 @@ return function(this:wepTyp&any): wepType.atkResult
 			return
 		end
 		local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
+		for _,enemy in pairs(hits) do
 			local dmgTbl = dmgConfig.heavy
 
 			local attack = this:makeAtk(
 				dmgTbl,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 

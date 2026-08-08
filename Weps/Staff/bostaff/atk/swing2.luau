@@ -23,10 +23,10 @@ return function(this:wepBase.myself&any)
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 
 	local hitLanded = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.m1,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		attack.hitbox = hitbox

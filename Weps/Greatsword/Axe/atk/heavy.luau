@@ -3,7 +3,7 @@ local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
 
-local humanoids = require(game:GetService("ServerScriptService"):WaitForChild("Humanoids"))
+local humanoids = require(game:GetService("ServerScriptService"):WaitForChild("Entities"))
 local destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 return function(this:wepBase.myself): wepBase.atkResult
 	if this:canTriggerCD("heavy") == false then return end	
@@ -13,7 +13,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 1)
 
 	humObj.walkSpeed:SetMod("stopMoving", -100)
-	--game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
+	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	task.wait(0.5)
 
 	local force = this:bodyForce(Vector3.new(0,75,0), 0.6, true, 0.6, 1)
@@ -53,10 +53,10 @@ return function(this:wepBase.myself): wepBase.atkResult
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 
 	local landed = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.heavy,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 

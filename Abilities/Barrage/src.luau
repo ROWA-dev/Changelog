@@ -77,11 +77,11 @@ local function useFunc(this:myself)
 	for i = 1,18 do
 		FxRemote:FireAllClients("brrgArms", Char)
 
-		local hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
+		local _, hits = this:hitbox(hitboxOffset, hitboxSize)
+		for _,enemy in pairs(hits) do
 			local attack = this:makeAtk(
 				dmgTbl,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 

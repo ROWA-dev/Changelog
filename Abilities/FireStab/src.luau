@@ -29,12 +29,12 @@ local function useFunc(this:myself & any)
 
 	local vfx = game.ReplicatedStorage.RemoteEvents.VFX	
 	vfx:FireAllClients("fsShine2",
+		-- "Right Arm" is an R6-rig assumption, but it is already a FALLBACK to
+		-- GetBlade() and the whole chain nil-degrades, so an odd-shaped entity
+		-- using this ability just gets no shine rather than an error. Left as
+		-- an ability-local quirk on purpose (P6 6F: don't grow the contract).
 		this._humObj:GetBlade()
-			or (
-				this._humObj.HRootPart
-				and this._humObj.HRootPart.Parent
-				and this._humObj.HRootPart.Parent:FindFirstChild("Right Arm")
-			)
+			or (this._humObj.Model and this._humObj.Model:FindFirstChild("Right Arm"))
 	) -- LAMBDA OF DOOM	
 
 	local feinted = this:feintWait(0.5)
@@ -67,7 +67,7 @@ local function useFunc(this:myself & any)
 
 	local hitboxOffset = CFrame.new(0, 0, -4)
 	local hitboxSize   = Vector3.new(6,6,8)
-	local hits		   = this:hitbox(hitboxOffset, hitboxSize)
+	local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 
 	local dmgTbl = {
 		weight   = dmgUtils.weighEnum.Heavy,
@@ -87,10 +87,10 @@ local function useFunc(this:myself & any)
 		end,
 	}
 
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		

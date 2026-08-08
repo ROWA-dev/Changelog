@@ -31,10 +31,10 @@ return function(this:wepBase.myself&any)
 			break
 		end
 		hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
+		for _,enemy in pairs(hits) do
 			local attack = this:makeAtk(
 				dmgConfig.multiple,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 			attack.hitbox = hitbox
@@ -59,10 +59,10 @@ return function(this:wepBase.myself&any)
 	
 	if breakOut == false and humObj:inStun() == false then
 		hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
+		for _,enemy in pairs(hits) do
 			local attack = this:makeAtk(
 				dmgConfig.heavy,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 			attack.hitbox = hitbox

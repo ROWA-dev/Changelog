@@ -47,7 +47,7 @@ local function useFunc(this:myself)
 	
 	local hitboxOffset = CFrame.new(0, 0, -3)
 	local hitboxSize   = Vector3.new(7,7,7)
-	local hits		   = this:hitbox(hitboxOffset, hitboxSize)
+	local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 	
 	local dmgTbl = {
 		weight   = dmgUtils.weighEnum.Medium,
@@ -60,10 +60,10 @@ local function useFunc(this:myself)
 		onHit    = require(script.punch),
 	}
 	
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		
@@ -86,7 +86,7 @@ local function useFunc(this:myself)
 	local function spinHit()
 		local hitboxOffset = CFrame.new(0, 2, -1)
 		local hitboxSize   = Vector3.new(8,6,8)
-		local hits		   = this:hitbox(hitboxOffset, hitboxSize)
+		local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 
 		local spinDmgTbl = {
 			weight   = dmgUtils.weighEnum.Medium,
@@ -100,10 +100,10 @@ local function useFunc(this:myself)
 			onHit    = require(script.punch),
 		}
 		
-		for _,enemhum in pairs(hits) do
+		for _,enemy in pairs(hits) do
 			local attack = this:makeAtk(
 				spinDmgTbl,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 			this:executeAttack(attack)

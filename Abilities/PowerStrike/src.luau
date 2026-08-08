@@ -42,7 +42,7 @@ local function useFunc(this:myself)
 	
 	local hitboxOffset = CFrame.new(0, 0, -4)
 	local hitboxSize   = Vector3.new(9,9,9)
-	local hits		   = this:hitbox(hitboxOffset, hitboxSize)
+	local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 	
 	local dmgTbl = {
 		weight   = dmgUtils.weighEnum.Heavy,
@@ -53,10 +53,10 @@ local function useFunc(this:myself)
 		parryH   = -0.08
 	}
 	
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		
@@ -89,10 +89,10 @@ local function useFunc(this:myself)
 		parryH   = -0.08
 	}
 
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 

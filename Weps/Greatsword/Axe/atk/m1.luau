@@ -29,16 +29,16 @@ function flourish(this:wepBase.myself&any)
 	)
 
 	local hitLanded = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.kick,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 
 		attack.hitbox = hitbox
 
-		local enemyRoot:any = enemhum.RootPart
+		local enemyRoot:any = enemy.HRootPart
 
 		local offset = enemyRoot.Position - hurtbox.Position
 		local forward = hurtbox.CFrame.LookVector
@@ -69,7 +69,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 	end
 	
 
-	if tick() > this.lastAttacked + this.atkRate.Value then this.m1cycle = 0 end
+	if tick() > this.lastAttacked + ((2*(0.58+0.08) * this.atkRate.Value) / this._humObj.timeScale.Value) then this.m1cycle = 0 end
 
 	if this.m1cycle == 2 then 
 		return flourish(this)

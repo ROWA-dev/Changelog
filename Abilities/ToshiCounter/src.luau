@@ -86,7 +86,7 @@ local function useFunc(this:myself)
 	
 	local hitboxOffset = CFrame.new(0, 0, -3)
 	local hitboxSize   = Vector3.new(8,8,8)
-	local hits		   = this:hitbox(hitboxOffset, hitboxSize)
+	local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 	local hurtbox  = humObj.HurtBox
 	
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("bostaffShock", hurtbox.CFrame * CFrame.new(0,0,-6))
@@ -106,10 +106,10 @@ local function useFunc(this:myself)
 	}
 
 	local victimWasHit = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		
@@ -133,7 +133,9 @@ local function useFunc(this:myself)
 		end
 		
 		if attack:isHit() then
-			if enemhum == triggeredBy.Hum then
+			-- hits are entities now; triggeredBy is still a HumObj, so compare
+			-- through .Hum rather than against the entity itself
+			if enemy.Hum == triggeredBy.Hum then
 				victimWasHit = true
 			end
 			
@@ -164,7 +166,7 @@ local function useFunc(this:myself)
 			
 			local attack2 = this:makeAtk(
 				dmgTbl2,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 

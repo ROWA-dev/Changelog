@@ -80,10 +80,10 @@ return function (this:wepTyp&any): wepType.atkResult
 	local enemyHum = nil
 	
 	
-	for _, enemhum in ipairs(hits) do
+	for _, enemy in ipairs(hits) do
 		local atk = this:makeAtk(
 			dmgConfig.heavy,
-			enemhum,
+			enemy,
 			root.CFrame.LookVector
 		)
 		atk.hitbox = hitbox

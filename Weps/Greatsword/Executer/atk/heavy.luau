@@ -3,7 +3,7 @@ local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
 
-local humanoids = require(game:GetService("ServerScriptService"):WaitForChild("Humanoids"))
+local humanoids = require(game:GetService("ServerScriptService"):WaitForChild("Entities"))
 local destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 return function(this:wepBase.myself): wepBase.atkResult
 	if this:canTriggerCD("heavy") == false then return end	
@@ -46,10 +46,10 @@ return function(this:wepBase.myself): wepBase.atkResult
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 
 	local landed = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.heavy,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 

@@ -1,5 +1,6 @@
 --!strict
 local baseWep = require(script.Parent)
+local Debug = require(game.ReplicatedStorage.Modules.Debug)
 
 export type myself = baseWep.myself & {
 }
@@ -52,7 +53,7 @@ end
 
 --- unwield
 function module.unwield(self:myself)
-	print("katana unwield")
+	Debug.dprint("katana unwield")
 	-- unwield stuff here
 	if self.lastAnim then
 		self.lastAnim:Stop()

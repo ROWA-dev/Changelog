@@ -43,7 +43,7 @@ local function cannonFxShot(this)
 	end
 end
 
-local humanoids = require(game:GetService("ServerScriptService"):WaitForChild("Humanoids"))
+local humanoids = require(game:GetService("ServerScriptService"):WaitForChild("Entities"))
 local destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 return function(this:wepBase.myself&any): wepBase.atkResult
 	if this:canTriggerCD("heavy") == false then return end	
@@ -122,11 +122,11 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 	
 	local hitLanded = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local dmgTbl = dmgConfig.heavy
 		local attack = this:makeAtk(
 			dmgTbl,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		attack.hitbox = hitbox

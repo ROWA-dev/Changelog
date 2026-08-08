@@ -187,15 +187,15 @@ vfx["Critical Hit"]:Play()
 		local hitbox = hitboxClass.new(hitboxCF, hitboxSize, nil, humObj.Hum)
 		local hits = hitbox:hit()
 
-		for _,enemhum in pairs(hits) do
-			if alreadyHit[enemhum] then
+		for _,enemy in pairs(hits) do
+			if alreadyHit[enemy] then
 				continue
 			end
-			alreadyHit[enemhum] = true
+			alreadyHit[enemy] = true
 			
 			local attack = this:makeAtk(
 				dmgConfig.heavy,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 			local newkb = this:knockback(hurtbox.CFrame.LookVector*16, 0.3)

@@ -29,16 +29,16 @@ function flourish(this:wepBase.myself&any)
 	)
 
 	local hitLanded = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.punch,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 
 		attack.hitbox = hitbox
 
-		local enemyRoot:any = enemhum.RootPart
+		local enemyRoot:any = enemy.HRootPart
 
 		local offset = enemyRoot.Position - hurtbox.Position
 		local forward = hurtbox.CFrame.LookVector

@@ -101,10 +101,10 @@ local function fastSlash(this:wepTyp&any, humObj):wepType.atkResult
 	end
 
 	local hitLanded = false
-	for _,enemhum in pairs(hits) do
+	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
 			dmgConfig.heavy,
-			enemhum,
+			enemy,
 			hurtbox.CFrame.LookVector
 		)
 		attack.hitbox = hitbox
@@ -156,10 +156,10 @@ local function multipleSlash(this:wepTyp&any, humObj):wepType.atkResult
 			local hitboxOffset = CFrame.new(0, 0, -14)
 			local hitboxSize   = Vector3.new(14,12,26)
 			local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-			for _,enemhum in pairs(hits) do
+			for _,enemy in pairs(hits) do
 				local attack = this:makeAtk(
 					dmgConfig.multiple,
-					enemhum,
+					enemy,
 					hurtbox.CFrame.LookVector
 				)
 				attack.hitbox = hitbox

@@ -53,21 +53,21 @@ return function(this:wepTyp&any): wepType.atkResult
 	local isHit = {}
 	for i = 1,5 do
 		local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
-			local found = isHit[enemhum]
+		for _,enemy in pairs(hits) do
+			local found = isHit[enemy]
 			if found then
 				if found == 0 then
 					continue
 				end
-				isHit[enemhum] -= 1
+				isHit[enemy] -= 1
 			else
-				isHit[enemhum] = 1
+				isHit[enemy] = 1
 			end
 			local dmgTbl = dmgConfig.heavy
 
 			local attack = this:makeAtk(
 				dmgTbl,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 

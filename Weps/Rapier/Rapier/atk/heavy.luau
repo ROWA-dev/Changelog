@@ -48,7 +48,7 @@ return function(this:wepTyp&any): wepType.atkResult
 		model.Blade.Bottom.shock:Emit(1)
 		
 		local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-		for _,enemhum in pairs(hits) do
+		for _,enemy in pairs(hits) do
 			local dmgTbl = dmgConfig.heavy
 			if first == true then
 				dmgTbl = dmgConfig.firstHeavy
@@ -59,7 +59,7 @@ return function(this:wepTyp&any): wepType.atkResult
 			
 			local attack = this:makeAtk(
 				dmgTbl,
-				enemhum,
+				enemy,
 				hurtbox.CFrame.LookVector
 			)
 

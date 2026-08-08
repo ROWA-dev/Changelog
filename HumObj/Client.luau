@@ -6,6 +6,7 @@ local Classes    = repliStore:WaitForChild("Class")
 local Packages   = repliStore:WaitForChild("Packages")
 
 local Signal        = require(Packages.Signal)
+local Debug         = require(repliStore.Modules.Debug)
 local AdditiveValue = require(Packages.AdditiveValue)
 
 local valueBase = Packages.valueBase
@@ -91,11 +92,17 @@ export type myself = baseClass.entity & {
 
 local module = {
 	Name = "HumObj_Client",
-	__mode = "k"
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
 setmetatable(module, { __index = baseClass })
+
+-- Combatant contract. Behaviour-preserving and meant to be boring: HumObj
+-- overrides every one of these for real, so it changes nothing there. It only
+-- bites on a client-side HumObjClient, which never had ragdoll/statusEffects/
+-- dmgRecord/cards and would previously have errored on them.
+-- Must run before this file's table.freeze.
+require(Classes:WaitForChild("Combatant")).applyInertDefaults(module, "HumObj_Client")
 
 local setupChar = require(script:WaitForChild("setupCharacter"))
 function module.new(hum: Humanoid):myself
@@ -163,12 +170,12 @@ function module.new(hum: Humanoid):myself
 		"stateChange"
 	)
 
-	self.attacking.Changed:Connect(function(boolean: boolean) 
+	self:AddConnection(self.attacking.Changed:Connect(function(boolean: boolean) 
 		if boolean == true then
 			self._lastAttack = tick()
 			self:stopDash(true)
 		end
-	end)
+	end), "attacking_stopDash")
 	
 	return self
 end
@@ -322,7 +329,7 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 					local dir = (root.CFrame.LookVector*Vector3.new(1,0,1)).Unit
 					local rDir = root.CFrame:VectorToObjectSpace(dir)
 					task.spawn(slidefx, root, rDir)
-					print("slide jump")
+					Debug.dprint("slide jump")
 					self._slideForce = bodyMover(
 						dir*slideJumpPower*1*timeScale,
 						root,
@@ -401,7 +408,7 @@ end
 local dashfx = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("dashFx"))
 function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 	if self:canDash() == false then return false end
-	print((tick() - self._lastAttack))
+	Debug.dprint((tick() - self._lastAttack))
 	
 	local hum = self.Hum
 	local rootpart = self.HRootPart
@@ -656,12 +663,12 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 		"stateChange" -- override default
 	)
 
-	self.sprinting.Changed:Connect(function(boolean: boolean)
+	self:AddConnection(self.sprinting.Changed:Connect(function(boolean: boolean)
 		remoteEvent:FireServer(1, boolean)
-	end)
-	self.sliding.Changed:Connect(function(boolean: boolean) 
+	end), "repl_c2s_1_sprinting")
+	self:AddConnection(self.sliding.Changed:Connect(function(boolean: boolean) 
 		remoteEvent:FireServer(14, boolean)
-	end)
+	end), "repl_c2s_14_sliding")
 end
 
 return table.freeze(module)

@@ -17,7 +17,7 @@ function module.new(humObj):myself
 	self:addConnection(
 		humObj.onAttacked:Connect(function(attack, returnValue: number) 
 			if attack:isParried() then
-				humObj.walkSpeed:SetMod("parry", 4)
+				humObj.walkSpeed:SetMod("parry", 5)
 				task.wait(1) -- TODO why this hold heap?
 				if humObj and humObj.isActive then
 					humObj.walkSpeed:RemoveMod("parry")
