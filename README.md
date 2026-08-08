@@ -1,11 +1,11 @@
-# when was the last time I did this?
-Update 1.18
+# hyperarmour
+Update 1.19
 
-speed boosts are stronger now (refer to landHitSpeedBuff method in HumObj)
-speed boost and duration are scaled abit by the weapons stun
-this means heavy weapons get a bit faster and longer duration speed boosts on hit
-fists are able to land hits more often so this compensates heavy weapons landing less of the time
+heavy weapons hyperarmour at start of a m1 duration scaled with the windup length
 
-too much refactore on the entity class system and more to come
+local IFEINT_WINDUP = 0.5
+local ARMOUR_WINDUP = 0.55
+local ARMOUR_SCALE = 3.5
+(windup - ARMOUR_WINDUP) * ARMOUR_SCALE
 
 and more

@@ -22,7 +22,7 @@ local function useFunc(this:myself)
 	local cooldownID = "Barrage"
 	if this:canTriggerCD(cooldownID) ~= true then return end
 	print("USE ABILITY!")
-	local anim = this:PlayAnim(script.Anim, 0, 1, 1.2)
+	local anim = this:PlayAnim(script.Anim, 0, 1, 1.4)
 	local humObj = this._humObj
 	local hroot = humObj.HRootPart
 
@@ -32,7 +32,7 @@ local function useFunc(this:myself)
 	game.Debris:AddItem(sound2, 4)
 
 	local st = tick()
-	local feinted = this:feintWait(0.6, function(dt: number)
+	local feinted = this:feintWait(0.5, function(dt: number)
 		local t = tick()-st
 		--Idle.Squash = NumberSequence.new(t-0.4)
 		--Idle:Emit(1)

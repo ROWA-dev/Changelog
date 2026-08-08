@@ -51,6 +51,7 @@ export type myself = baseClass.entity & {
 
 
 	timeStunned:	 number,
+	_hyperUntil:     number,
 	_lastAttack:     number,
 	_numClimb:       number,
 	_dashForce:		 LinearVelocity,
@@ -69,10 +70,11 @@ export type myself = baseClass.entity & {
 	setupController: (self:myself) -> (),
 	stopDash: (self: myself, onlyStopAnims:boolean?) -> (),
 
-	Stun:       (self: myself, stunTime: number) -> (),
+	Stun:       (self: myself, stunTime: number, bypassArmour: boolean?) -> (),
 	inStun:     (self: myself, timeOffset:number?) -> boolean,
 	TrueStun:   (self: myself, trueStunTime: number) -> (),
 	inTrueStun: (self: myself) -> boolean,
+	inHyperArmour: (self: myself) -> boolean,
 	isSwimming: (self: myself) -> boolean,
 	
 	Dash:       (self: myself, dir:Vector3, fromServer: boolean?) -> boolean,
@@ -92,6 +94,13 @@ export type myself = baseClass.entity & {
 
 local module = {
 	Name = "HumObj_Client",
+
+	--[[ HYPER ARMOUR. Absolute tick() timestamp, like stun/canAtkThreshold.
+		While tick() < _hyperUntil, `Stun` refuses to write. Lives on the CLASS
+		table so an entity that never gets armoured costs zero bytes (R12) --
+		`self._hyperUntil = x` shadows it per-instance on first write.
+		Owner: Class/StatusEffects/HyperArmour. Do not poke it directly. ]]
+	_hyperUntil = 0,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -359,7 +368,12 @@ function module.stopDash(self:myself, onlyStopAnims:boolean?)
 	self.charAnims:stopDashAnims()
 end
 
-function module:Stun(stunTime:number)
+--[[ `bypassArmour` PIERCES hyper armour. TrueStun passes it; nothing else
+	should. See TrueStun below for why it is a parameter and not a check on
+	inTrueStun(). ]]
+function module:Stun(stunTime:number, bypassArmour:boolean?)
+	if not bypassArmour and tick() < self._hyperUntil then return end
+
 	if stunTime > 0 then
 		self:stopDash()
 	end
@@ -375,11 +389,29 @@ function module:TrueStun(trueStunTime:number)
 		self.stun.Value,
 		tick() + trueStunTime
 	)
-	self:Stun(trueStunTime)
+	--[[ >>> MUST PASS bypassArmour. <<< TrueStun is defined as unstoppable and
+		every caller is a punish or a grab cinematic (GuardBreak, ToshiCounter,
+		Vise/Rah/bostaff heavies). Without the flag the hyper-armour gate eats
+		this inner call and the damage is INVISIBLE: trueStun.Value is already
+		written above, so inStun() still reads true and it looks fine -- but
+		`timeStunned` and `stun.Value` never change, so the `stun.Changed`
+		replication in HumObj:initReplicateServer NEVER FIRES and the client
+		walks around free while the server thinks it is stunned.
+		This is also why the gate is a parameter rather than
+		`not self:inTrueStun()`: that would work only by accident of the
+		assignment above happening first, and SimpleEntity/TestDummy have no
+		inTrueStun at all. ]]
+	self:Stun(trueStunTime, true)
 end
 
 function module:inTrueStun(): boolean
 	return tick() < self.trueStun.Value
+end
+
+--- Armoured right now? Ask this, never `tick() < self._hyperUntil` by hand --
+--- anything that INTERRUPTS a victim has to check it, not just :Stun.
+function module:inHyperArmour(): boolean
+	return tick() < self._hyperUntil
 end
 
 function module:inStun(timeOffset:number?): boolean
@@ -524,8 +556,8 @@ function module.DashCancel(self:myself, dir:Vector3, fromServer:boolean?): boole
 		local timeScale = self.timeScale.Value
 		local iTimeScale = 1/timeScale
 		
-		local dcPower = 40 * timeScale
-		local dcTime = 0.3 * iTimeScale
+		local dcPower = 30 * timeScale
+		local dcTime = 0.2 * iTimeScale
 		local dcDecay = 0.4 * iTimeScale
 
 		
