@@ -2,6 +2,33 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.19 - Hyperarmor
+
+> Note: Sorry for being somewhat vague in the logs for versions 1.18 and 1.19, I am struggling to comprehend Air's code; it is almost 5 AM for me 😭. I may revise these logs at a later date for clarity once I figure out what is going on.
+
+### Added ✅
+- Heavy weapons now have hyperarmor at the start of an M1
+  - The duration of said hyperarmor is determined by the windup length of the M1
+
+### Changes 🛠️
+- Changed some feint stuff for Barrage
+- Some sneaky client and server changes because of the hyperarmor addition
+
+<br><sub>2026-08-08</sub>
+
+## 1.18 - The Refactoring
+### Added ✅
+- New card: Ability Haste (testing card)
+- Added VFX for Axe heavy attack
+- Debug stuff for development
+
+### Changes 🛠️
+- Hitbox refactor thing; hits are entities now
+- Speed boosts are stronger
+- Some sneaky client and server changes because of the refactor that I don't understand
+
+<br><sub>2026-08-07</sub>
+
 ## 1.17 - The Two Month Wait
 ### Added ✅
 - New ability: Fulminate
