@@ -62,6 +62,7 @@ export type myself = baseClass.entity & {
 	_lastDoubleDash: number,
 	_wantSlide: 	 boolean,
 	_slideForce: 	 LinearVelocity?,
+	_slideHipDrop:   number,
 
 	charAnims:  charAnims.myself,
 	limbTrails: limbTrails.myself,
@@ -95,12 +96,14 @@ export type myself = baseClass.entity & {
 local module = {
 	Name = "HumObj_Client",
 
-	--[[ HYPER ARMOUR. Absolute tick() timestamp, like stun/canAtkThreshold.
-		While tick() < _hyperUntil, `Stun` refuses to write. Lives on the CLASS
-		table so an entity that never gets armoured costs zero bytes (R12) --
-		`self._hyperUntil = x` shadows it per-instance on first write.
-		Owner: Class/StatusEffects/HyperArmour. Do not poke it directly. ]]
+	-- hyper armour. absolute tick() stamp like stun. class-table default so
+	-- unarmoured entities cost nothing. owned by StatusEffects/HyperArmour.
 	_hyperUntil = 0,
+
+	--[[ Studs of HipHeight the current slide still owes back, 0 when upright.
+		Class-level default so `stopSlideState` can never read nil on an entity
+		that skipped `module.new`'s init (inert/Combatant defaults path). ]]
+	_slideHipDrop = 0,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -154,6 +157,11 @@ function module.new(hum: Humanoid):myself
 	self._lastBlocked = 0
 	self._lastDoubleDash = 0
 	self._wantSlide = false
+	--[[ How many studs of HipHeight the slide currently owes back. NEVER do
+		`HipHeight -= 1.5` / `+= 1.5` in a pair -- a missed or doubled call
+		leaks the offset forever (permanent crouched/floating character). Only
+		`_enterSlideHip`/`_exitSlideHip` touch this. ]]
+	self._slideHipDrop = 0
 	
 	--
 	
@@ -253,23 +261,113 @@ end
 local slidefx = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("slideFx"))
 local repliUtils = game.ReplicatedStorage:WaitForChild("Utils")
 local bodyMover = require(repliUtils:WaitForChild("bodymover"))
+local SLIDE_HIP_DROP = 1.5
+
+--[[ Every bit of state a slide turns ON lives here and gets turned OFF here,
+	as ONE unit. It is idempotent and cheap when there is nothing to undo, so
+	it doubles as the reaper for orphaned slide state: the controller pings
+	`ChangeSliding(false)` every frame while not sliding, which lands here.
+
+	>>> DO NOT re-gate any of this behind `if slideModif then` again. <<<
+	That was the old shape and it meant "the walkSpeed mod is still present"
+	decided whether HipHeight / the Slide track / torso collision came back.
+	Any path that dropped the mod first (the standing-still crouch fast-path
+	did exactly that) orphaned the rest of it PERMANENTLY -- character stuck
+	crouched with the slide anim looping. `slideModif` only decides whether a
+	slide JUMP is owed, nothing else. ]]
+local function stopSlideState(self:myself&any, allowSlideJump:boolean)
+	local Hum = self.Hum
+	local SlideAnim = self.charAnims.Slide
+	local slideModif:number? = self.walkSpeed:GetMod("slide")
+
+	if slideModif == nil
+		and self._slideHipDrop == 0
+		and SlideAnim.IsPlaying == false
+	then
+		return -- nothing to undo, don't churn signals every frame
+	end
+
+	self.walkSpeed:RemoveMod("slide")
+
+	local root = self.HRootPart
+	if allowSlideJump and slideModif and root then
+		local floor = workspace:FindPartOnRayWithIgnoreList(
+			Ray.new(root.Position, Vector3.new(0,-root.Size.Y*3,0)),
+			{root}
+		)
+		if Hum.Jump and floor ~= nil then
+			local timeScale = self.timeScale.Value
+			local slideJumpPower = math.max(slideModif, self.slideSpeed.Value)
+			if self._slideForce then
+				self._slideForce:Destroy()
+			end
+
+			local dir = (root.CFrame.LookVector*Vector3.new(1,0,1)).Unit
+			local rDir = root.CFrame:VectorToObjectSpace(dir)
+			task.spawn(slidefx, root, rDir)
+			Debug.dprint("slide jump")
+			self._slideForce = bodyMover(
+				dir*slideJumpPower*1*timeScale,
+				root,
+				0.4/timeScale
+			)
+		end
+	end
+
+	-- absolute, not `+= 1.5`: pays back exactly what was taken, once
+	local owedHip = self._slideHipDrop
+	if owedHip ~= 0 then
+		self._slideHipDrop = 0
+		Hum.HipHeight += owedHip
+	end
+
+	SlideAnim.Priority = Enum.AnimationPriority.Action
+	SlideAnim:Stop(0.3)
+
+	local chr:any = Hum.Parent
+	local torso:BasePart? = if chr then chr:FindFirstChild("Torso") else nil
+	if torso then
+		torso.CanCollide = true
+		torso.CollisionGroup = "Default"
+	end
+
+	if root then
+		local RootJoint:Motor6D = root:FindFirstChild("RootJoint")::any
+		if RootJoint then
+			RootJoint.C1 = RootJoint.C0
+		end
+	end
+end
+
 function module.ChangeSliding(self:myself, setTo:boolean): boolean
 	local crouchAnim = self.charAnims.Crouch
 	--self._wantSlide = setTo
 
-	if self.Hum.MoveDirection == Vector3.zero and self.sliding.Value ~= setTo then
-		self.sliding.Value = setTo
-		if setTo == true then
-			self.walkSpeed:RemoveMod("slide")
-			self:PlayTrack(crouchAnim, 0.1)
-			return true
-		end
+	--[[ Standing still -> the slide key crouches instead of sliding.
+		>>> This fast-path must NEVER write `sliding.Value` for setTo==false
+		and then fall through. <<< It used to, and the `sliding.Value ~= setTo`
+		guard further down then read false and skipped the ENTIRE teardown,
+		leaving walkSpeed's +slideSpeed mod on with sliding.Value==false --
+		nothing decays it (the decay lives in the controller's sliding==true
+		branch) so you keep the anim and fly around steerable at ~41 WS.
+		That is the "stuck fast slide" bug. Both branches return. ]]
+	if setTo == true and self.Hum.MoveDirection == Vector3.zero and self.sliding.Value ~= true then
+		stopSlideState(self, false) -- reap residue before crouching over it
+		self.sliding.Value = true
+		self:PlayTrack(crouchAnim, 0.1)
+		return true
 	end
 
 	if setTo == false and crouchAnim.IsPlaying then
-		self.sliding.Value = false
 		crouchAnim:Stop(0.1)
+		self.sliding.Value = false
+		stopSlideState(self, false)
 		return true
+	end
+
+	if setTo == false and self.sliding.Value == false then
+		stopSlideState(self, false) -- orphan reaper, no-ops when clean
+		return false
 	end
 
 	if setTo == true then
@@ -289,7 +387,11 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 		local torso:BasePart = chr:FindFirstChild("Torso")
 		local root = self.HRootPart
 
-		if torso == nil then
+		--[[ Only ENTERING needs the torso (collision swap). Bailing out of the
+			stop path on a missing torso would strand the speed mod + HipHeight,
+			which is the same permanent-fast-slide failure this function exists
+			to prevent -- stopSlideState handles a nil torso itself. ]]
+		if torso == nil and setTo == true then
 			return false
 		end
 
@@ -306,7 +408,12 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 			torso.CollisionGroup = "no"
 
 			self.walkSpeed:SetMod("slide", self.slideSpeed.Value)
-			Hum.HipHeight -= 1.5
+			-- book the drop instead of assuming a matching `+= 1.5` later.
+			-- guarded so a double-enter can't stack two drops on one payback.
+			if self._slideHipDrop == 0 then
+				self._slideHipDrop = SLIDE_HIP_DROP
+				Hum.HipHeight -= SLIDE_HIP_DROP
+			end
 			SlideAnim.Priority = Enum.AnimationPriority.Action2
 			self:PlayTrack(SlideAnim, 0.1)
 
@@ -321,41 +428,7 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 				-1
 			)
 		elseif setTo == false then				  -- stopped slide ing
-			local slideModif:number? = self.walkSpeed:GetMod("slide")
-			self.walkSpeed:RemoveMod("slide")
-			
-			if slideModif then
-				local floor = workspace:FindPartOnRayWithIgnoreList(
-					Ray.new(root.Position, Vector3.new(0,-root.Size.Y*3,0)),
-					{root}
-				)
-				if Hum.Jump and floor ~= nil then
-					local slideJumpPower = math.max(slideModif, self.slideSpeed.Value)
-					if self._slideForce then
-						self._slideForce:Destroy()
-					end
-					
-					local dir = (root.CFrame.LookVector*Vector3.new(1,0,1)).Unit
-					local rDir = root.CFrame:VectorToObjectSpace(dir)
-					task.spawn(slidefx, root, rDir)
-					Debug.dprint("slide jump")
-					self._slideForce = bodyMover(
-						dir*slideJumpPower*1*timeScale,
-						root,
-						0.4*iTimeScale
-					)
-				end
-				Hum.HipHeight += 1.5
-				SlideAnim.Priority = Enum.AnimationPriority.Action
-				SlideAnim:Stop(0.3)
-				torso.CanCollide = true
-				torso.CollisionGroup = "Default"
-
-				local RootJoint:Motor6D = self.HRootPart:FindFirstChild("RootJoint")::any
-				if RootJoint then
-					RootJoint.C1 = RootJoint.C0
-				end
-			end
+			stopSlideState(self, true)
 		end
 	end
 	return false
@@ -368,9 +441,7 @@ function module.stopDash(self:myself, onlyStopAnims:boolean?)
 	self.charAnims:stopDashAnims()
 end
 
---[[ `bypassArmour` PIERCES hyper armour. TrueStun passes it; nothing else
-	should. See TrueStun below for why it is a parameter and not a check on
-	inTrueStun(). ]]
+-- bypassArmour pierces hyper armour. only TrueStun passes it.
 function module:Stun(stunTime:number, bypassArmour:boolean?)
 	if not bypassArmour and tick() < self._hyperUntil then return end
 
@@ -389,18 +460,9 @@ function module:TrueStun(trueStunTime:number)
 		self.stun.Value,
 		tick() + trueStunTime
 	)
-	--[[ >>> MUST PASS bypassArmour. <<< TrueStun is defined as unstoppable and
-		every caller is a punish or a grab cinematic (GuardBreak, ToshiCounter,
-		Vise/Rah/bostaff heavies). Without the flag the hyper-armour gate eats
-		this inner call and the damage is INVISIBLE: trueStun.Value is already
-		written above, so inStun() still reads true and it looks fine -- but
-		`timeStunned` and `stun.Value` never change, so the `stun.Changed`
-		replication in HumObj:initReplicateServer NEVER FIRES and the client
-		walks around free while the server thinks it is stunned.
-		This is also why the gate is a parameter rather than
-		`not self:inTrueStun()`: that would work only by accident of the
-		assignment above happening first, and SimpleEntity/TestDummy have no
-		inTrueStun at all. ]]
+	-- must pass the flag. without it the gate eats this silently: trueStun.Value
+	-- is already set so inStun() looks right, but stun.Value never changes and
+	-- the stun.Changed replication never fires -> client thinks it is free.
 	self:Stun(trueStunTime, true)
 end
 

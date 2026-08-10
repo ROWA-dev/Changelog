@@ -1,11 +1,11 @@
-# hyperarmour
-Update 1.19
+# hyperarmour²
+Update 1.20
 
-heavy weapons hyperarmour at start of a m1 duration scaled with the windup length
+the HYPERARMOUR mentioned in the previous update IS NOW AT THE TAIL of windup instead at startup
+so it cant be used as wakeup ane be annoying... (zypren zach )
 
-local IFEINT_WINDUP = 0.5
-local ARMOUR_WINDUP = 0.55
-local ARMOUR_SCALE = 3.5
-(windup - ARMOUR_WINDUP) * ARMOUR_SCALE
+finally figured out the rare inf speedyfrozen  slide bug and fixed it
+
+in game CHANGELOG GUI now has faithfull markdown
 
 and more

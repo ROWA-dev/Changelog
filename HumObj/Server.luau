@@ -325,32 +325,9 @@ function module.new(hum: Humanoid): myself
 				local relativeAtkDir = myTorso.CFrame:VectorToObjectSpace(attack.atkDir)
 				local allHitAnims = script.HitAnims:GetChildren()
 				local hitAnim = allHitAnims[math.random(1,#allHitAnims)]
-				--[[ HYPER ARMOUR, THIRD INTERRUPT -- SKIP THE FLINCH ENTIRELY.
-
-					This flinch is what cancels ABILITIES: it Stops
-					lastAbilityAnim, the slot AbilityBase.PlayAnim writes into.
-					It never mentions stun, so gating :Stun and the weapon
-					interrupt did not cover abilities.
-
-					>>> lastAbilityAnim IS ONE SLOT, SO YOU CANNOT KEEP BOTH. <<<
-					The assignment below is not incidental -- it is how the
-					flinch itself stays stoppable (stopAbilityAnims, and thus
-					the victim's next ability via StopAnim). Unarmoured that is
-					consistent: the ability is Stopped, the flinch takes the
-					slot, exactly one live track. Trying to let BOTH play while
-					armoured orphans whichever one you do not store -- either
-					the ability can no longer be stopped by its own feint
-					cleanup, or the flinch bleeds into the next action.
-
-					So while armoured the flinch does not play at all. One
-					track, one slot, every existing invariant intact.
-					Feedback is NOT lost: bfx/bfx2 blood emitters above and the
-					FastRemotes.blood broadcast below are both outside this
-					branch, plus the armour highlight is on the victim. Only
-					the flinch ANIMATION is skipped -- which is the point, since
-					that animation IS the interrupt.
-
-					True stun is not armoured, so it still flinches normally. ]]
+				-- this flinch is what cancels abilities: it takes over
+				-- lastAbilityAnim. one slot, so both cannot play -- armoured
+				-- skips the anim entirely. blood/vfx are outside this branch.
 				if not self:inHyperArmour() then
 					local hitTrack = self:LoadAnimation(hitAnim)
 					hitTrack.Priority = Enum.AnimationPriority.Action4
@@ -813,21 +790,12 @@ function module.canAttack(self:myself)
 	)
 end
 
---[[ The hyper-armour gate is DUPLICATED from baseClass.Stun on purpose, and it
-	must stay ABOVE the two side effects. baseClass would refuse the write on
-	its own, but by then `onStunned` has already fired (HUD flash, emote
-	cancel) and the victim's own swing has been stopLastAnim'd -- an armoured
-	player would lose their attack to a hit that never stunned them, which is
-	the entire thing hyper armour exists to prevent.
-	bypassArmour is forwarded, not re-derived: TrueStun pierces. ]]
+-- gate is duplicated from baseClass.Stun so it sits ABOVE the side effects:
+-- otherwise an armoured player still eats onStunned + loses their swing.
 function module.Stun(self:myself, stunTime:number, bypassArmour:boolean?)
 	if self.isActive ~= true then return end
-	--[[ Armour REFUSED this stun -- tell the effect so a hidden grant can flash.
-		Hooked HERE, not in baseClass.Stun, because statusEffects is server-only
-		and HumObjClient must not know about it. Reached through activeEffects
-		rather than a method on the manager: an entity can be armoured by a raw
-		_hyperUntil write with no effect object at all, and that must not
-		crash. ]]
+	-- hooked here not in baseClass: statusEffects is server-only. via
+	-- activeEffects because a raw _hyperUntil write has no effect object.
 	if not bypassArmour and tick() < self._hyperUntil then
 		local armour = self.statusEffects.activeEffects
 			and self.statusEffects.activeEffects.HyperArmour
