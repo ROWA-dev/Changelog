@@ -2,17 +2,30 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
-## 1.19 - Hyperarmor
+## 1.21 - Hyperarmor Hotfix
 
-> Note: Sorry for being somewhat vague in the logs for versions 1.18 and 1.19, I am struggling to comprehend Air's code; it is almost 5 AM for me 😭. I may revise these logs at a later date for clarity once I figure out what is going on.
+### Changes 🛠️
+- Hyperarmor math changed
+
+<br><sub>2026-08-10</sub>
+
+## 1.20 - Hyperarmor Patch
+
+### Changes 🛠️
+- Hyperarmor is now applied to the end of heavy weapon M1s rather than the start to prevent annoying wakeup interactions
+- Fixed rare infinite slide bug
+- Ingame changelog now correctly shows markdown (it's readable)
+
+<br><sub>2026-08-10</sub>
+
+## 1.19 - The Birth Of Hyperarmor
 
 ### Added ✅
 - Heavy weapons now have hyperarmor at the start of an M1
   - The duration of said hyperarmor is determined by the windup length of the M1
 
 ### Changes 🛠️
-- Changed some feint stuff for Barrage
-- Some sneaky client and server changes because of the hyperarmor addition
+- Barrage windup decreased (0.6s -> 0.5s)
 
 <br><sub>2026-08-08</sub>
 
