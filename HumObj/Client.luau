@@ -157,7 +157,7 @@ function module.new(hum: Humanoid):myself
 	self._lastBlocked = 0
 	self._lastDoubleDash = 0
 	self._wantSlide = false
-	--[[ How many studs of HipHeight the slide currently owes back. NEVER do
+--[[ How many studs of HipHeight the slide currently owes back. NEVER do
 		`HipHeight -= 1.5` / `+= 1.5` in a pair -- a missed or doubled call
 		leaks the offset forever (permanent crouched/floating character). Only
 		`_enterSlideHip`/`_exitSlideHip` touch this. ]]
@@ -268,7 +268,7 @@ local SLIDE_HIP_DROP = 1.5
 	it doubles as the reaper for orphaned slide state: the controller pings
 	`ChangeSliding(false)` every frame while not sliding, which lands here.
 
-	>>> DO NOT re-gate any of this behind `if slideModif then` again. <<<
+	DO NOT re-gate any of this behind `if slideModif then` again.
 	That was the old shape and it meant "the walkSpeed mod is still present"
 	decided whether HipHeight / the Slide track / torso collision came back.
 	Any path that dropped the mod first (the standing-still crouch fast-path
@@ -343,8 +343,8 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 	local crouchAnim = self.charAnims.Crouch
 	--self._wantSlide = setTo
 
-	--[[ Standing still -> the slide key crouches instead of sliding.
-		>>> This fast-path must NEVER write `sliding.Value` for setTo==false
+--[[ Standing still -> the slide key crouches instead of sliding.
+		This fast-path must NEVER write `sliding.Value` for setTo==false
 		and then fall through. <<< It used to, and the `sliding.Value ~= setTo`
 		guard further down then read false and skipped the ENTIRE teardown,
 		leaving walkSpeed's +slideSpeed mod on with sliding.Value==false --
@@ -387,7 +387,7 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 		local torso:BasePart = chr:FindFirstChild("Torso")
 		local root = self.HRootPart
 
-		--[[ Only ENTERING needs the torso (collision swap). Bailing out of the
+	--[[ Only ENTERING needs the torso (collision swap). Bailing out of the
 			stop path on a missing torso would strand the speed mod + HipHeight,
 			which is the same permanent-fast-slide failure this function exists
 			to prevent -- stopSlideState handles a nil torso itself. ]]

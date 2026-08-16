@@ -2,14 +2,10 @@
 --[[
 	AbilityHaste — makes the wielder's abilities wind up faster.
 
-	This card exists to PROVE the PLAN_05 5B exit criterion: "a card can buff
-	an ability's speed. Prove it with one real card."
-
-	Before 5B this card was IMPOSSIBLE TO WRITE. AbilityBase stored atkRate /
-	atkRateOffset / knockbackMult as plain numbers, so there was no mod list to
-	target — a card could only have clobbered the raw value and hoped nothing
-	else wanted a say. Weapons had AdditiveValue and abilities did not, which
-	read as a style inconsistency but was actually a feature hole.
+	This card is the proof that a card can buff an ABILITY's speed, not just a
+	weapon's. It only works because AbilityBase's atkRate / atkRateOffset /
+	knockbackMult are AdditiveValues: plain numbers have no mod list to target,
+	so a card could only clobber the raw value and hope nothing else wanted a say.
 
 	Mirrors SpeedOnParry's shape: SetMod on apply, RemoveMod on cleanup, keyed
 	by a card-specific string so it stacks correctly with anything else.

@@ -127,12 +127,12 @@ end
 
 local onDied = require(script.onDeath)
 
--- HandleAttack's branches (7C). Pure moves; see the dispatcher for the order.
+-- HandleAttack's branches. Pure moves; see the dispatcher for the order.
 local resolveParry = require(script.resolution.resolveParry)
 local resolveBlock = require(script.resolution.resolveBlock)
 local resolveHit   = require(script.resolution.resolveHit)
 
---[[ One regen loop, four call sites. (7D)
+--[[ One regen loop, four call sites.
 
 	Preserves the exact `while active do while active and belowMax do step end
 	Changed:Wait() end` shape the four hand-written loops used -- that nested
@@ -145,13 +145,13 @@ local resolveHit   = require(script.resolution.resolveHit)
 	                 number  = wait(n)
 	                 "frame" = task.wait() -- true per-frame
 
-	>>> wait() vs task.wait() IS A BALANCE DIFFERENCE, NOT A STYLE ONE.
-	>>> posture and mana used BARE wait(), which yields ~30Hz. floating used
-	>>> task.wait(), which is per-frame (~60Hz+). Since every one of these
-	>>> loops integrates `dt * rate`, swapping the two changes how much regen
-	>>> lands per second on a fast client. An earlier draft of this helper used
-	>>> task.wait() for all of them and would have silently doubled posture and
-	>>> mana regen. Each call site keeps the timer it actually had.
+	wait() vs task.wait() IS A BALANCE DIFFERENCE, NOT A STYLE ONE.
+	posture and mana used BARE wait(), which yields ~30Hz. floating used
+	task.wait(), which is per-frame (~60Hz+). Since every one of these
+	loops integrates `dt * rate`, swapping the two changes how much regen
+	lands per second on a fast client. An earlier draft of this helper used
+	task.wait() for all of them and would have silently doubled posture and
+	mana regen. Each call site keeps the timer it actually had.
 
 	The `step` return value exists for health, which alone did
 	`if not active or isDead then RETURN end` -- exiting the whole loop rather
@@ -178,12 +178,12 @@ local function regenLoop(self: any, changedSignal: any, isBelowMax: () -> boolea
 	end)
 end
 
---- HumObj GENUINELY REQUIRES a Humanoid, unlike EntityBase (P6).
+--- HumObj GENUINELY REQUIRES a Humanoid, unlike EntityBase.
 --  It is the full player-character surface: ragdoll, grab, CharController and
 --  the animation stack all take a Humanoid directly. So it refuses up front
 --  with a clear message instead of failing five subsystems deep.
 --  An odd-shaped entity should NOT be a HumObj -- subclass EntityBase and take
---  Combatant's inert defaults instead (6A).
+--  Combatant's inert defaults instead.
 function module.new(hum: Humanoid): myself
 	if typeof(hum) ~= "Instance" or not hum:IsA("Humanoid") then
 		error(
@@ -197,6 +197,14 @@ function module.new(hum: Humanoid): myself
 	local self:myself = setmetatable(abstract, module) :: any
 
 	self.isActive 		= true
+	-- destroy() stamps "norepli" on the root to mark it dead. a live HumObj on
+	-- that same root must clear it, or the marker outlives the corpse: loadChar
+	-- does Unregister(hum) -> Get(hum), which destroys and rebuilds on a char
+	-- that never died, and CharController reads the stale tag as "apply air
+	-- friction forever". Symmetric with destroy, keep it that way.
+	if self.HRootPart then
+		self.HRootPart:RemoveTag("norepli")
+	end
 	self.hurtboxSize    = AdditiveValue.new(1)
 	self.dmgRecord      = dmgRecord.new()
 	self.cards          = cardLoader.new(self)
@@ -262,7 +270,7 @@ function module.new(hum: Humanoid): myself
 			self.ragdoll:unragdoll()
 		elseif attack:isHit() then
 			local now = tick()
-			--[[ HYPER ARMOUR. This cancel is a SECOND, INDEPENDENT interrupt --
+		--[[ HYPER ARMOUR. This cancel is a SECOND, INDEPENDENT interrupt --
 				it hangs off onAttacked and never consults stun, so gating
 				:Stun alone left an armoured player still losing their swing to
 				every chip hit. "Cannot be stunned" has to mean "cannot be
@@ -374,7 +382,7 @@ function module.new(hum: Humanoid): myself
 	end), "humDied")
 
 	-- self.Model, not HRootPart.Parent: the rootpart is not guaranteed to sit
-	-- directly under the model on a non-standard rig (P6 6D).
+	-- directly under the model on a non-standard rig.
 	local character:Model = self.Model or self.HRootPart.Parent::any
 	local hurtbox = character:FindFirstChild("hurtbox") or script.hurtbox:Clone()
 	hurtbox:WaitForChild("Weld").Part0 = self.HRootPart
@@ -395,7 +403,7 @@ function module.new(hum: Humanoid): myself
 
 	do
 		local charSizeChanged = function(key: string) 
-			-- self.Model, not HRootPart.Parent (P6 6D)
+			-- self.Model, not HRootPart.Parent
 			local model:any = self.Model or (self.HRootPart::any).Parent
 			model:ScaleTo(self.charSize.Value)
 		end
@@ -407,7 +415,7 @@ function module.new(hum: Humanoid): myself
 		self:AddConnection(self.floating.Changed:Connect(function(v)
 			if v > 0 and self.isDead ~= true then
 				self.ragdoll:unragdoll()
-				--[[if self.ragdoll:inRagdoll() then
+			--[[if self.ragdoll:inRagdoll() then
 					Debug.dprint("STOP floatin!")
 					self.ragdoll:unragdoll()
 					self.targetFloatY.Value = nil
@@ -438,11 +446,11 @@ function module.new(hum: Humanoid): myself
 		self:AddConnection(self.blocking.Changed:Connect(stopEmote), "emote_blocking")
 		--self.onDash:Connect(stopEmote)
 	end
-	--[[ 7D: four near-identical regen loops -> one helper + four call sites.
+--[[ Four near-identical regen loops -> one helper + four call sites.
 
 		The nested `while ... Changed:Wait()` throttling idiom is CORRECT and
-		is on the EXPLICIT NON-GOALS list -- this DEDUPES it, it does not
-		replace it. A flat Heartbeat loop would be strictly worse.
+		DELIBERATE -- this DEDUPES it, it does not replace it. A flat Heartbeat
+		loop would be strictly worse.
 
 		The helper takes a STEP FUNCTION, not a rate, because the four are not
 		interchangeable: health uses constants and a real Humanoid, floating
@@ -557,7 +565,7 @@ function module.Die(self:myself)
 end
 
 local returnEnums = DmgUtils.returnEnum
---[==[ HandleAttack — the dispatcher. (PLAN_07 7C)
+--[==[ HandleAttack — the dispatcher.
 
 	Resolution ORDER is the contract, and it is the one thing this function
 	still owns:  dead -> parry -> dodge -> block -> hit.
@@ -572,19 +580,17 @@ local returnEnums = DmgUtils.returnEnum
 	to match its siblings would be symmetry for its own sake and would add a
 	file to read for no information gained.
 
-	>>> THE BLOCK BRANCH CAN RETURN nil ON PURPOSE. A broken guard falls
-	>>> through to the hit branch, which is how guard-breaking works. Do not
-	>>> collapse `if blocked ~= nil then return blocked end` into
-	>>> `return blocked`.
+	THE BLOCK BRANCH CAN RETURN nil ON PURPOSE. A broken guard falls
+	through to the hit branch, which is how guard-breaking works. Do not
+	collapse `if blocked ~= nil then return blocked end` into
+	`return blocked`.
 ]==]
 function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 	local enemyEntity = attack.enemyEntity
 
-	-- 7B: was `return nil` under a `-> number` annotation, and AttackClass
-	-- forwarded that nil straight to the caller. A caller receiving nil cannot
-	-- tell "target was already dead" from "this function forgot to return",
-	-- and R3 says that ambiguity IS the bug. Routed through onAttackReturn so
-	-- attack.status is actually set.
+	-- NEVER `return nil` here. A caller receiving nil cannot tell "target was
+	-- already dead" from "this function forgot to return", and that ambiguity
+	-- IS the bug. Routed through onAttackReturn so attack.status is really set.
 	if self.isDead then
 		return attack:onAttackReturn(returnEnums.aborted, atkSource)
 	end
@@ -1084,18 +1090,17 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		--print("STUN duration:",duration, number)
 		remoteEvent:FireClient(plr, 1, duration)
 	end), "repl_1_stun")
-	--[[ The plain "signal fired -> forward its value under an id" cases.
+--[[ The plain "signal fired -> forward its value under an id" cases.
 
 		These six were six separate raw :Connect blocks that differed only by
 		which signal and which integer. Collapsed into a table so the id/field
-		pairing is READABLE IN ONE PLACE -- which is most of what 7F is asking
-		for, without yet touching the wire format or the client side.
-		Every connection is janitored (7A).
+		pairing is READABLE IN ONE PLACE, without touching the wire format or
+		the client side. Every connection is janitored.
 
 		onDash/onDashCancel deliberately forward NO payload, matching the
 		original `FireClient(plr, 8)` with no third argument.
 	]]
-	--[[ NOTE the two lists. They are NOT interchangeable and must not be
+--[[ NOTE the two lists. They are NOT interchangeable and must not be
 		merged with a `x.Changed or x` fallback:
 
 		  * attacking/blocking/posture/parryWindow are VALUE OBJECTS. The
@@ -1104,7 +1109,7 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		    are the signal, and they forward no payload.
 
 		Signal's __index ERRORS on an unknown member rather than returning nil
-		-- "Attempt to get Signal::Changed (not a valid member)" -- so
+	-- "Attempt to get Signal::Changed (not a valid member)" -- so
 		`entry.signal.Changed or entry.signal` does not degrade, it throws, and
 		it would have taken out initReplicateServer for every player.
 	]]
@@ -1153,7 +1158,7 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 	end), "repl_23_mana")
 
 
-	--[[local rcon = remoteEvent.OnServerEvent:Connect(function(plr: Player, id:number, value: any)
+--[[local rcon = remoteEvent.OnServerEvent:Connect(function(plr: Player, id:number, value: any)
 		if plr.Character and self.Hum and plr.Character:FindFirstChild("Humanoid") ~= self.Hum then
 			return
 		end]]

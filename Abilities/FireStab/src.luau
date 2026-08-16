@@ -32,7 +32,7 @@ local function useFunc(this:myself & any)
 		-- "Right Arm" is an R6-rig assumption, but it is already a FALLBACK to
 		-- GetBlade() and the whole chain nil-degrades, so an odd-shaped entity
 		-- using this ability just gets no shine rather than an error. Left as
-		-- an ability-local quirk on purpose (P6 6F: don't grow the contract).
+		-- an ability-local quirk on purpose: don't grow the entity contract.
 		this._humObj:GetBlade()
 			or (this._humObj.Model and this._humObj.Model:FindFirstChild("Right Arm"))
 	) -- LAMBDA OF DOOM	

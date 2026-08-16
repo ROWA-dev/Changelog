@@ -90,6 +90,7 @@ local function useFunc(this:myself)
 				this:executeAttack(attack)
 				if attack:isHit() then
 					hitlanded = true
+					dmgTbl.parryH = 1
 				elseif attack:isParried() then
 					if attack.enemyEntity.attacking and attack.enemyEntity.attacking.Value == true then
 						dmgTbl.stunMeOnParried = 0.1
