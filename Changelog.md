@@ -2,14 +2,53 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
-## 1.21 - Hyperarmor Hotfix
+## 1.6.0 - Port ROWA
+
+> Note: This update I changed the version structuring a whole lot. Nobody will know though. 🤫
+
+> Note: Air was lazy so even though it looks like there's a lot of new abilties it's just because he ported them from ROWA.
+
+### Added ✅
+- New ability: Blight
+- New ability: Bolt Punch
+- New ability: Cero
+- New ability: Flame Dance
+- New ability: Huozi
+- New ability: Ice Bash
+- New ability: Ice Beam
+- New ability: Jolt Kick
+- New ability: Lightning
+- New ability: Piercing Stab
+- New ability: Power Strike
+- New ability: Rend
+- New ability: Storm Up
+- New ability: Stronger Left
+- New ability: Tendrils
+- New ability: Zoltraak
+
+### Changes 🛠️
+- Axe name changed to Stark Axe
+- Barrage damage increased (2.5 -> 3 per hit)
+
+<br><sub>2026-08-17</sub>
+
+## 1.5.3 - What To Name This Version? Gubby Glider
+
+### Changes 🛠️
+- Barrage can now be parried mid stun
+- Glider physics fixed
+- Added unique Axe M1s
+
+<br><sub>2026-08-16</sub>
+
+## 1.5.2 - Hyperarmor Hotfix
 
 ### Changes 🛠️
 - Hyperarmor math changed
 
 <br><sub>2026-08-10</sub>
 
-## 1.20 - Hyperarmor Patch
+## 1.5.1 - Hyperarmor Patch
 
 ### Changes 🛠️
 - Hyperarmor is now applied to the end of heavy weapon M1s rather than the start to prevent annoying wakeup interactions
@@ -18,7 +57,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-08-10</sub>
 
-## 1.19 - The Birth Of Hyperarmor
+## 1.5.0 - The Birth Of Hyperarmor
 
 ### Added ✅
 - Heavy weapons now have hyperarmor at the start of an M1
@@ -29,7 +68,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-08-08</sub>
 
-## 1.18 - The Refactoring
+## 1.4.1 - The Refactoring
 ### Added ✅
 - New card: Ability Haste (testing card)
 - Added VFX for Axe heavy attack
@@ -42,7 +81,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-08-07</sub>
 
-## 1.17 - The Two Month Wait
+## 1.4.0 - The Two Month Wait
 ### Added ✅
 - New ability: Fulminate
 
@@ -59,7 +98,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-07-25</sub>
 
-## 1.16 - Status Effects
+## 1.3.4 - Status Effects
 ### Added ✅
 - Implemented base status effects class for entities
 - Fire Stab now applies burn status
@@ -67,7 +106,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-05-28</sub>
 
-## 1.15 - Base Progression
+## 1.3.3 - Base Progression
 ### Added ✅
 - Added weapon and elemental stats serverside base
 - Leveling up gives stat points
@@ -81,7 +120,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-05-24</sub>
 
-## 1.14 - More Refactoring
+## 1.3.2 - More Refactoring
 ### Added ✅
 - Safer and better fast replication during combat or whatever that means
 - Slight client side prediction to mitigate unnoticeable loss
@@ -93,7 +132,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-05-24</sub>
 
-## 1.13 - Progression Preparation
+## 1.3.1 - Progression Preparation
 ### Added ✅
 - More admin commands: /giveexp, /wipeslot
 - Updated UI to include EXP and level
@@ -105,7 +144,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-05-21</sub>
 
-## 1.12 - Dagger? I Barely Know Her!
+## 1.3.0 - Dagger? I Barely Know Her!
 ### Added ✅
 - Slide jump has momentum now
 - New weapon: Dagger (from ROWA)
@@ -116,7 +155,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-05-12</sub>
 
-## 1.11 - ROWA 2 Might Be Back
+## 1.2.0 - ROWA 2 Might Be Back
 ### Added ✅
 - New ability: Earth Shot
 
@@ -127,7 +166,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-05-10</sub>
 
-## 1.10 - Some Small Changes
+## 1.1.5 - Some Small Changes
 ### Changes 🛠️
 - Mace heavy attack damage decreased (24 -> 20)
 - Spear M1 damage decreased (13 -> 12)
@@ -139,7 +178,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-04-08</sub>
 
-## 1.9 - Grabbing Guts
+## 1.1.4 - Grabbing Guts
 ### Changes 🛠️
 - Rah heavy attack hitbox reduced (-0.5 studs)
 - Vise heavy attack hitbox reduced (-0.5 studs)
@@ -149,7 +188,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-03-25</sub>
 
-## 1.8 - ROWA Sunset
+## 1.1.3 - ROWA Sunset
 ### Added ✅
 - /time command
 - WIP character stat UI
@@ -157,11 +196,11 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 ### Changes 🛠️
 - Fixed memory leaks
 - Slot optimization; Slot data is wiped
-  - Wipe is not significant because game has no progression
+  - Wipe is not significant because game has no progression at this point
 
 <br><sub>2026-03-25</sub>
 
-## 1.7 - The Much Needed Rah Nerf
+## 1.1.2 - The Much Needed Rah Nerf
 ### Added ✅
 - Barrage now hides arms while punching
 
@@ -171,7 +210,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-03-23</sub>
 
-## 1.6 - Minimal Changes
+## 1.1.1 - Minimal Changes
 ### Changes 🛠️
 - Feinting Fire Stab now puts the move on half cooldown after you use it
   - This is to stop people from feinting > using fire stab > using fire stab again
@@ -181,9 +220,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-03-23</sub>
 
-## 1.5 - The Gutter
-
-> Note: Versions 1.3 and 1.4 were omitted because they harbor no significance towards the actual game, only the changelog repository.
+## 1.1.0 - The Gutter
 
 ### Changes 🛠️
 - Strong Left parry window increased again (by 0.02s)
@@ -197,19 +234,19 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 <br><sub>2026-03-22</sub>
 
-## 1.2 - Strong Left Too OP
+## 1.0.1 - Strong Left Too OP
 
 ### Added ✅
-- Ported Fire Stab over from ROWA
+- New ability: Fire Stab
 
 ### Changes 🛠️
 - Strong Left is now a bit easier to parry (by 0.02s)
 
 <br><sub>2026-03-21</sub>
 
-## 1.1 - The Swap Ends Here
+## 1.0.0 - The Swap Ends Here
 
-> Note: Although this update is the first in the changelog, ROWA 2 has been updated consistently since 2025-08-21.
+> Note: Although this update is the first in the changelog, ROWA 2 has been updated somewhat consistently since 2025-08-21.
 
 ### Changes 🛠️
 - Removed ability to unequip weapons during attack

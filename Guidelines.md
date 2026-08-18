@@ -5,8 +5,19 @@ This file contains guidelines for editing the [changelog] for the purpose of sta
 The version and title should be in the same second-level heading using the following format:
 ` [VERSION] - [UPDATE NAME] `
 
-Here is an example:
-## 1.1 - The Swap Ends Here
+For determining version number, use this formula:
+` [major].[minor].[patch] `
+
+**Major** - Major changes to the game such as a transition from alpha to beta. This could also be used with major additions such as game expansions. As a rule of thumb, if there are too many changes in one update that the jump from the previous version to the new version feels major, increment the major digit. Comparable to a... major update.
+
+**Minor** - Large bugfixes, feature updates, etc. Comparable to a weekly update.
+
+**Patch** - Small bugfixes, minor alterations, some nerfs, etc. Comparable to a balance patch (duh).
+
+If there is an update to the repository but it doesn't affect the game, do not include as an update. Such is the case for the times when Air added content that already existed in the game to the repository for consistency.
+
+Finally, here is an example:
+## 1.0.0 - The Swap Ends Here
 ## Changes
 The changes made by an update can be organized and formatted in three different ways:
 
@@ -18,7 +29,7 @@ If there is no changes in a category, do not add that category to the changes.
 
 Here is an example:
 ### Added ✅
-(Added would not be in the change but I added it for example sake)
+(Added was not in the version but I added it to show proper formatting)
 ### Changes 🛠️
 - Removed ability to unequip weapons during attack
   - This fixes crit cooldown swapping by proxy
@@ -26,7 +37,7 @@ Here is an example:
 - Barrage stops if parrying victim attacks user
 
 ### Removed ❌
-(Removed would not be in the change but I added it for example sake)
+(Removed was not in the version but I added it to show proper formatting)
 
 Finally, the date.
 
