@@ -1,0 +1,184 @@
+--!strict
+--[[ JoltKick - rowa1 Items/Ability/JoltKick. Notes: README.md/PORT_JoltKick.
+
+	A charged lightning roundhouse. If the first kick connects it chains into
+	a second animation and a second jolt on the SAME victim, with the caster
+	magnetically dragged along behind them.
+
+	rowa1 set `Attacking.Time = 0.1` on a move with a 0.7s windup. That field
+	is what the trade logic reads to decide who wins a simultaneous exchange,
+	so the old version won trades it had no business winning. feintWait gets
+	the honest 0.7 here -- JoltKick will lose some trades it used to win. ]]
+local baseClass = require(script.Parent.AbilityBase)
+export type myself = baseClass.myself
+type humObj = baseClass.humObj
+
+local module = {
+	Name = "JoltKick"
+}
+module.__tostring = baseClass.__tostring
+module.__index = module
+setmetatable(module, { __index = baseClass })
+
+function module.new(humObj:humObj):myself
+	local abstract = baseClass.new(humObj) :: baseClass.myself
+	local self:myself = setmetatable(abstract, module) :: any
+	return self
+end
+
+local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
+local dmgFlag  = dmgUtils.dmgFlags
+local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
+
+--- rowa1 "jolt": Heavy, blunt+magic, 30 dmg, truestun 0.4 / stun 0.9.
+local JOLT = {
+	weight   = dmgUtils.weighEnum.Heavy,
+	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
+	dmg      = 19,
+	stun     = 0.9,
+	posMult  = 3,
+	parryH   = -0.04,
+	onHit    = function(attack)
+		hitSfx(attack.enemyEntity.HRootPart, "HitSound", "JoltH")
+	end,
+}
+
+--- the JoltFx burst, fired twice (once per kick).
+local function joltBurst(root: BasePart)
+	local stpos = root.Position + Vector3.new(0, -1, 0)
+	fireVFX("joltfx",
+		CFrame.new(stpos + root.CFrame.LookVector * 6.5,
+		           stpos + root.CFrame.LookVector * 10))
+end
+
+--[[ rowa1 pinned the caster to the victim with a BodyPosition for the whole
+	0.6s follow-up, so the second kick could not whiff. AlignPosition is the
+	modern equivalent; nothing else in rowa2 expresses "hold me at a moving
+	point", and bodyForce cannot (it is a fire-and-forget impulse).
+
+	Returns a destructor. CALL IT ON EVERY EXIT -- a stranded AlignPosition
+	drags the player around permanently. ]]
+local function pinTo(root: BasePart, targetRoot: BasePart): () -> ()
+	local att = Instance.new("Attachment")
+	att.Parent = root
+
+	local align = Instance.new("AlignPosition")
+	align.Attachment0 = att
+	align.Mode = Enum.PositionAlignmentMode.OneAttachment
+	align.MaxForce = root.AssemblyMass * 4000
+	align.Responsiveness = 40
+	align.Parent = root
+
+	local alive = true
+	task.spawn(function()
+		while alive do
+			if align.Parent == nil or targetRoot.Parent == nil or root.Parent == nil then
+				break
+			end
+			align.Position = targetRoot.Position - root.CFrame.LookVector * 4
+			task.wait()
+		end
+	end)
+
+	return function()
+		alive = false
+		align:Destroy()
+		att:Destroy()
+	end
+end
+
+local function useFunc(this:myself)
+	local cooldownID = "joltKick"
+	if this:canTriggerCD(cooldownID) ~= true then return end
+
+	local humObj  = this._humObj
+	local hurtbox = humObj.HurtBox
+	local char: any = hurtbox.Parent
+	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
+
+	--[[ rowa1 gated on holding a Tool with a Model and then immediately did
+		`tool = nil` with the comment "litearlly useless". The gate was
+		disabled in the original, so it is not ported. ]]
+
+	local rightLeg = char:FindFirstChild("Right Leg")
+	if rightLeg then fireVFX("joltCharge", rightLeg) end
+
+	if this:feintWait(0.7) then
+		if anim then anim:Stop() end
+		return
+	end
+
+	this:useMana()
+	this:triggerCD(cooldownID, 8, true)
+
+	joltBurst(hurtbox)
+
+	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(5, 5, 7))
+
+	local connected = nil
+	for _, enemy in pairs(hits) do
+		local attack = this:makeAtk(JOLT, enemy, hurtbox.CFrame.LookVector)
+		--[[ isRootRelative TRUE, matching rowa1: the kick sends them along
+			YOUR facing, not along the hit normal. rowa1 look*30 at the x0.6
+			knockback ratio (README S7) = 18. ]]
+		attack.knockback = this:knockback(Vector3.new(0, 0, -18), 0.2, true, -1)
+		this:executeAttack(attack)
+		if attack:isHit() or attack:isBlocked() then
+			connected = enemy
+		end
+	end
+
+	if connected == nil then
+		this:endLag(0.2)
+		return
+	end
+
+	--[[ CHECK isActive BEFORE THE SECOND BEAT. 0.6s is long enough for the
+		victim to die or be destroyed, and a destroyed entity is a bare empty
+		table rather than nil (DOC_GOTCHAS) -- so `connected ~= nil` is not
+		enough on its own. ]]
+	local eroot = connected.HRootPart
+	if connected.isActive ~= true or eroot == nil then
+		this:endLag(0.2)
+		return
+	end
+
+	if anim then anim:Stop() end
+	this:PlayAnim(script.Anim2, 0.1, 1, 1)
+
+	local unpin = pinTo(hurtbox, eroot)
+
+	if this:feintWait(0.3) then
+		unpin()
+		return
+	end
+
+	local leftLeg = char:FindFirstChild("Left Leg")
+	if leftLeg then fireVFX("joltCharge", leftLeg) end
+
+	if this:feintWait(0.3) then
+		unpin()
+		return
+	end
+
+	joltBurst(hurtbox)
+
+	if connected.isActive == true then
+		local attack = this:makeAtk(JOLT, connected, hurtbox.CFrame.LookVector)
+		attack.knockback = this:knockback(attack.atkDir * 18, 0.2, false, -1)
+		this:executeAttack(attack)
+	end
+
+	unpin()
+
+	-- rowa1 MiniDash(look, 40); bodyForce scales by 5, so 40/5 = 8.
+	this:bodyForce(Vector3.new(0, 0, -8), 0.2, true)
+	this:endLag(0.2)
+end
+
+function module.use(self:myself)
+	return baseClass.use(self, useFunc)
+end
+
+return table.freeze(module)

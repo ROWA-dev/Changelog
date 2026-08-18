@@ -43,7 +43,7 @@ function module.wield(self:myself&any)
 	model.Parent = char
 	
 	self._model = model
-
+	self._trail = model:WaitForChild("Trail1")
 	baseWep.wield(self)
 end
 
@@ -53,16 +53,18 @@ function module:unwield()
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end
-	local humobj = self._humObj
-	local model = self._model
 	
-	if model then
+	local humobj:any = self._humObj
+	if humobj and humobj.Hum then
+		local char:Model = humobj.Hum.Parent::any
+		local torso = char:FindFirstChild("Torso")
+		local model = self._model
+		
 		model.Motor6D.Enabled = false
 		model.strap.Enabled = true
-		
 		model.strap.Part1 = model.Hold
-		model.strap.Part0 = humobj.Hum.Parent["Torso"]
-		model.Parent = humobj.Hum.Parent
+		model.strap.Part0 = torso
+		model.Parent = char
 	end
 
 	baseWep.unwield(self)

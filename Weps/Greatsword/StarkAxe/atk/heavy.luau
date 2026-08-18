@@ -10,17 +10,15 @@ return function(this:wepBase.myself): wepBase.atkResult
 	local humObj   = this._humObj
 	local hurtbox  = humObj.HurtBox
 	
-	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 1)
+	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 1.5)
 
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	task.wait(0.5)
 
-	local force = this:bodyForce(Vector3.new(0,75,0), 0.6, true, 0.6, 1)
+	local force = this:bodyForce(Vector3.new(0,55,0), 0.4, true, 0.35, 1)
 	
 	local Hold = this._model.Hold
-	Hold.Parent.Trail1.Enabled = false
-	Hold.Parent.heavy.Enabled = true
 	--[[
 	]]--
 
@@ -29,15 +27,64 @@ return function(this:wepBase.myself): wepBase.atkResult
 	Hold.slideSfx.TimePosition = 0.1
 	Hold.wind:Play()]]--
 	
-	task.wait(0.65)
+	task.wait(0.3)
 	humObj:FireVFXClient(
 		"rootImpulse",
-		Vector3.new(0,40,0)
+		Vector3.new(0,20,0)
 	)
 	
+	task.wait(0.4)
+	
+	if force then
+		force:destroy()
+	end
+	
+
+	local slamForce = this:bodyForce(Vector3.new(0,-20,0), 0.18, true, 0.18, 1)
+	
+	Hold.Parent.Trail1.Enabled = false
+	Hold.Parent.heavy.Enabled = true
+	
+	task.wait(0.15)
+	
+	if slamForce then
+		slamForce:destroy()
+	end
+	
+	slamForce = this:bodyForce(
+		Vector3.new(0, -80, 0),
+		0.18,
+		true,
+		0.18,
+		1
+	)
+
+	if slamForce then
+		slamForce:destroy()
+	end
+	
+	task.wait(0.15)
+	
+	slamForce = this:bodyForce(
+		Vector3.new(0, -120, 0),
+		0.18,
+		true,
+		0.18,
+		1
+	)
+	
+	if slamForce then
+		slamForce:destroy()
+	end
+	
+	humObj:FireVFXClient(
+		"rootImpulse",
+		Vector3.new(0,-10,0)
+	)	
+
 	Hold.Parent.heavy.Enabled = false
-	Hold.Parent.Trail1.Enabled = true
-	if this:feintWait(0.75) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy() Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
+	--Hold.Parent.Trail1.Enabled = true
+	if this:feintWait(0.75) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy() slamForce:destroy() Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
 	
 	--attack
 	--this:triggerCD("heavy")
@@ -48,8 +95,8 @@ return function(this:wepBase.myself): wepBase.atkResult
 	--game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("BigSlash",bigSlashCF, hurtbox,bigSlashSz)
 	
 	
-	local hitboxOffset = CFrame.new(0, 0, -3.5)
-	local hitboxSize   = Vector3.new(9,9,9)
+	local hitboxOffset = CFrame.new(0, -2, -3)
+	local hitboxSize   = Vector3.new(11,6,11)
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
 
 	local landed = false

@@ -1,7 +1,10 @@
-# glider
-Update 1.22
+# alot
+Update 1.3
 
-fixed glider physics (a lift coefficient  shouldve been flipped when angled up)
-momentum stays stronger now and glider falls faster to balance that
+glider bug here tping during glider state divides by zero and destroys your character
 
-and barrage can be parried once already hit now?
+settings terminal no has a "slot" tab that show ur slot stats and player stats
+and you can make more slots now
+
+started on projectile class
+lazily ported like a bunch of abilities from rowa1

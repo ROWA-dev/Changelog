@@ -1,0 +1,179 @@
+--!strict
+--[[ Zoltraak - rowa1 Items/Ability/Zoltraak. Notes: README.md/PORT_Zoltraak.
+
+	A lock-on piercing bolt. Acquire, charge 0.6s, fire; on a connect inside
+	60 studs, follow up with a 10-shot volley at randomised offsets.
+
+	THERE IS NO PROJECTILE. rowa1 resolved the hit INSTANTLY on the target and
+	let the client draw a beam between the two roots -- there is no travel
+	simulation anywhere in the original. This is PLAN_PROJECTILE section 2D:
+	do not build a projectile for something that never had one.
+
+	STUN IS ZERO, DELIBERATELY. Eleven bolts at 10 damage each with the victim
+	fully mobile the whole time IS the counterplay. Adding stun "so it feels
+	better" turns it into an eleven-hit lock. ]]
+local baseClass = require(script.Parent.AbilityBase)
+export type myself = baseClass.myself
+type humObj = baseClass.humObj
+
+local module = {
+	Name = "Zoltraak"
+}
+module.__tostring = baseClass.__tostring
+module.__index = module
+setmetatable(module, { __index = baseClass })
+
+function module.new(humObj:humObj):myself
+	local abstract = baseClass.new(humObj) :: baseClass.myself
+	local self:myself = setmetatable(abstract, module) :: any
+	return self
+end
+
+local dmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)
+local dmgFlag   = dmgUtils.dmgFlags
+local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
+local fireVFX   = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
+
+--[[ rowa1 "ztr": Heavy, blunt, 10 dmg, truestun 0 / stun 0, posMult 2.
+	stunMeOnParried 0 replaces rowa1's `noparrystun` membership -- without it,
+	parrying bolt 1 punishes the caster for the remaining ten. ]]
+local ZTR = {
+	weight   = dmgUtils.weighEnum.Heavy,
+	type     = dmgFlag.blunt,
+	dmg      = 10,
+	stun     = 0,
+	posMult  = 2,
+	dodgeH   = 0.1, -- rowa2-only knob: a no-travel lock-on needs SOME out
+	stunMeOnParried = 0,
+	onHit    = function(attack)
+		hitSfx(attack.enemyEntity.HRootPart, "HitSound")
+	end,
+}
+
+local CHARGE      = 0.6
+local VOLLEY      = 10
+--- rowa1 task.wait(0.15) between volley launches.
+local VOLLEY_STAGGER = 0.15
+local VOLLEY_RANGE = 60
+local CD          = 18
+--- rowa1 refunded a whiff down to a 1 second cooldown. Good design, kept.
+local WHIFF_CD    = 1
+
+--[[ one bolt: it CHARGES, then it fires. Shared by the opener and by every
+	volley shot.
+
+	!! EVERY BOLT HAS ITS OWN 0.6s CHARGE. rowa1's sendShot is one function
+	that spawns the orb, spins beziers for 0.6s and only then resolves -- and
+	the volley calls that SAME function ten times, staggered 0.15s. So the
+	volley is ten overlapping 0.6s charges spread across 1.5s, not ten
+	instant hits.
+
+	An earlier pass resolved each volley bolt immediately at a 0.06s stagger,
+	which collapsed a ~2.1 second sequence into ~0.6 -- that is the "zoltraak
+	is so fast" read, and it was here, not in feintWait's 0.08. ]]
+local function resolveBolt(this: myself, target: any, offset: Vector3): boolean
+	local humObj = this._humObj
+	if humObj == nil or humObj.isActive ~= true then return false end
+	if target == nil or target.isActive ~= true then return false end
+
+	local root = humObj.HRootPart
+	local eroot = target.HRootPart
+	if root == nil or eroot == nil then return false end
+
+	fireVFX("zoltrak2", root, eroot, offset)
+
+	local dir = (eroot.Position - (root.Position + offset))
+	dir = if dir.Magnitude > 0 then dir.Unit else root.CFrame.LookVector
+
+	local attack = this:makeAtk(ZTR, target, dir)
+	-- rowa1 lookVector*12, at the x0.6 knockback ratio (README S7)
+	attack.knockback = this:knockback(dir * 7.2, 0.15, false, -1)
+	this:executeAttack(attack)
+	return attack:isHit()
+end
+
+--- charge THEN resolve. The volley uses this; the opener drives its own
+--- charge through feintWait so it stays cancellable.
+local function chargedBolt(this: myself, target: any, offset: Vector3)
+	local humObj = this._humObj
+	if humObj == nil or humObj.isActive ~= true then return end
+	if target == nil or target.isActive ~= true or target.HRootPart == nil then return end
+
+	fireVFX("zoltrak", humObj.HRootPart, target.HRootPart, offset, CHARGE)
+	task.wait(CHARGE)
+	resolveBolt(this, target, offset)
+end
+
+local function useFunc(this:myself)
+	local cooldownID = "zoltraak"
+	if this:canTriggerCD(cooldownID) ~= true then return end
+
+	local humObj  = this._humObj
+	local hurtbox = humObj.HurtBox
+	local anim    = this:PlayAnim(script.Anim, 0, 1, 1)
+
+	local target = Targeting.nearestInDirection(
+		hurtbox.Position, hurtbox.CFrame.LookVector, humObj)
+
+	--[[ WHIFF REFUND, and it happens BEFORE the mana is spent. rowa1 charged
+		the full 28s only on a lock; an empty cast cost 1s. ]]
+	if target == nil then
+		if anim then anim:Stop() end
+		this:triggerCD(cooldownID, WHIFF_CD, true)
+		return
+	end
+
+	fireVFX("zoltrak", humObj.HRootPart, target.HRootPart, Vector3.zero, CHARGE)
+
+	if this:feintWait(CHARGE) then
+		if anim then anim:Stop() end
+		return
+	end
+
+	this:useMana()
+	this:triggerCD(cooldownID, CD, true)
+
+	local hit = resolveBolt(this, target, Vector3.zero)
+
+	--[[ the volley. rowa1 spawned ten coroutines that each re-read the
+		character's state; here each shot re-checks `target.isActive` and the
+		distance itself, because a destroyed entity is a bare empty table
+		(DOC_GOTCHAS) and rowa1 would happily keep shooting a corpse. ]]
+	if not hit then
+		this:endLag(0.2)
+		return
+	end
+
+	local root = humObj.HRootPart
+	if root == nil or (root.Position - target.HRootPart.Position).Magnitude >= VOLLEY_RANGE then
+		this:endLag(0.2)
+		return
+	end
+
+	task.wait(0.1)
+	for _ = 1, VOLLEY do
+		if humObj:inStun() or humObj.isActive ~= true then break end
+		if target.isActive ~= true or target.HRootPart == nil then break end
+		root = humObj.HRootPart
+		if root == nil then break end
+
+		local lookCf = CFrame.new(root.Position, target.HRootPart.Position)
+		local offset = Vector3.new(0, math.random(8, 20), 0)
+			+ lookCf.RightVector * math.random(-24, 24)
+			+ lookCf.LookVector * -10
+
+		task.spawn(chargedBolt, this, target, offset)
+		--[[ 0.15, rowa1's stagger. Ten bolts therefore LAUNCH across 1.5s and,
+			with each one's 0.6s charge, the last lands at ~2.1s. ]]
+		task.wait(VOLLEY_STAGGER)
+	end
+
+	this:endLag(0.2)
+end
+
+function module.use(self:myself)
+	return baseClass.use(self, useFunc)
+end
+
+return table.freeze(module)

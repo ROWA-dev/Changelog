@@ -256,6 +256,10 @@ function module.new(hum: Humanoid): myself
 
 	self:AddConnection(self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
 		if attack:isBlocked() then
+			-- _lastBlocked means "my guard last DID something", not "blocking.Value
+			-- last flipped". ChangeBlocking only stamps the EDGES, so holding guard
+			-- through a string let it expire mid-combo. Sole reader is ToshiCounter.
+			self._lastBlocked = tick()
 			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("block",
 				self.HRootPart,
 				attack.dmgTbl.dmg,
@@ -263,6 +267,7 @@ function module.new(hum: Humanoid): myself
 				attack.atkDir
 			)
 		elseif attack:isParried() then
+			self._lastBlocked = tick() -- see isBlocked branch above
 			self.cooldowns:Reset("parry")
 			self.stun.Value = 0    -- reset stun so they can attack back
 			self.canAtkThreshold = 0
