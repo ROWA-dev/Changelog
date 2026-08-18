@@ -98,7 +98,9 @@ local function slam(this: myself, dmgTbl: any, origin: Vector3, forward: Vector3
 		local attack = this:makeAtk(dmgTbl, enemy, forward)
 		this:executeAttack(attack)
 		if attack:isHit() then
-			attack.enemyEntity.ragdoll:ragdoll(45, false, attack.atkDir * 6)
+			--- rowa1's "rend" used `ragdollWait`: 0.8s flat. See IceBash for
+			--- why (45, false) meant 45 seconds of lying there.
+			attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 6)
 		end
 	end
 end
@@ -141,14 +143,15 @@ local function useFunc(this:myself)
 
 		The hop fires 0.2s INTO that window and lasts 0.4s, leaving ~0.5s of
 		hang before the ground hits. That spacing is the move. ]]
-	if this:feintWait(0.2) then
+	--- +0.08 (README S7 7f): the two beats must add to rowa1's real 1.1s gap
+	if this:feintWait(0.28) then
 		if anim2 then anim2:Stop() end
 		return
 	end
 
 	local hop2 = this:bodyForce(Vector3.new(0, 0.3, -1).Unit * HOP_2, 0.4, true)
 
-	if this:feintWait(0.9) then
+	if this:feintWait(0.98) then
 		if anim2 then anim2:Stop() end
 		if hop2 then hop2:destroy() end
 		return

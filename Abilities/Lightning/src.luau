@@ -87,7 +87,11 @@ local function useFunc(this:myself)
 		packet can no longer leave the caster permanently invisible. ]]
 	fireVFX("ststep", char, 0.4)
 
-	if this:feintWait(0.4) then
+	--[[ 0.48, not 0.4: feintWait subtracts 0.08 on EVERY call, which is
+		deliberate for the windup above but wrong for a plain inter-beat
+		wait. Chained, the two lost 0.16s and the bolt landed early.
+		README S7 note 7f. ]]
+	if this:feintWait(0.48) then
 		if anim then anim:Stop() end
 		fireVFX("lstrike", FX_CANCEL, char)
 		return
@@ -98,8 +102,10 @@ local function useFunc(this:myself)
 
 	--[[ point at whoever is in front, else straight ahead, then raycast so
 		the bolt lands on the first thing in the way rather than inside it. ]]
+	--- rowa1 used GetNearestInDirection3: the SOFT preset, no angle limit.
 	local target = Targeting.nearestInDirection(
-		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, STRIKE_RANGE)
+		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, STRIKE_RANGE,
+		Targeting.SOFT)
 
 	local dir = hurtbox.CFrame.LookVector
 	if target and target.HRootPart then

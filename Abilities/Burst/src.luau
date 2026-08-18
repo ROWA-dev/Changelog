@@ -1,0 +1,227 @@
+--!strict
+--[[ Burst - rowa1 Items/Ability/Burst. Notes: README.md/PORT_Burst.
+
+	Light a fireball on your fist and CHARGE. Anyone you run through is
+	welded to the ball and dragged along with you, carving a trench, until
+	the whole thing detonates.
+
+	!! IT IS A RUSH, NOT A CATCH-THEN-DETONATE. The doc described "catch
+	someone in a short-range grab, then a rushing explosion". The grab is not
+	a separate beat -- the dash IS the move, and it grabs CONTINUOUSLY: a
+	13-tick loop with a hitbox that closes from 9 studs to 5 as you go, so
+	victims pile onto the ball as you pass through them.
+
+	The detonation only happens IF SOMEONE WAS CAUGHT. A whiffed Burst is
+	just a dash. ]]
+local baseClass = require(script.Parent.AbilityBase)
+export type myself = baseClass.myself
+type humObj = baseClass.humObj
+
+local module = {
+	Name = "Burst"
+}
+module.__tostring = baseClass.__tostring
+module.__index = module
+setmetatable(module, { __index = baseClass })
+
+function module.new(humObj:humObj):myself
+	local abstract = baseClass.new(humObj) :: baseClass.myself
+	local self:myself = setmetatable(abstract, module) :: any
+	return self
+end
+
+local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
+local dmgFlag  = dmgUtils.dmgFlags
+local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
+local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
+local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+
+--[[ rowa1 "brst1": Medium, fire, 4 dmg, stun 1.0, posMult 10, parryH 0.1.
+	posMult 10 is the highest multiplier in rowa1's whole table -- at 4 dmg
+	that is 40 posture, HALF a rowa2 guard bar, off a move that can catch
+	you repeatedly. Cut to 5. It is still a guard-breaker, which is the
+	point; it is no longer a two-touch break. ]]
+local BRST1 = {
+	weight   = dmgUtils.weighEnum.Medium,
+	type     = dmgFlag.fire,
+	dmg      = 4,
+	stun     = 1,
+	posMult  = 5,
+	--- positive: it is a wide telegraphed charge and rowa1 wanted it parryable
+	parryH   = 0.1,
+	stunMeOnParried = 0,
+	onHit    = function(attack)
+		hitSfx(attack.enemyEntity.HRootPart, "grab")
+	end,
+}
+
+--- rowa1 "brst2": Heavy, fire+blunt, 26 dmg, truestun 0.4 / stun 0.6.
+local BRST2 = {
+	weight   = dmgUtils.weighEnum.Heavy,
+	type     = bit32.bor(dmgFlag.fire, dmgFlag.blunt),
+	dmg      = 17,
+	stun     = 0.6,
+	posMult  = 3,
+	parryH   = -0.04,
+	onHit    = function(attack)
+		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit")
+	end,
+}
+
+local TICKS      = 13
+local TICK_RATE  = 0.05
+--[[ rowa1 BodyVelocity at 120 studs/s held for 0.6s. /5 converts to 24, but
+	this is a SUSTAINED mover so it takes about two thirds (README S7). ]]
+local RUSH_FORCE = 16
+local RUSH_TIME  = 0.6
+--- rowa1 budgets its carving so a long rush cannot shred the whole map
+local BREAK_BUDGET = 24
+--- the burn rowa1 hardcoded in the resolver for brst2
+local BURN_TIME, BURN_DMG = 6, 3
+
+local function useFunc(this:myself)
+	local cooldownID = "burst"
+	if this:canTriggerCD(cooldownID) ~= true then return end
+
+	local humObj  = this._humObj
+	local hurtbox = humObj.HurtBox
+	local char: any = hurtbox.Parent
+	local anim = this:PlayAnim(script.Punch, 0, 1, 1)
+
+	local rightArm = char:FindFirstChild("Right Arm")
+	fireVFX("igniteBall", rightArm, 2)
+
+	--- rowa1: 0.1 + 0.4 then the shockwave, then 0.2 more
+	if this:feintWait(0.5) then
+		if anim then anim:Stop() end
+		fireVFX("igniteBall", nil, 0)
+		return
+	end
+
+	fireVFX("burstRing", humObj.HRootPart, false)
+
+	if this:feintWait(0.28) then
+		if anim then anim:Stop() end
+		fireVFX("igniteBall", nil, 0)
+		return
+	end
+
+	this:useMana()
+	this:triggerCD(cooldownID, 12, true)
+
+	local rush = this:bodyForce(Vector3.new(0, 0, -RUSH_FORCE), RUSH_TIME, true)
+
+	local caught: {any} = {}
+	local seen: {[number]: boolean} = {}
+	local breakCount = 0
+
+	for i = 1, TICKS do
+		if humObj:inStun() then break end
+		if this.isFeinted then
+			this.isFeinted = false
+			humObj.cooldowns:trigger("feint2")
+			fireVFX("feintfx", char)
+			break
+		end
+
+		local root = humObj.HRootPart
+		if root == nil then break end
+		local forward = root.CFrame.LookVector
+
+		--[[ the trench. rowa1 carves at 4, 9, 14 and 19 studs ahead and
+			BUDGETS it -- once breakCount passes 80 it stops entirely, which
+			is what keeps a full-length rush from shredding a whole arena. ]]
+		--[[ the helpers return Destruction's own result, not a count, so this
+			budgets ATTEMPTS. rowa1 budgeted successes, but the point is only
+			to stop a full-length rush shredding a whole arena. ]]
+		if breakCount < BREAK_BUDGET then
+			for _, dist in ipairs({ 4, 9, 14 }) do
+				destruct.smallBreak(
+					root.Position + forward * dist + Vector3.new(0, 2, 0), forward)
+				breakCount += 1
+			end
+		end
+
+		--[[ the catch box CLOSES as the rush goes on: 9 studs ahead on the
+			first tick down to about 5 on the last, so it sweeps people onto
+			the ball rather than pushing them ahead of it. ]]
+		local reach = 9 - i / 3
+		local _, hits = this:hitbox(CFrame.new(0, 0, -reach), Vector3.new(5, 5, 6))
+
+		for _, enemy in pairs(hits) do
+			if seen[enemy.entityId] then continue end
+			seen[enemy.entityId] = true
+
+			local attack = this:makeAtk(BRST1, enemy, forward)
+			this:executeAttack(attack)
+
+			if attack:isHit() and enemy.grab then
+				--[[ !! STUCK TO THE ARM, not the root. rowa1 welds them to
+					`igniteballFX` -- the fireball on the fist -- and parents
+					the weld there, so they ride ahead of the caster on the
+					ball rather than clipping through their chest.
+					The ball itself is client-side now, so the ARM is the
+					server-side equivalent anchor; it is the same place.
+					maxTime is a dead-man switch -- a Burst that errors
+					mid-rush must not leave someone stuck to a player. ]]
+				--[[ PURE ROTATION, no translation. The anchor part IS the
+					position -- the arm is already out in front holding the
+					ball, so translating on top of it shoves them into space.
+					rowa1: C0 = CFrame.Angles(90, 0, 180), which lays them
+					flat across the fist. ]]
+				enemy.grab:grab(humObj,
+					CFrame.Angles(math.rad(90), 0, math.rad(180)), 2, rightArm)
+				table.insert(caught, enemy)
+			end
+		end
+
+		task.wait(TICK_RATE)
+	end
+
+	if rush then rush:destroy() end
+	for _, enemy in ipairs(caught) do
+		if enemy.grab then enemy.grab:release() end
+	end
+
+	--- rowa1 only detonates if the rush actually caught someone
+	if #caught == 0 then
+		fireVFX("igniteBall", nil, 0)
+		this:endLag(0.25)
+		return
+	end
+
+	fireVFX("igniteBall", nil, -1) -- -1 = detonate rather than just clear
+	fireVFX("burstRing", humObj.HRootPart, true)
+
+	if anim then anim:Stop() end
+	this:PlayAnim(script.Blast, 0, 1, 1)
+	--- rowa1 MiniDash2(look, 60, 0.1): an IMPULSE, so the full /5 applies
+	this:bodyForce(Vector3.new(0, 0, -12), 0.1, true)
+
+	local forward = hurtbox.CFrame.LookVector
+	local _, blast = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(9, 9, 9))
+	for _, enemy in pairs(blast) do
+		local attack = this:makeAtk(BRST2, enemy, forward)
+		-- rowa1 look*17, at the x0.6 knockback ratio (README S7)
+		attack.knockback = this:knockback(attack.atkDir * 10.2, 0.2, false, -1)
+		this:executeAttack(attack)
+
+		if attack:isHit() then
+			--- rowa1's onHit is ragdtillground: a CAP ended by landing
+			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 10)
+			--[[ rowa1 hardcoded `if dmgID == "brst2" then BurnEnemy(...)`
+				INSIDE the resolver. One line at the call site here. ]]
+			attack.enemyEntity.statusEffects:apply(
+				humObj.statusEffects.Burn, BURN_TIME, BURN_DMG)
+		end
+	end
+
+	this:endLag(0.3)
+end
+
+function module.use(self:myself)
+	return baseClass.use(self, useFunc)
+end
+
+return table.freeze(module)

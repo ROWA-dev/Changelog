@@ -68,6 +68,9 @@ local BLODBREAK = {
 	end,
 }
 
+--- rowa1 GetNearestInDirection2 with maxstAngle = 0.8
+local TENDRIL_CONE = table.freeze({ distWeight = 10, maxAngle = 0.8 })
+
 local CAST_TIME   = 0.6
 local REACH_TIME  = 0.3
 local HOLD_TIME   = 1
@@ -98,8 +101,12 @@ local function useFunc(this:myself)
 
 	fireVFX("bloodcast", 2, root, vfxID)
 
+	--[[ rowa1 used GetNearestInDirection2 called as (..., 60, 0.8): the soft
+		cone with an explicit 0.8 rad limit, so a tendril cannot reach for
+		someone stood behind the caster. ]]
 	local target = Targeting.nearestInDirection(
-		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, RANGE)
+		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, RANGE,
+		TENDRIL_CONE)
 
 	--[[ rowa1 spent NO cooldown on a whiff -- it returns before `cd = tick()`.
 		Kept, but a token cost so it cannot be spammed as a free scan. ]]

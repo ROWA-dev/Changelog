@@ -30,6 +30,7 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
+local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
 
 --- rowa1 "jolt": Heavy, blunt+magic, 30 dmg, truestun 0.4 / stun 0.9.
 local JOLT = {
@@ -53,40 +54,9 @@ local function joltBurst(root: BasePart)
 end
 
 --[[ rowa1 pinned the caster to the victim with a BodyPosition for the whole
-	0.6s follow-up, so the second kick could not whiff. AlignPosition is the
-	modern equivalent; nothing else in rowa2 expresses "hold me at a moving
-	point", and bodyForce cannot (it is a fire-and-forget impulse).
-
-	Returns a destructor. CALL IT ON EVERY EXIT -- a stranded AlignPosition
-	drags the player around permanently. ]]
-local function pinTo(root: BasePart, targetRoot: BasePart): () -> ()
-	local att = Instance.new("Attachment")
-	att.Parent = root
-
-	local align = Instance.new("AlignPosition")
-	align.Attachment0 = att
-	align.Mode = Enum.PositionAlignmentMode.OneAttachment
-	align.MaxForce = root.AssemblyMass * 4000
-	align.Responsiveness = 40
-	align.Parent = root
-
-	local alive = true
-	task.spawn(function()
-		while alive do
-			if align.Parent == nil or targetRoot.Parent == nil or root.Parent == nil then
-				break
-			end
-			align.Position = targetRoot.Position - root.CFrame.LookVector * 4
-			task.wait()
-		end
-	end)
-
-	return function()
-		alive = false
-		align:Destroy()
-		att:Destroy()
-	end
-end
+	0.6s follow-up, so the second kick could not whiff. Modules/pinTo is that,
+	with a guaranteed destructor -- a stranded AlignPosition drags the player
+	around permanently and there is no error to notice. ]]
 
 local function useFunc(this:myself)
 	local cooldownID = "joltKick"
@@ -147,9 +117,23 @@ local function useFunc(this:myself)
 	if anim then anim:Stop() end
 	this:PlayAnim(script.Anim2, 0.1, 1, 1)
 
-	local unpin = pinTo(hurtbox, eroot)
+	--[[ !! HRootPart, NOT HurtBox. The pin is an AlignPosition and the
+		HurtBox is a massless query volume -- constraining it moves nothing,
+		so the caster never actually homed onto the victim and the second
+		kick whiffed at range. Exact same slip as StormUp's shockspin.
+		Hitboxes are HurtBox-relative; PHYSICS IS HRootPart. ]]
+	local myRoot = humObj.HRootPart
+	local unpin = pinTo(myRoot, function()
+		if eroot.Parent == nil or myRoot.Parent == nil then return nil end
+		return eroot.Position - myRoot.CFrame.LookVector * 4
+	end, { maxTime = 1.2 })
 
-	if this:feintWait(0.3) then
+	--[[ 0.38, not 0.3. feintWait waits t - 0.08, which is right for a WINDUP
+		(it is derived from rowa1's Attacking.Time) but wrong here: these are
+		plain task.wait(0.3) beats between two kicks, so they want the real
+		0.3s. Passing 0.3 made the follow-up land 0.16s early across the pair
+		and the ride never read. ]]
+	if this:feintWait(0.38) then
 		unpin()
 		return
 	end
@@ -157,7 +141,7 @@ local function useFunc(this:myself)
 	local leftLeg = char:FindFirstChild("Left Leg")
 	if leftLeg then fireVFX("joltCharge", leftLeg) end
 
-	if this:feintWait(0.3) then
+	if this:feintWait(0.38) then
 		unpin()
 		return
 	end

@@ -46,11 +46,18 @@ local ZTR = {
 	posMult  = 2,
 	dodgeH   = 0.1, -- rowa2-only knob: a no-travel lock-on needs SOME out
 	stunMeOnParried = 0,
+	--[[ rowa1's "ztr" row carries onHit = ragdollWait: 0.8s FLAT per bolt.
+		With eleven bolts each extending the lifetime, the victim stays down
+		for the whole volley -- which is rowa1's behaviour and is why the
+		move can afford ZERO stun. ]]
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HitSound")
+		attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 6)
 	end,
 }
 
+--- rowa1 variant 5 capped at 200 studs
+local TARGET_RANGE = 200
 local CHARGE      = 0.6
 local VOLLEY      = 10
 --- rowa1 task.wait(0.15) between volley launches.
@@ -113,8 +120,12 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local anim    = this:PlayAnim(script.Anim, 0, 1, 1)
 
+	--- rowa1 used GetNearestInDirection5: the TIGHT preset -- 0.8 rad cone,
+	--- close-range forgiveness, and a line-of-sight check so a bolt cannot
+	--- lock through a wall.
 	local target = Targeting.nearestInDirection(
-		hurtbox.Position, hurtbox.CFrame.LookVector, humObj)
+		hurtbox.Position, hurtbox.CFrame.LookVector, humObj,
+		TARGET_RANGE, Targeting.TIGHT)
 
 	--[[ WHIFF REFUND, and it happens BEFORE the mana is spent. rowa1 charged
 		the full 28s only on a lock; an empty cast cost 1s. ]]

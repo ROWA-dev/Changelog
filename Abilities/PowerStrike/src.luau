@@ -93,7 +93,8 @@ local function useFunc(this:myself)
 		player could be interrupted mid-sequence. AbilityBase owns that flag
 		now, so DO NOT touch it -- feintWait restores the interruptibility
 		without lying to the rest of the system. ]]
-	if this:feintWait(0.35) then
+	--- +0.08: every feintWait after the first needs it back (README S7 7f)
+	if this:feintWait(0.43) then
 		if anim then anim:Stop() end
 		return
 	end

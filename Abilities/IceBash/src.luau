@@ -82,7 +82,14 @@ local function useFunc(this:myself)
 		this:executeAttack(attack)
 		if attack:isHit() then
 			hitAny = true
-			attack.enemyEntity.ragdoll:ragdoll(60, false, attack.atkDir * 8)
+			--[[ !! 0.8 AND false, NOT 60. rowa1's ice3 used the `ragdollWait`
+				OnHitFunc, which ragdolls for 0.8 SECONDS FLAT. The other
+				OnHitFunc, `ragdtillground`, is the until-you-land one and is
+				what every `(60, true)` call in this codebase means -- 60 is a
+				CAP, and stopOnGround ends it early.
+				`(60, false)` therefore means "sixty seconds flat, never check
+				the ground", which is why victims stopped getting up. ]]
+			attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 8)
 			--[[ 3 of a 10 meter. IceBash is the SETUP in the ice kit -- a
 				solid chunk off one committed heavy, but never a freeze on its
 				own. See PORT_Freeze section 1. ]]

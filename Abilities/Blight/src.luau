@@ -28,15 +28,27 @@ end
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 
--- rowa1 "blight": Light, magic, 5 dmg, stun 0.4, posMult 1. Already tiny;
--- kept as-is rather than scaled, because there is nothing to scale.
+--[[ rowa1 "blight": Light, magic, 5 dmg, stun 0.4, posMult 1. Already tiny;
+	kept as-is rather than scaled, because there is nothing to scale.
+
+	!! THE BLIND IS THE ABILITY. Five damage in a 20-stud sphere is not why
+	anyone presses this -- the row's onHit fires a screen-covering flash at
+	the victim, and an earlier pass ported the damage and dropped the point.
+	It is Class/StatusEffects/Blind now rather than a one-shot client fx, so
+	it refreshes instead of stacking and clears on death or cleanse. ]]
+local BLIND_TIME = 4
+
 local BLIGHT = {
 	weight   = dmgUtils.weighEnum.Light,
 	type     = dmgFlag.magic,
 	dmg      = 5,
 	stun     = 0.4,
 	posMult  = 1,
+	onHit    = function(attack)
+		attack.enemyEntity.statusEffects:apply(statusEffects.Blind, BLIND_TIME)
+	end,
 }
 
 local TRAVEL_TIME  = 0.3
