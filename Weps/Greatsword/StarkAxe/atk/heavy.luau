@@ -15,8 +15,8 @@ return function(this:wepBase.myself): wepBase.atkResult
 	
 	fxModel.Bottom.WorldCFrame = humObj.HRootPart.CFrame * CFrame.new(0, -3, 0)
 	fxModel.Top.WorldCFrame = fxModel.CFrame	
-	fxModel.flame.WorldCFrame = fxModel.CFrame
-	fxModel.strike.WorldCFrame = fxModel.CFrame * CFrame.new(0, 0.5, 0)
+	fxModel.flame.WorldCFrame = fxModel.CFrame  * CFrame.new(0, -3.5, 0)
+	fxModel.strike.WorldCFrame = fxModel.CFrame * CFrame.new(0, -5, 0)
 	
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
@@ -25,11 +25,11 @@ return function(this:wepBase.myself): wepBase.atkResult
 	for i,v in pairs(fxModel.start:GetChildren()) do
 		v.Parent = leftLeg
 		if v:IsA("ParticleEmitter") then
-			--v:Emit(v:GetAttribute("EmitCount") or 10)
-			v.Enabled = true
+			v:Emit(v:GetAttribute("EmitCount") or 10)
+		
 		end
 	end
-	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 0.65)
+	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 0.8)
 	
 	task.wait(1)
 	
@@ -38,50 +38,52 @@ return function(this:wepBase.myself): wepBase.atkResult
 
 	for i,v in pairs(fxModel.Bottom:GetChildren()) do
 		if v:IsA("ParticleEmitter") then
-			--v:Emit(v:GetAttribute("EmitCount") or 2)
-			v.Enabled = true
+			v:Emit(v:GetAttribute("EmitCount") or 100)
+			
 		end
 	end
-
 	
-
+	
+	
+	local force = this:bodyForce(Vector3.new(0,105,0), 1, false, 0.5)
+	
+	
 	
 	local Hold = this._model.Hold
-	--[[
+	--[[a
 	]]--
 
 
 	--[[Hold.slideSfx:Play()
 	Hold.slideSfx.TimePosition = 0.1
 	Hold.wind:Play()]]--
-	anim:AdjustSpeed(1)
+	
+	
+	--anim:AdjustSpeed(1)
 	fxModel.flame.star:Emit(1)
 	
-	task.wait(0.3)
+	task.wait(0.5)
 	
-	
-	task.wait(0.2)
 	for i,v in pairs(fxModel.flame:GetChildren()) do
 		if v:IsA("ParticleEmitter") then
-			--v:Emit(v:GetAttribute("EmitCount") or 5)\
-			v.Enabled = true
+			v:Emit(v:GetAttribute("EmitCount") or 100)
 		end
 	end
 	
 	humObj:FireVFXClient(
 		"rootImpulse",
-		Vector3.new(0,0,0)
+		Vector3.new(0,20,0)
 	)
 	
-	task.wait(0.4)
+	task.wait(1)
 	
-	anim:AdjustSpeed(1.5)
+	--[[anim:AdjustSpeed(1.5)
 	if force then
 		force:destroy()
-	end
+	end[[]]
 	
 
-	local slamForce = this:bodyForce(Vector3.new(0,-20,0), 1, true, 0.18, 1)
+	local slamForce = this:bodyForce(Vector3.new(0,0,0), 1, false, 0.18, 1)
 	
 	Hold.Parent.Trail1.Enabled = false
 	Hold.Parent.heavy.Enabled = true
@@ -120,14 +122,14 @@ return function(this:wepBase.myself): wepBase.atkResult
 	
 	for i,v in pairs(fxModel.Top:GetChildren()) do
 		if v:IsA("ParticleEmitter") then
-			v:Emit(v:GetAttribute("EmitCount") or 6)
+			v:Emit(v:GetAttribute("EmitCount") or 100)
 		end
 	end
 	
-	humObj:FireVFXClient(
+	--[[humObj:FireVFXClient(
 		"rootImpulse",
 		Vector3.new(0,-10,0)
-	)	
+	)	]]
 
 	Hold.Parent.heavy.Enabled = false
 	--Hold.Parent.Trail1.Enabled = true

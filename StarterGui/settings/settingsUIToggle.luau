@@ -5,7 +5,17 @@ local terminal = require(script.Parent:WaitForChild("terminalModule"))
 local term = script.Parent:WaitForChild("Terminal")
 local topbar = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("TopbarIcons"))
 
+
 local icon
+
+term.Back.MouseButton1Down:Connect(function()
+	terminal.closeAll()
+	term.Visible = false
+	if icon then
+		icon:setActive(term.Visible)
+	end
+end)
+
 icon = topbar.register({
 	name  = "settings",
 	order = 1,

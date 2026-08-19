@@ -1,12 +1,9 @@
-# UI UX
-Update 1.3.5
+# CMD
+Update 1.3.6
 
-inventory now has minecraft style hotkeying/quicklooting
-- shift + click to quick transfer between inventory/hotbar
-- hovering over item and using hotbar key swaps item to that position
+forgot to mention previous upd that items with cooldowns(abilities) now display cd on its item  frame
+instead of the left cooldowns frame...
 
-touch screen users now get a inventory topbar icon
-
-**I DECIDED to push entirety of starter gui in this public github**
+more commands uhhh check in game w /help i have to make the output better or smthn for this
 
 and more
