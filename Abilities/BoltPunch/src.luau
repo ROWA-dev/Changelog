@@ -84,7 +84,14 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 10, true)
 
-	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(5, 5, 6))
+	local _, hits
+	for i = 1,3 do
+		_, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(5, 5, 6))
+		if #hits ~= 0 then
+			break
+		end
+		task.wait(0.05)
+	end
 
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(BOLT, enemy, hurtbox.CFrame.LookVector)

@@ -31,7 +31,7 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --- rowa1 "bastard": Heavy, slash, 20 dmg, truestun 1.6 / stun 2.0, posMult 4.
 local BASTARD = {
@@ -148,14 +148,13 @@ local function useFunc(this:myself)
 	if anim then anim:Stop(0.1) end
 	this:PlayAnim(script.Part2, 0.05, 1, 1)
 
-	--[[ the lane. rowa1 carves at 6, 12 and 18 studs, at TWO heights each
-		(-2 and +4), budgeted the same way Burst's rush is. ]]
+	--[[ the lane. rowa1 stepped six 7^3 SmallBreak2s -- three positions at
+		two heights -- to fake a trench the sword ploughs. One ELLIPSOID does
+		it properly: wide and tall along the lane, in a single call. ]]
 	forward = hurtbox.CFrame.LookVector
-	for i = 1, 3 do
-		local at = hurtbox.Position + forward * 6 * i
-		destruct.smallBreak2(at + Vector3.new(0, -2, 0), forward)
-		destruct.smallBreak2(at + Vector3.new(0, 4, 0), forward)
-	end
+	local laneMid = hurtbox.Position + forward * 12 + Vector3.new(0, 1, 0)
+	Destruction.Ellipsoid(nil, CFrame.new(laneMid, laneMid + forward),
+		Vector3.new(4, 5, 12), 2.4, forward)
 
 	local _, thrown = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(5, 7, 7))
 	for _, enemy in pairs(thrown) do

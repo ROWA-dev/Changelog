@@ -3,7 +3,7 @@
 
 	A wide beam cannon. 1.2s charge, then a 15x15x40 lane re-queried four
 	times, carving a tunnel through the terrain. The biggest single hit in
-	rowa1's table.
+	rowa1's table. 				blaze was here
 
 	NOT A PROJECTILE (PLAN_PROJECTILE section 2D). The hitbox never moves:
 	rowa1 computes ONE CFrame in front of the caster and re-queries it four
@@ -29,7 +29,7 @@ end
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --[[ rowa1 "cero": Heavy, magic, 60 dmg, truestun 0.3 / stun 0.5, posMult 6.
 	60 is the highest single hit in the whole table.
@@ -108,7 +108,11 @@ local function useFunc(this:myself)
 		fake a tunnel out of overlapping cubes. rowa2 has the shape: ONE
 		Cylinder down the lane, which is cheaper and loses the scalloped edge
 		the stepped version left. See README S10.4. ]]
-	destruct.cero(origin + Vector3.new(0, 2, 0), forward, 12 * BEAM_STEPS, 8)
+	--[[ rowa1 stepped a 16^3 cube SIX times down the lane to fake a tunnel.
+		rowa2 has the shape: ONE cylinder, which is cheaper and loses the
+		scalloped edge the stepped version left. ]]
+	Destruction.Cylinder(nil, origin + Vector3.new(0, 2, 0), forward,
+		12 * BEAM_STEPS, 8, 4.8)
 
 	for i = 1, BEAM_STEPS do
 		task.spawn(function()

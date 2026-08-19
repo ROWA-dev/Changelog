@@ -52,15 +52,13 @@ local BLDR2 = {
 }
 
 local ROLL_TIME = 1
---[[ rowa1 BodyVelocity Velocity = Dir*90, and bodyForce scales by 5, so the
-	literal conversion is 18. It reads far too fast.
+--[[ rowa1 BodyVelocity Velocity = Dir*90; /5 converts to 18, which read far
+	too fast in play, so this is deliberately cut to ~2/3.
 
-	WHY THE /5 RATIO UNDER-DELIVERS HERE: every other caller uses bodyForce
-	as a short IMPULSE (0.1-0.4s), where the character never reaches the
-	commanded velocity before it expires. StoneBall holds it for a FULL
-	SECOND, so it actually gets there -- the same number is a shove
-	everywhere else and a top speed here.
-	Sustained movers want roughly two thirds of the converted value. ]]
+	THAT IS A TUNING CALL FOR THIS MOVE, NOT A RULE. It was briefly written
+	up as "sustained movers want two thirds" and applied to Burst's charge,
+	which then came out a third too slow. Start from the literal conversion
+	and cut only what actually feels wrong. ]]
 local ROLL_SPEED = 12
 local SLOW_KEY  = "stoneBall"
 

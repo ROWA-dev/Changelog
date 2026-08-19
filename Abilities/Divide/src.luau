@@ -37,7 +37,7 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --- rowa1 "ucut": Light, blunt, 10 dmg, stun 1.0, posMult 3. The launcher.
 local UCUT = {
@@ -169,19 +169,20 @@ local function useFunc(this:myself)
 		if myRoot == nil or myRoot.Parent == nil then return nil end
 		return (myRoot.CFrame * CFrame.new(0, 0, -4)).Position
 	end, DRAG_OPTS)
+	
+	-- to wait for them to fall down alittlebit...
+	if this:feintWait(0.2) then
+		if anim then anim:Stop(0.1) end
+		release()
+		return
+	end
 
 	if anim then anim:Stop(0.1) end
+	
 	local part2 = this:PlayAnim(script.Part2, 0, 1, 1)
 	fireVFX("divergant", char:FindFirstChild("Right Arm"), 0.8)
 
 	if this:feintWait(0.68) then
-		if part2 then part2:Stop(0.1) end
-		release()
-		return
-	end
-	
-	-- to wait for them to fall down alittlebit...
-	if this:feintWait(0.1) then
 		if part2 then part2:Stop(0.1) end
 		release()
 		return
@@ -277,9 +278,10 @@ local function useFunc(this:myself)
 	end
 
 	fireVFX("pauseF", char, caught.HRootPart and caught.HRootPart.Parent)
-	destruct.bigBreak(
+	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
+	Destruction.Sphere(nil,
 		hurtbox.Position + hurtbox.CFrame.LookVector * 8 + Vector3.new(0, 4, 0),
-		hurtbox.CFrame.LookVector)
+		8, 4.8, hurtbox.CFrame.LookVector)
 	fireVFX("divideFlash", humObj.HRootPart, nil)
 
 	forward = hurtbox.CFrame.LookVector

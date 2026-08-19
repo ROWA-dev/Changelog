@@ -41,7 +41,7 @@ local dmgFlag  = dmgUtils.dmgFlags
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --[[ rowa1 "fire1"/"fire2": both Light, magic+fire, stun 0.1, posMult 0.5.
 	BOTH BANDS ARE LIGHT WITH A 0.1 STUN, and that is what stops a 3-second
@@ -134,11 +134,12 @@ local function useFunc(this:myself)
 			local cf = CFrame.new(root.Position + forward * dist, root.Position)
 
 			if i == carveBand then
-				destruct.blockBreak(
-					cf * CFrame.new(0, size.Y / 3, 0),
-					size / (math.random(100, 150) / 100),
-					forward
-				)
+				--- rowa1 BlockBreak2 took its size as an argument and is
+				--- genuinely box-shaped, so it maps straight onto OBB.
+				local carveSize = size / (math.random(100, 150) / 100)
+				Destruction.OBB(nil, cf * CFrame.new(0, size.Y / 3, 0),
+					carveSize, math.max(1.5, math.min(carveSize.X, carveSize.Y, carveSize.Z) * 0.6),
+					forward)
 			end
 
 			local _, hits = this:hitbox(cf, size, nil, true)

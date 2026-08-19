@@ -35,7 +35,7 @@ local dmgFlag  = dmgUtils.dmgFlags
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --[[ rowa1 "brst1": Medium, fire, 4 dmg, stun 1.0, posMult 10, parryH 0.1.
 	posMult 10 is the highest multiplier in rowa1's whole table -- at 4 dmg
@@ -71,9 +71,18 @@ local BRST2 = {
 
 local TICKS      = 13
 local TICK_RATE  = 0.05
---[[ rowa1 BodyVelocity at 120 studs/s held for 0.6s. /5 converts to 24, but
-	this is a SUSTAINED mover so it takes about two thirds (README S7). ]]
-local RUSH_FORCE = 16
+--[[ rowa1 BodyVelocity at 120 studs/s held FLAT for 0.6s, so 120/5 = 24.
+
+	An earlier pass used 16, applying a "sustained movers want two thirds"
+	rule -- but that rule came from ONE data point (StoneBall's one-second
+	roll) and does not generalise. rowa1 sets a BodyVelocity, which reaches
+	its target speed immediately and holds it; the honest conversion is the
+	literal one, and decayT -1 keeps it flat rather than ramping down.
+
+	rowa1's MaxForce is `abs(Dir) * mass * 10000` -- force only along the
+	TRAVEL axes, so gravity is untouched. A root-relative horizontal vector
+	is the same thing. ]]
+local RUSH_FORCE = 24
 local RUSH_TIME  = 0.6
 --- rowa1 budgets its carving so a long rush cannot shred the whole map
 local BREAK_BUDGET = 24
@@ -90,12 +99,12 @@ local function useFunc(this:myself)
 	local anim = this:PlayAnim(script.Punch, 0, 1, 1)
 
 	local rightArm = char:FindFirstChild("Right Arm")
-	fireVFX("igniteBall", rightArm, 2)
+	fireVFX("igniteBall", 1, rightArm, 2)
 
 	--- rowa1: 0.1 + 0.4 then the shockwave, then 0.2 more
 	if this:feintWait(0.5) then
 		if anim then anim:Stop() end
-		fireVFX("igniteBall", nil, 0)
+		fireVFX("igniteBall", 0)
 		return
 	end
 
@@ -103,14 +112,19 @@ local function useFunc(this:myself)
 
 	if this:feintWait(0.28) then
 		if anim then anim:Stop() end
-		fireVFX("igniteBall", nil, 0)
+		fireVFX("igniteBall", 0)
 		return
 	end
 
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
 
-	local rush = this:bodyForce(Vector3.new(0, 0, -RUSH_FORCE), RUSH_TIME, true)
+	local rush = this:bodyForce(Vector3.new(0, 0, -RUSH_FORCE), RUSH_TIME, true, RUSH_TIME+0.2)
+
+	--[[ the trailing burn. rowa1 fired this as its own `igniteBFx` id at the
+		moment the charge starts moving -- it is the flames you see streaming
+		off the fist for the length of the rush, and it was missing. ]]
+	fireVFX("igniteBall", 2, rightArm, RUSH_TIME + 0.05)
 
 	local caught: {any} = {}
 	local seen: {[number]: boolean} = {}
@@ -132,15 +146,15 @@ local function useFunc(this:myself)
 		--[[ the trench. rowa1 carves at 4, 9, 14 and 19 studs ahead and
 			BUDGETS it -- once breakCount passes 80 it stops entirely, which
 			is what keeps a full-length rush from shredding a whole arena. ]]
-		--[[ the helpers return Destruction's own result, not a count, so this
-			budgets ATTEMPTS. rowa1 budgeted successes, but the point is only
-			to stop a full-length rush shredding a whole arena. ]]
+		--[[ the trench. rowa1 fired three separate 7^3 SmallBreaks per tick at
+			4, 9 and 14 studs; a CYLINDER carves the same run in one call and
+			leaves a continuous trench rather than three pits.
+			Still budgeted -- a full-length rush should not shred a whole arena. ]]
 		if breakCount < BREAK_BUDGET then
-			for _, dist in ipairs({ 4, 9, 14 }) do
-				destruct.smallBreak(
-					root.Position + forward * dist + Vector3.new(0, 2, 0), forward)
-				breakCount += 1
-			end
+			Destruction.Cylinder(nil,
+				root.Position + forward * 3 + Vector3.new(0, 2, 0),
+				forward, 12, 3.5, 2.1)
+			breakCount += 1
 		end
 
 		--[[ the catch box CLOSES as the rush goes on: 9 studs ahead on the
@@ -186,12 +200,17 @@ local function useFunc(this:myself)
 
 	--- rowa1 only detonates if the rush actually caught someone
 	if #caught == 0 then
-		fireVFX("igniteBall", nil, 0)
+		fireVFX("igniteBall", 0)
 		this:endLag(0.25)
 		return
 	end
 
-	fireVFX("igniteBall", nil, -1) -- -1 = detonate rather than just clear
+	fireVFX("igniteBall", 3)
+	if this.isFeinted then
+		this:endLag(0.1)
+		return
+	end
+	
 	fireVFX("burstRing", humObj.HRootPart, true)
 
 	if anim then anim:Stop() end

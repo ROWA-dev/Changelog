@@ -38,7 +38,7 @@ local JOLT = {
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
 	dmg      = 19,
 	stun     = 0.9,
-	posMult  = 3,
+	posMult  = 2,
 	parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HitSound", "JoltH")
@@ -89,10 +89,7 @@ local function useFunc(this:myself)
 	local connected = nil
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(JOLT, enemy, hurtbox.CFrame.LookVector)
-		--[[ isRootRelative TRUE, matching rowa1: the kick sends them along
-			YOUR facing, not along the hit normal. rowa1 look*30 at the x0.6
-			knockback ratio (README S7) = 18. ]]
-		attack.knockback = this:knockback(Vector3.new(0, 0, -18), 0.2, true, -1)
+		attack.knockback = this:knockback(attack.atkDir * 18, 0.2, false, -1)
 		this:executeAttack(attack)
 		if attack:isHit() or attack:isBlocked() then
 			connected = enemy

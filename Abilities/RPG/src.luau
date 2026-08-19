@@ -37,7 +37,7 @@ local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag    = dmgUtils.dmgFlags
 local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 local Targeting  = require(game.ServerStorage.ROWA.Modules.Targeting)
-local destruct   = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
@@ -71,8 +71,8 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	if action == nil or action._humObj == nil then return end
 
 	fireVFX("rocketBoom", pos)
-	-- rowa1 Destruction:BigBreak, CUTTER_SIZE 16^3 -> Sphere r8
-	destruct.bigBreak(pos, proj.dir)
+	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
+	Destruction.Sphere(nil, pos, 8, 4.8, proj.dir)
 
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)

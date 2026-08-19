@@ -738,6 +738,11 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 		elseif id == 12 then
 			self.floating.Value = value
 			-- 13 is taken by _lastJumped stateChange
+		elseif id == 14 then
+			-- duration on the wire, absolute timestamp locally. 0 = clear.
+			-- Written straight to the field: :TrueStun would re-route through
+			-- :Stun and double up the stun that id 1 has already delivered.
+			self.trueStun.Value = if value > 0 then tick() + value else 0
 		elseif id == 20 then
 			self.targetFloatY.Value = value
 			-- 21 is taken by timescale

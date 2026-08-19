@@ -31,7 +31,7 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --[[ rowa1 "strP2": Heavy, blunt, 50 dmg, truestun 1.4 / stun 1.6, posMult 6.
 	Scaled by the same ~0.65 the shipped ports used, so it keeps its ratio to
@@ -141,7 +141,10 @@ local function useFunc(this:myself)
 	fireVFX("strongerSlam", hurtbox)
 
 	-- rowa1 Destruction:BigBreak2, CUTTER_SIZE 16^3 -> Sphere r 8.
-	destruct.bigBreak2(origin + Vector3.new(0, 8, 0) + forward * 9, forward)
+	--[[ rowa1 BigBreak2 cut with a 16^3 CUBE. rowa2 has a real sphere, so
+		this is r8 (the inscribed sphere of that cube -- the circumscribed one
+		would carve ~40% wider than the original). ]]
+	Destruction.Sphere(nil, origin + Vector3.new(0, 8, 0) + forward * 9, 8, 4.8, forward)
 
 	--- rowa1 fired its own CamShake RemoteEvent with exactly these args;
 	--- rowa2's camShake quiver id takes the same (pos, range, intensity, dur).

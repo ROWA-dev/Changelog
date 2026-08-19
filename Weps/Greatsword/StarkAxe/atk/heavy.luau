@@ -9,14 +9,42 @@ return function(this:wepBase.myself): wepBase.atkResult
 	if this:canTriggerCD("heavy") == false then return end	
 	local humObj   = this._humObj
 	local hurtbox  = humObj.HurtBox
+	local char = humObj.HRootPart.Parent
+	local fxModel = this._model.Union
 	
-	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 1.5)
-
+	
+	fxModel.Bottom.WorldCFrame = humObj.HRootPart.CFrame * CFrame.new(0, -3, 0)
+	fxModel.Top.WorldCFrame = fxModel.CFrame	
+	fxModel.flame.WorldCFrame = fxModel.CFrame
+	fxModel.strike.WorldCFrame = fxModel.CFrame * CFrame.new(0, 0.5, 0)
+	
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
-	task.wait(0.5)
+	
+	local leftLeg = char:FindFirstChild("Left Leg")
+	for i,v in pairs(fxModel.start:GetChildren()) do
+		v.Parent = leftLeg
+		if v:IsA("ParticleEmitter") then
+			--v:Emit(v:GetAttribute("EmitCount") or 10)
+			v.Enabled = true
+		end
+	end
+	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 0.65)
+	
+	task.wait(1)
+	
+	
+	
 
-	local force = this:bodyForce(Vector3.new(0,55,0), 0.4, true, 0.35, 1)
+	for i,v in pairs(fxModel.Bottom:GetChildren()) do
+		if v:IsA("ParticleEmitter") then
+			--v:Emit(v:GetAttribute("EmitCount") or 2)
+			v.Enabled = true
+		end
+	end
+
+	
+
 	
 	local Hold = this._model.Hold
 	--[[
@@ -26,33 +54,46 @@ return function(this:wepBase.myself): wepBase.atkResult
 	--[[Hold.slideSfx:Play()
 	Hold.slideSfx.TimePosition = 0.1
 	Hold.wind:Play()]]--
+	anim:AdjustSpeed(1)
+	fxModel.flame.star:Emit(1)
 	
 	task.wait(0.3)
+	
+	
+	task.wait(0.2)
+	for i,v in pairs(fxModel.flame:GetChildren()) do
+		if v:IsA("ParticleEmitter") then
+			--v:Emit(v:GetAttribute("EmitCount") or 5)\
+			v.Enabled = true
+		end
+	end
+	
 	humObj:FireVFXClient(
 		"rootImpulse",
-		Vector3.new(0,20,0)
+		Vector3.new(0,0,0)
 	)
 	
 	task.wait(0.4)
 	
+	anim:AdjustSpeed(1.5)
 	if force then
 		force:destroy()
 	end
 	
 
-	local slamForce = this:bodyForce(Vector3.new(0,-20,0), 0.18, true, 0.18, 1)
+	local slamForce = this:bodyForce(Vector3.new(0,-20,0), 1, true, 0.18, 1)
 	
 	Hold.Parent.Trail1.Enabled = false
 	Hold.Parent.heavy.Enabled = true
 	
-	task.wait(0.15)
+	task.wait(0.3)
 	
 	if slamForce then
 		slamForce:destroy()
 	end
-	
+	--[[
 	slamForce = this:bodyForce(
-		Vector3.new(0, -80, 0),
+		Vector3.new(0, -30, 0),
 		0.18,
 		true,
 		0.18,
@@ -66,7 +107,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	task.wait(0.15)
 	
 	slamForce = this:bodyForce(
-		Vector3.new(0, -120, 0),
+		Vector3.new(0, -40, 0),
 		0.18,
 		true,
 		0.18,
@@ -75,6 +116,12 @@ return function(this:wepBase.myself): wepBase.atkResult
 	
 	if slamForce then
 		slamForce:destroy()
+	 ]]--
+	
+	for i,v in pairs(fxModel.Top:GetChildren()) do
+		if v:IsA("ParticleEmitter") then
+			v:Emit(v:GetAttribute("EmitCount") or 6)
+		end
 	end
 	
 	humObj:FireVFXClient(

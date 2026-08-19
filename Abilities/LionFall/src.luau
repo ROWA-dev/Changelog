@@ -38,7 +38,7 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --[[ rowa1 "lionFall": Heavy, blunt, 30 dmg ("nerfed from 40"), truestun 0.4
 	/ stun 1. Its onHit was an INLINE function -- ragdtillground plus two
@@ -149,7 +149,8 @@ local function useFunc(this:myself)
 
 	local forward = hurtbox.CFrame.LookVector
 	fireVFX("phantom", char, char.PrimaryPart and char.PrimaryPart.CFrame or hurtbox.CFrame)
-	destruct.bigBreak(hurtbox.Position + forward * 7, forward)
+	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
+	Destruction.Sphere(nil, hurtbox.Position + forward * 7, 8, 4.8, forward)
 
 	local _, hits = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(8, 8, 8))
 	for _, enemy in pairs(hits) do

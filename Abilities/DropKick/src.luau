@@ -33,7 +33,7 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --- rowa1 "dropKick": Heavy, magic+blunt, 40 dmg, truestun 0.2 / stun 0.5.
 local DROP_KICK = {
@@ -62,8 +62,8 @@ local MAX_DIVE   = 1.2
 --[[ the hop only has to get you off the ground -- the dive is the move.
 	rowa1's MiniDash(.., 40) converts to 8, but it held for 0.3s and read as
 	a long hang before anything happened. Shorter and softer. ]]
-local HOP_FORCE  = 6.5
-local HOP_TIME   = 0.18
+local HOP_FORCE  = 10
+local HOP_TIME   = 0.1
 
 local diveParams = RaycastParams.new()
 diveParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -76,7 +76,7 @@ local function useFunc(this:myself)
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
-	local first = this:PlayAnim(script.First, 0, 1, 1)
+	local first = this:PlayAnim(script.First, 0, 1, 1.2)
 
 	--- the hop. Root-relative so it follows your facing.
 	local hop = this:bodyForce(
@@ -88,6 +88,8 @@ local function useFunc(this:myself)
 		if hop then hop:destroy() end
 		return
 	end
+	
+	first:AdjustSpeed(1)
 
 	fireVFX("dropKickCharge", char:FindFirstChild("Right Leg"), 1.5)
 
@@ -151,8 +153,8 @@ local function useFunc(this:myself)
 		else Vector3.new(0, -1, 0)
 
 	if landing then
-		-- rowa1 Destruction:SmallBreak2, CUTTER_SIZE 7^3 -> Sphere r 3.5
-		destruct.smallBreak2(origin, dir * 40)
+		--- rowa1 SmallBreak2 cut with a 7^3 cube; r3.5 is its inscribed sphere
+		Destruction.Sphere(nil, origin, 3.5, 2.1, dir * 40)
 	end
 	fireVFX("dropKickLand", origin, dir)
 
@@ -160,8 +162,11 @@ local function useFunc(this:myself)
 		for _, enemy in pairs(hits) do
 			local attack = this:makeAtk(DROP_KICK, enemy, dir)
 			-- rowa1 dir.Unit*50, at the x0.6 knockback ratio (README S7)
-			attack.knockback = this:knockback(dir * 30, 0.2, false, -1)
+			attack.knockback = this:knockback(dir * 20, 0.2, false, -1)
 			this:executeAttack(attack)
+			if attack:isHit() then
+				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir*10)
+			end
 		end
 	end
 

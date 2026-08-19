@@ -137,7 +137,7 @@ local function useFunc(this:myself)
 		attack.knockback = this:knockback(
 			forward * 15 + Vector3.new(0, 21, 0), 0.25, false, -1)
 		this:executeAttack(attack)
-		if attack:isHit() then caught = enemy end
+		if attack:isHit() or attack:isBlocked() then caught = enemy end
 		break
 	end
 

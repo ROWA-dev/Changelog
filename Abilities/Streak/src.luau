@@ -43,7 +43,7 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local destruct = require(game.ServerStorage.ROWA.Modules.rowa1Destruct)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 --- rowa1 "shock": Medium, slash, 40 dmg, truestun 0.4 / stun 0.9, posMult 2.
 local SHOCK = {
@@ -58,11 +58,8 @@ local SHOCK = {
 	end,
 }
 
---- rowa1 rays 8*5 studs and carves at 5-stud steps along it
+--- rowa1 rays 8*5 studs
 local RANGE = 40
-local BREAK_STEPS = 8
---- rowa1 stops carving after two successful breaks
-local BREAK_LIMIT = 2
 
 local rayParams = RaycastParams.new()
 rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -105,15 +102,10 @@ local function useFunc(this:myself)
 	local dir = root.CFrame.LookVector
 
 	--- the lane. rowa1 gives up after two successful breaks.
-	--[[ the helpers return Destruction's own result, not a count, so this
-		counts ATTEMPTS rather than successes -- rowa1 counted successes, but
-		the point is only to cap the carving and an attempt cap does that
-		without depending on a return shape. ]]
-	for i = 1, math.min(BREAK_STEPS, BREAK_LIMIT + 1) do
-		destruct.blockBreak(
-			CFrame.new(origin + dir * i * 5 + Vector3.new(0, 1, 0), origin + dir * 100),
-			Vector3.new(8, 8, 8), dir)
-	end
+	--[[ rowa1 stepped eight 8^3 BlockBreaks down the lane and gave up after
+		two landed. rowa2 has a real cylinder, so the whole lane is ONE call
+		-- no stepping, no scalloped edge, and no need to count successes. ]]
+	Destruction.Cylinder(nil, origin + Vector3.new(0, 1, 0), dir, RANGE, 4, 2.4)
 
 	rayParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 	local hit = workspace:Raycast(origin, dir * RANGE, rayParams)

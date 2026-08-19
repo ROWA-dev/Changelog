@@ -1095,6 +1095,26 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		--print("STUN duration:",duration, number)
 		remoteEvent:FireClient(plr, 1, duration)
 	end), "repl_1_stun")
+
+	--[[ TRUE STUN IS NOT DERIVABLE FROM ID 1.
+
+		:TrueStun routes through :Stun, so all the client ever saw was an
+		ordinary stun packet -- a guard break and a jab look identical on the
+		wire. Client-side `trueStun` therefore sat at 0 for a player's entire
+		session, which quietly killed BOTH readers of it:
+		  * CharController's hard `JP = 0 / WS = 0` branch never ran
+		  * shiftlock kept steering you through a guard break (ClientClass)
+
+		Duration on the wire, not the timestamp, matching id 1. 0 = clear, so
+		the grab cancels that write `trueStun.Value = 0` release it too.
+	]]
+	self:AddConnection(self.trueStun.Changed:Connect(function(number: number) 
+		local duration = number - tick()
+		if number == 0 or duration <= 0 then
+			duration = 0
+		end
+		remoteEvent:FireClient(plr, 14, duration)
+	end), "repl_14_trueStun")
 --[[ The plain "signal fired -> forward its value under an id" cases.
 
 		These six were six separate raw :Connect blocks that differed only by
