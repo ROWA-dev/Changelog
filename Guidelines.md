@@ -14,6 +14,8 @@ For determining version number, use this formula:
 
 **Patch** - Small bugfixes, minor alterations, some nerfs, etc. Comparable to a balance patch (duh).
 
+When incrementing one of these digits, the lower tier digits should reset to 0. To illustrate, if I were to classify the incoming version as a minor update, I would set the patch digit to 0 (1.5.**3** -> 1.6.**0**).
+
 If there is an update to the repository but it doesn't affect the game, do not include as an update. Such is the case for the times when Air added content that already existed in the game to the repository for consistency.
 
 Finally, here is an example:
