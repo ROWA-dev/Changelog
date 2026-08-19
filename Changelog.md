@@ -2,33 +2,89 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.8.1 - It's The Small Things That Count
+
+### Added ✅
+- New commands (but it's a secret 🤫)
+
+### Changes 🛠️
+- The X button in the settings works now
+- Axe heavy attack is still being worked on
+
+<br><sub>2026-08-18</sub>
+
+## 1.8.0 - Port ROWA 3
+
+> Note: Air ported the entire StarterGui folder to the repository this update.
+
+### Added ✅
+- New ability: Freeze
+- New ability: Prediction
+- Inventory now has Minecraft-esque mechanics
+  - Shift-clicking quickly transfers the target item between inventory and hotbar
+  - Pressing a hotkey while hovering over the target item switches it with the item in the pressed hotkey slot
+- Touch screen users get an inventory topbar icon
+- Cooldowns now display in the hotbar above the ability used rather than the generic cooldowns on the left
+
+### Changes 🛠️
+- Fixed certain moves that had issues after the port
+- True stun stuff
+- Axe heavy attack is being worked on
+
+<br><sub>2026-08-18</sub>
+
+## 1.7.0 - Port ROWA 2
+
+### Added ✅
+- More abilities ported from ROWA
+  - New ability: Bastar(d)
+  - New ability: Blood Chain
+  - New ability: Burst
+  - New ability: Divide
+  - New ability: Drop Kick
+  - New ability: Ice Shards
+  - New ability: Ice Slash
+  - New ability: Lion Fall
+  - New ability: Paper Bomb
+  - New ability: RPG
+  - New ability: Smash
+  - New ability: Stone Ball
+  - New ability: Streak
+
+### Changes 🛠️
+- Fixed certain moves that had issues after the port
+
+<br><sub>2026-08-18</sub>
+
 ## 1.6.0 - Port ROWA
 
 > Note: This update I changed the version structuring a whole lot. Nobody will know though. 🤫
 
-> Note: Air was lazy so even though it looks like there's a lot of new abilties it's just because he ported them from ROWA.
-
 ### Added ✅
-- New ability: Blight
-- New ability: Bolt Punch
-- New ability: Cero
-- New ability: Flame Dance
-- New ability: Huozi
-- New ability: Ice Bash
-- New ability: Ice Beam
-- New ability: Jolt Kick
-- New ability: Lightning
-- New ability: Piercing Stab
-- New ability: Power Strike
-- New ability: Rend
-- New ability: Storm Up
-- New ability: Stronger Left
-- New ability: Tendrils
-- New ability: Zoltraak
+- New abilities ported from ROWA
+  - New ability: Blight (Blinding Light)
+  - New ability: Bolt Punch
+  - New ability: Cero
+  - New ability: Flame Dance
+  - New ability: Huozi
+  - New ability: Ice Bash
+  - New ability: Ice Beam
+  - New ability: Jolt Kick
+  - New ability: Lightning
+  - New ability: Piercing Stab
+  - New ability: Power Strike
+  - New ability: Rend
+  - New ability: Storm Up
+  - New ability: Stronger Left
+  - New ability: Tendrils
+  - New ability: Zoltraak
+- Settings has a slot tab that displays slot and player statistics
+- You can now make slots
 
 ### Changes 🛠️
 - Axe name changed to Stark Axe
 - Barrage damage increased (2.5 -> 3 per hit)
+- Glider TP bug fixed
 
 <br><sub>2026-08-17</sub>
 
