@@ -191,6 +191,10 @@ local function useFunc(this:myself)
 		if eroot == nil or myRoot == nil or myRoot.Parent == nil then return end
 
 		fireVFX("bchainYank", myRoot, eroot)
+		--[[ LATCH the flying chain onto them for the pull. Without this the
+			beam just timed out mid-air and the yank played with nothing
+			visibly connecting the two -- see bchain's header. ]]
+		fireVFX("bchain", 2, char:FindFirstChild("Right Arm"), eroot, YANK_TIME)
 		local release = yankTogether(myRoot, eroot)
 		--- hard stop: the yank must never outlive its own window
 		task.delay(YANK_TIME + 0.2, release)
@@ -200,7 +204,7 @@ local function useFunc(this:myself)
 
 	--[[ fired by hand rather than through cfg.fxId, because the beam's NEAR
 		end has to be the caster's hand -- see the note on fxId above. ]]
-	fireVFX("bchain", originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
+	fireVFX("bchain", 1, originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
 		char:FindFirstChild("Right Arm"), target.HRootPart)
 
 	this:projectile(table.freeze(cfg), originCF)

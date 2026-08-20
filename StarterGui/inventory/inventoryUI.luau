@@ -242,7 +242,13 @@ local keybindEnums = require(modules.keybindEnums)
 local bindFuncs    = require(modules.bindFuncs)
 for i = 1, 10 do
 	bindFuncs[keybindEnums["hotbar"..i]] = function(down) -- lambda
-		if not down then return end
+		-- key UP. Dropped entirely before, which meant nothing downstream
+		-- could ever tell a tap from a hold -- the release never left the
+		-- machine. Charge-style abilities need it; everything else ignores it.
+		if not down then
+			inventoryRemote:FireServer(inventoryEnums.releaseHotbar, i)
+			return
+		end
 		if hotbarSwap(i) then return end -- bag open + cursor on a slot: swap, don't equip
 		hotbarUse(i)
 	end

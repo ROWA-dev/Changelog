@@ -72,7 +72,8 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 
 	fireVFX("rocketBoom", pos)
 	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
-	Destruction.Sphere(nil, pos, 8, 4.8, proj.dir)
+	--- studs/SECOND: `proj.dir` is a unit heading and moved nothing
+	Destruction.Sphere(nil, pos, 8, 4.8, proj.dir * 90)
 
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
@@ -125,9 +126,16 @@ local ROCKET_CFG = table.freeze({
 	lifetime    = 6,
 	size        = Vector3.new(4, 4, 12),
 	--[[ rowa1 steered by adding lookToTarget/16 to the facing every frame --
-		a weak, framerate-DEPENDENT nudge. 2.5 rad/s is the same lazy arc
-		expressed as a rate, so it flies the same at 30fps and at 144. ]]
-	steer       = 2.5,
+		a framerate-DEPENDENT nudge. Expressed as a rate it flies the same at
+		30fps and at 144.
+
+		3.75, NOT 2.5. Measure the original instead of calling it "lazy":
+		adding a unit vector scaled 1/16 to a unit facing and renormalising
+		turns you by atan(1/16) = 3.58 degrees per FRAME, and rowa1 ran that
+		off RenderStepped, so at the 60fps it was played at the rocket turned
+		~215 deg/s = 3.75 rad/s. 2.5 is a third slower than the move has ever
+		been, which is why the homing "felt different" -- it was. ]]
+	steer       = 3.75,
 	dmgTbl      = PROXIMITY,
 	pierce      = 1,
 	stopOnWorld = true,
@@ -142,11 +150,30 @@ local ROCKET_CFG = table.freeze({
 		if attack:isParried() then
 			local eroot = attack.enemyEntity.HRootPart
 			if eroot == nil then return end
-			local newDir = eroot.CFrame.LookVector
+			--[[ rowa1's own blend for this exact case (rocket:61): current
+				heading + the parrier's facing + a lift. On a head-on parry
+				those cancel and it fires almost straight up -- which rowa1
+				gets away with because the re-target below takes over within
+				a frame. parryDir keeps the blend and handles that collapse. ]]
+			local look = eroot.CFrame.LookVector
+			local newDir = proj:parryDir(look)
+			--[[ the SEARCH uses the raw facing, not the blended heading.
+				rowa1 does the same (GetNearestInDirection takes the
+				parrier's LookVector) and it matters: the blend carries a
+				lift and half the incoming heading, so searching along it
+				aims the cone at the sky and picks whoever the parrier is
+				NOT looking at. Where it flies and who it hunts are two
+				different questions. ]]
 			local newTarget = Targeting.nearestInDirection(
-				eroot.Position, newDir, attack.enemyEntity, TARGET_RANGE, ROCKET_CONE)
+				eroot.Position, look, attack.enemyEntity, TARGET_RANGE, ROCKET_CONE)
 			fireVFX("rocketDeflect", proj.pos, newDir)
-			proj:deflect(newDir, newTarget, 0.15)
+			--[[ the fourth argument is not cosmetic: HitboxQuery ignores the
+				projectile's owner, so until now a redirected rocket that
+				re-acquired the ORIGINAL CASTER flew home and passed straight
+				through them. "The best thing in the original" could not
+				actually pay out against the person who fired it. Handing the
+				parrier over moves the ignore onto them instead. ]]
+			proj:deflect(newDir, newTarget, 0.15, attack.enemyEntity)
 			return
 		end
 

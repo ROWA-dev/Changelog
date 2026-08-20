@@ -105,7 +105,8 @@ local function useFunc(this:myself)
 	--[[ rowa1 stepped eight 8^3 BlockBreaks down the lane and gave up after
 		two landed. rowa2 has a real cylinder, so the whole lane is ONE call
 		-- no stepping, no scalloped edge, and no need to count successes. ]]
-	Destruction.Cylinder(nil, origin + Vector3.new(0, 1, 0), dir, RANGE, 4, 2.4)
+	--- velo is studs/SECOND: the lane debris should fly with the dash
+	Destruction.Cylinder(nil, origin + Vector3.new(0, 1, 0), dir, RANGE, 4, 2.4, dir * 50)
 
 	rayParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 	local hit = workspace:Raycast(origin, dir * RANGE, rayParams)

@@ -281,7 +281,8 @@ local function useFunc(this:myself)
 	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
 	Destruction.Sphere(nil,
 		hurtbox.Position + hurtbox.CFrame.LookVector * 8 + Vector3.new(0, 4, 0),
-		8, 4.8, hurtbox.CFrame.LookVector)
+		--- studs/SECOND, not a heading
+		8, 4.8, hurtbox.CFrame.LookVector * 55)
 	fireVFX("divideFlash", humObj.HRootPart, nil)
 
 	forward = hurtbox.CFrame.LookVector

@@ -60,6 +60,8 @@ local ROLL_TIME = 1
 	which then came out a third too slow. Start from the literal conversion
 	and cut only what actually feels wrong. ]]
 local ROLL_SPEED = 12
+--- rowa1 Attacking.Time = 0.6, and its task.wait agrees for once
+local WINDUP    = 0.6
 local SLOW_KEY  = "stoneBall"
 
 local function useFunc(this:myself)
@@ -73,13 +75,24 @@ local function useFunc(this:myself)
 
 	--- hshock takes a BASEPART in rowa2, not a Humanoid (README S5 step 7e)
 	fireVFX("hshock", humObj.HRootPart)
-	fireVFX("bground", humObj.HRootPart, 0.6 + ROLL_TIME)
 
 	--- rowa1 froze input for the whole windup and roll
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 
-	if this:feintWait(0.6) then
+	--[[ THE RUMBLE STARTS WITH THE CAST, not with the roll. rowa1 clones
+		bground onto the root and plays groundshake as its FIRST act, so the
+		wind-up has a build-up under it; starting it at the roll instead left
+		0.52s of total silence and made the launch read as coming out of
+		nowhere.
+		The reason it had been moved was that a fixed duration kept dusting
+		under a cast that never happened -- but bground is cancellable now,
+		and rowa1 handles the same case the same way (Debris:AddItem(bground,
+		0) on its interrupt path). So: start it early, kill it on the feint. ]]
+	fireVFX("bground", humObj.HRootPart, WINDUP + ROLL_TIME)
+
+	if this:feintWait(WINDUP) then
 		if anim then anim:Stop() end
+		fireVFX("bground", humObj.HRootPart, 0)
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		return
 	end
@@ -92,6 +105,17 @@ local function useFunc(this:myself)
 		unhide can no longer leave someone permanently invisible. ]]
 	fireVFX("ststep", char, ROLL_TIME)
 	fireVFX("stoneBallRoll", 1, humObj.HRootPart, ROLL_TIME)
+
+	--[[ the launch ring. rowa1 cloned Effects.Shockwave here and the GROWTH
+		lived in FxHandler's global ChildAdded listener (README S5). One id
+		owns both halves now -- see VFXQuiver/shockRing.
+		rowa1's numbers: 6.5 x 6.5 x 0.5, transparency 0.96, stood up 2 studs
+		ahead of the root and facing down the lane. No `boom`: StoneBall is
+		the one caller that clones this asset without playing it. ]]
+	local ringPos = humObj.HRootPart.Position + hurtbox.CFrame.LookVector * 2
+	fireVFX("shockRing",
+		CFrame.new(ringPos, ringPos + hurtbox.CFrame.LookVector * 8),
+		Vector3.new(6.5, 6.5, 0.5), 0.96)
 
 	if anim then anim:Stop(0) end
 
@@ -139,8 +163,16 @@ local function useFunc(this:myself)
 
 	if dash then dash:destroy() end
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
-	--- stage 2 whenever the roll REALLY ended, including an early break
+
+	--[[ END EVERY CHANNEL EFFECT ON THE REAL END, not on the duration they
+		were started with. The roll stops early on a connect (`breakOut`), on
+		stun and on feint, so anything told "1 second" up front outlives it:
+		the rock kept spinning, dust kept pouring, and the caster stayed
+		INVISIBLE for the remainder -- which is the bug that made StoneBall
+		feel broken even when it worked. ]]
 	fireVFX("stoneBallRoll", 2, humObj.HRootPart)
+	fireVFX("ststep", char, 0)
+	fireVFX("bground", humObj.HRootPart, 0)
 
 	this:endLag(0.2)
 end

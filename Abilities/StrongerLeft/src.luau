@@ -144,7 +144,9 @@ local function useFunc(this:myself)
 	--[[ rowa1 BigBreak2 cut with a 16^3 CUBE. rowa2 has a real sphere, so
 		this is r8 (the inscribed sphere of that cube -- the circumscribed one
 		would carve ~40% wider than the original). ]]
-	Destruction.Sphere(nil, origin + Vector3.new(0, 8, 0) + forward * 9, 8, 4.8, forward)
+	--- velo is studs/SECOND: `forward` alone is 1, which is why the rubble
+	--- used to sit there. A punch this size throws it.
+	Destruction.Sphere(nil, origin + Vector3.new(0, 8, 0) + forward * 9, 8, 4.8, forward * 60)
 
 	--- rowa1 fired its own CamShake RemoteEvent with exactly these args;
 	--- rowa2's camShake quiver id takes the same (pos, range, intensity, dur).

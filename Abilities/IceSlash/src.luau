@@ -67,8 +67,17 @@ local CRESCENT = table.freeze({
 	maxDistance = 600,
 	size        = Vector3.new(9, 9, 4),
 	dmgTbl      = ICE2,
-	--- rowa1 capped humsH at 4.
-	pierce      = 4,
+	--[[ IT SHATTERS ON THE FIRST BODY IT CONNECTS WITH. rowa1 capped humsH
+		at 4 and carried on through all of them, which fights the effect it
+		already has: the fx SHATTERS the crescent on impact, plays Hit and
+		Shatter and emits `mess` -- and then the crescent kept flying, so the
+		shatter was a thing that happened to a projectile still visibly
+		intact. One clean break on the first target reads correctly and makes
+		the throw a commitment rather than a mower.
+		A BLOCK still does not consume this: resolveHits skips the pierce
+		decrement on a deflection, so a blocked crescent bends away with its
+		one hit intact, which is the mechanic worth keeping. ]]
+	pierce      = 1,
 	stopOnWorld = true,
 	--- rowa1 dir*8, at the x0.6 knockback ratio (README S7)
 	knockbackForce = 4.8,
@@ -87,19 +96,46 @@ local CRESCENT = table.freeze({
 			fireVFX("iceShatter", attack.enemyEntity.HRootPart)
 
 		elseif attack:isParried() then
-			--[[ a parried crescent dies SILENTLY -- rowa1 set
-				`iceExplode = false` so it shattered without the burst. The
-				parry reward reading correctly. ]]
-			Projectile.kill(proj)
+			--[[ PARRIED CRESCENTS GO HOME. rowa1 killed it silently
+				(`iceExplode = false`), which is a fine reward and a boring
+				one -- the parry ends the threat and nothing else happens.
+				Sent back, the same read is still there (it is no longer YOUR
+				problem) plus the thrower now has to deal with their own
+				crescent, which is the most interesting thing that could
+				happen with a 200 studs/s projectile and a parry window.
+
+				rowa1's rocket redirect heading, via BaseProjectile.parryDir
+				-- current heading + the parrier's facing + a little lift,
+				falling back to their facing alone when a head-on parry makes
+				the first two cancel. `newOwner` is what lets it reach the
+				caster at all. No target: a crescent does not home. ]]
+			local eroot = attack.enemyEntity.HRootPart
+			if eroot then
+				fireVFX("iceShatter", eroot)
+				--- rowa1's rocket blend, degeneracy handled. See parryDir.
+				proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15,
+					attack.enemyEntity)
+			else
+				Projectile.kill(proj)
+			end
 
 		elseif attack:isBlocked() then
 			--[[ DEFLECTION. The only mechanic of its kind in the game: a
 				blocked crescent bends away along the blocker's facing rather
-				than dying. This is the reason `proj.dir` is writable from
-				onHit at all, and it is worth keeping. ]]
+				than dying, and it is worth keeping.
+
+				:setDir, not `proj.dir = `. Velocity is the projectile's
+				storage now and `dir` is a derived read, so the old
+				assignment would be overwritten on the very next step. This
+				also makes the intent explicit: bend the HEADING, keep the
+				speed. The old write happened to preserve speed because of
+				how the fields were laid out, which is not the same as
+				meaning to. NOT :deflect() -- that clears `seen`, and a
+				crescent that forgets who it has already hit can re-hit the
+				same blocker for the rest of its flight. ]]
 			local eroot = attack.enemyEntity.HRootPart
 			if eroot then
-				proj.dir = (proj.dir + eroot.CFrame.LookVector / 3).Unit
+				proj:setDir(proj.dir + eroot.CFrame.LookVector / 3)
 			end
 		end
 	end,

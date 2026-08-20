@@ -139,6 +139,14 @@ local function useFunc(this:myself)
 	for i = 1, 4 do
 		if humObj:inStun() then
 			if punch then punch:Stop() end
+			--[[ rowa1 bins Chargup AND HandSparks on this exact path
+				(Debris 0 on both). Getting stunned out of the charge left
+				the hand sparking and the charge sound ringing for another
+				four seconds -- the same interrupt-does-not-look-like-an-
+				interrupt bug as the beam and the flamethrower. ]]
+			game.Debris:AddItem(startSnd, 0)
+			if sparks then game.Debris:AddItem(sparks, 0) end
+			if circle then game.Debris:AddItem(circle, 0) end
 			humObj.walkSpeed:RemoveMod(SLOW_KEY)
 			return
 		end
@@ -150,7 +158,8 @@ local function useFunc(this:myself)
 	local forward = hurtbox.CFrame.LookVector
 	fireVFX("phantom", char, char.PrimaryPart and char.PrimaryPart.CFrame or hurtbox.CFrame)
 	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
-	Destruction.Sphere(nil, hurtbox.Position + forward * 7, 8, 4.8, forward)
+	--- studs/SECOND, not a heading -- see Destruction's visualizeDestroyed
+	Destruction.Sphere(nil, hurtbox.Position + forward * 7, 8, 4.8, forward * 55)
 
 	local _, hits = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(8, 8, 8))
 	for _, enemy in pairs(hits) do

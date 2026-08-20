@@ -9,7 +9,25 @@
 	The slam's stun is 2.0 in rowa1 -- the longest in its whole table -- which
 	exists purely to guarantee the follow-up. Halved: rowa2's stun is a single
 	field (README S4.2), so 2.0 there is 2.0 of everything, and the weld
-	already guarantees the second beat. ]]
+	already guarantees the second beat.
+
+	!! THE ORDER IS THE MOVE. An earlier pass had the beats right and
+	everything hanging off them in the wrong place, which is a different bug
+	from a missing effect and reads as "it feels off" rather than "it is
+	broken". Against the source, the running order is:
+	    cast    P1 + hshock, the blade sings (heavySwung2 + hs3), trails Wind
+	            and glows red.        NO SHAKE -- nothing has hit anything yet.
+	    0.55    the overhead ARC (BigSlash), then a 0.1 beat. rowa1's declared
+	            windup is 0.65 and this is where the other 0.1 went.
+	    0.65    IMPACT: the ground carves, the camera shakes, the blade
+	            stomps, THEN the hitbox resolves and pins.
+	    +0.0    P2 starts IMMEDIATELY on the pin -- the throw wind-up is the
+	            hold. It was starting 0.8s late, in the same frame as its own
+	            damage, so the sword was never seen being thrown.
+	    +0.8    the second ARC, the release, the throw.
+	The carve belongs to the SLAM (rowa1 runs it before the slam hitbox, not
+	after the hold): it is the floor breaking under an overhead greatsword,
+	not a trench the throw ploughs. ]]
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -32,6 +50,19 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
+
+--- ability-local sounds, rowa1's own, cloned onto the blade (StrongLeft pattern)
+local function bladeSfx(blade: BasePart?, name: string, from: number?)
+	if blade == nil or blade.Parent == nil then return end
+	local src = script:FindFirstChild(name)
+	if src == nil or not src:IsA("Sound") then return end
+	local snd = src:Clone()
+	snd.Parent = blade
+	snd:Play()
+	--- rowa1 skips hs3's first 0.1s so the two swings do not double up
+	if from then snd.TimePosition = from end
+	game.Debris:AddItem(snd, 4)
+end
 
 --- rowa1 "bastard": Heavy, slash, 20 dmg, truestun 1.6 / stun 2.0, posMult 4.
 local BASTARD = {
@@ -77,10 +108,13 @@ local function useFunc(this:myself)
 
 	--- hshock takes a BASEPART in rowa2, not a Humanoid (README S5 step 7e)
 	fireVFX("hshock", humObj.HRootPart)
-	fireVFX("camShake", hurtbox.Position, 300, 1, 0.1)
 
 	local blade = humObj:GetBlade()
 	if blade then
+		bladeSfx(blade, "heavySwung2")
+		bladeSfx(blade, "hs3", 0.1)
+		--- the wind trail off the blade for the length of the wind-up
+		fireVFX("emit", blade, "Wind", 8, 4)
 		--- rowa1 tints the blade red for the whole windup
 		fireVFX("partOutline", blade, Color3.fromRGB(255, 0, 0), 0.4)
 	end
@@ -90,10 +124,46 @@ local function useFunc(this:myself)
 		return
 	end
 
+	--[[ the overhead ARC, and it lands BEFORE the impact does. rowa1's
+		literal CFrame; the quiver id tracks the root for the 0.6s it fades. ]]
+	fireVFX("BigSlash",
+		hurtbox.CFrame * CFrame.Angles(math.rad(-45), 0, math.rad(-110)),
+		hurtbox)
+
+	--[[ rowa1's second beat: 0.1s between the arc and the impact, and it
+		re-checked stun across it. +0.08 because this is an inter-beat wait,
+		not the windup (README 7f). 0.55 + 0.1 is the 0.65 rowa1 declares. ]]
+	if this:feintWait(0.18) then
+		if anim then anim:Stop() end
+		return
+	end
+
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
 
 	local forward = hurtbox.CFrame.LookVector
+
+	--[[ THE IMPACT, in rowa1's order: the floor goes first, then the shake
+		and the stomp, then the hitbox.
+		rowa1 stepped six 7^3 SmallBreak2s -- three positions at two heights --
+		down the lane in front of the caster. One ELLIPSOID does it properly:
+		wide and tall along the lane, in a single call. ]]
+	local laneMid = hurtbox.Position + forward * 12 + Vector3.new(0, 1, 0)
+	Destruction.Ellipsoid(nil, CFrame.new(laneMid, laneMid + forward),
+		--- studs/SECOND: a greatsword driven into the floor throws it
+		Vector3.new(4, 5, 12), 2.4, forward * 55)
+
+	--[[ rowa1 gated these three on having actually broken something
+		(breakCount > 8), which on any normal floor is always true.
+		The ring lies FLAT: rowa1 aims it at origin + (0,-10,0), i.e. straight
+		down into the floor it just cracked, six studs ahead and two down.
+		11 x 11 x 1 at 0.96, and this is the caller that DOES play `boom`. ]]
+	local slamAt = hurtbox.Position + forward * 6 + Vector3.new(0, -2, 0)
+	fireVFX("shockRing",
+		CFrame.new(slamAt, slamAt + Vector3.new(0, -10, 0)),
+		Vector3.new(11, 11, 1), 0.96, true)
+	fireVFX("camShake", hurtbox.Position, 300, 1, 0.1)
+	bladeSfx(blade, "Stomp")
 
 	--[[ the SLAM. atkDir is DOWNWARD -- HumObj reads it for the victim's
 		reaction, and this drives them into the floor rather than away. ]]
@@ -127,7 +197,18 @@ local function useFunc(this:myself)
 		return
 	end
 
-	--[[ the hold. rowa1 waits 0.8s pinned before the throw.
+	--[[ !! THE THROW ANIMATION STARTS HERE, ON THE PIN, and the hold happens
+		underneath it -- that is what the hold IS. It used to play after the
+		hold, in the same frame as its own hitbox, so the sword was never seen
+		being raised or thrown: the victim just took a second hit out of a
+		static pose. rowa1 stops P1 and starts P2 the instant the weld lands,
+		then waits its 0.8s. ]]
+	bladeSfx(blade, "heavySwung")
+	if anim then anim:Stop(0.1) end
+	local throwAnim = this:PlayAnim(script.Part2, 0.05, 1, 1)
+
+	--[[ the hold. rowa1 waits 0.8s pinned before the throw, and releases the
+		welds on the same 0.8s timer.
 		+0.08 because this is an inter-beat wait, not the windup (README 7f).
 		THE PIN MUST COME OFF ON EVERY EXIT -- a stranded weld is a player
 		who can never move again, and it is silent. ]]
@@ -138,23 +219,18 @@ local function useFunc(this:myself)
 	end
 
 	if this:feintWait(0.88) then
-		if anim then anim:Stop() end
+		if throwAnim then throwAnim:Stop() end
 		unpin()
 		return
 	end
 
 	unpin()
 
-	if anim then anim:Stop(0.1) end
-	this:PlayAnim(script.Part2, 0.05, 1, 1)
-
-	--[[ the lane. rowa1 stepped six 7^3 SmallBreak2s -- three positions at
-		two heights -- to fake a trench the sword ploughs. One ELLIPSOID does
-		it properly: wide and tall along the lane, in a single call. ]]
+	--- the release ARC, before the hit it belongs to. rowa1's literal CFrame.
 	forward = hurtbox.CFrame.LookVector
-	local laneMid = hurtbox.Position + forward * 12 + Vector3.new(0, 1, 0)
-	Destruction.Ellipsoid(nil, CFrame.new(laneMid, laneMid + forward),
-		Vector3.new(4, 5, 12), 2.4, forward)
+	fireVFX("BigSlash",
+		hurtbox.CFrame * CFrame.Angles(math.rad(45), 0, math.rad(200)),
+		hurtbox)
 
 	local _, thrown = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(5, 7, 7))
 	for _, enemy in pairs(thrown) do

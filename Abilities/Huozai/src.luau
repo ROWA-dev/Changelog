@@ -90,8 +90,22 @@ local function useFunc(this:myself)
 	-- equivalent. MUST come off on every exit path.
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 
+	--[[ THE BREATH IN. rowa1's first act after the anim is to clone BreathOut
+		onto the root and play it -- 1.2 seconds of drawing breath is the
+		entire tell for this move, and without it the flame arrives with no
+		warning at all. The sound is longer than the windup on purpose; it
+		carries under the first bands of fire.
+		rowa1 calls sound:Stop() on its interrupt path, so a cancelled cast
+		does not keep breathing. Debris 0 is the rowa2 spelling of that
+		(StrongLeft and StrongerLeft both do it this way). ]]
+	local breath = script.BreathOut:Clone()
+	breath.Parent = humObj.HRootPart
+	breath:Play()
+	game.Debris:AddItem(breath, 4)
+
 	if this:feintWait(1.2) then
 		if anim then anim:Stop(0.1) end
+		game.Debris:AddItem(breath, 0)
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		return
 	end
@@ -99,6 +113,14 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 45, true)
 
+	--[[ !! END THE PLUME ON THE REAL END, not on the duration it was started
+		with. This channel breaks out early on stun and on FEINT, and the
+		client was told "3 seconds" up front -- so a feinted Huozai stopped
+		dealing damage while the flamethrower, the camera shake and the
+		pushed FOV all carried on. The feint looked like it did nothing.
+		rowa1 could stop it whenever it liked: its signal was a TAG it
+		removed, not a duration (README S5 step 7b). This is that tag.
+		Same shape as StoneBall's ststep/bground teardown. ]]
 	fireVFX("huozai", char, CHANNEL)
 
 	local started = tick()
@@ -139,7 +161,10 @@ local function useFunc(this:myself)
 				local carveSize = size / (math.random(100, 150) / 100)
 				Destruction.OBB(nil, cf * CFrame.new(0, size.Y / 3, 0),
 					carveSize, math.max(1.5, math.min(carveSize.X, carveSize.Y, carveSize.Z) * 0.6),
-					forward)
+					--[[ studs/SECOND. Gentler than the impact moves: this is
+						a flame washing over the ground, so the rubble should
+						be nudged along the lane rather than blown off it. ]]
+					forward * 25)
 			end
 
 			local _, hits = this:hitbox(cf, size, nil, true)
@@ -178,6 +203,7 @@ local function useFunc(this:myself)
 		end
 	end
 
+	fireVFX("huozai", char, 0)
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 	if anim then anim:Stop(0.2) end
 	this:endLag(0.3)

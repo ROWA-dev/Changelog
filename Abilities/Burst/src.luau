@@ -153,7 +153,8 @@ local function useFunc(this:myself)
 		if breakCount < BREAK_BUDGET then
 			Destruction.Cylinder(nil,
 				root.Position + forward * 3 + Vector3.new(0, 2, 0),
-				forward, 12, 3.5, 2.1)
+				--- velo is studs/SECOND, thrown along the rush
+				forward, 12, 3.5, 2.1, forward * 45)
 			breakCount += 1
 		end
 

@@ -61,6 +61,8 @@ local ICE = {
 
 local TICKS       = 19
 local TICK_RATE   = 0.1
+--- what the client is told the beam will last. See stopBeam below.
+local BEAM_TIME   = TICKS * TICK_RATE
 --- per tick. ~7 connected ticks reach the threshold of 10.
 local FREEZE_FILL = 1.5
 
@@ -75,19 +77,30 @@ local function useFunc(this:myself)
 
 	local leftArm = char:FindFirstChild("Left Arm")
 	if leftArm then
-		fireVFX("icelst", leftArm)
+		fireVFX("icelst", leftArm, 0.9)
 	end
 
 	-- rowa1 was 0.5 + 0.2 + 0.2 with a re-check between each. One call.
 	if this:feintWait(0.9) then
 		if anim then anim:Stop(0.1) end
+		--- the hand must stop charging a cast that is not coming
+		if leftArm then fireVFX("icelst", leftArm, 0) end
 		return
 	end
 
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
 
-	fireVFX("icelasers", hurtbox)
+	--[[ !! END THE BEAM ON THE REAL END, not on the duration it was started
+		with. This channel drops out early on stun and on FEINT, and a client
+		told "1.9 seconds" up front kept firing for the remainder -- so a
+		feinted IceBeam cancelled the damage and left the beam hanging there,
+		which reads as the feint not having worked at all.
+		Same shape, same reason, as StoneBall's ststep/bground teardown. ]]
+	fireVFX("icelasers", hurtbox, BEAM_TIME)
+	local function stopBeam()
+		fireVFX("icelasers", hurtbox, 0)
+	end
 
 	--[[ fixed-rhythm channel, so this uses the BARRAGE PATTERN for its
 		interrupt checks rather than feintWait -- feintWait would fight the
@@ -115,10 +128,12 @@ local function useFunc(this:myself)
 
 		if humObj:inStun() then
 			if anim then anim:Stop(0.1) end
+			stopBeam()
 			return
 		end
 		if this.isFeinted then
 			if anim then anim:Stop(0.1) end
+			stopBeam()
 			this.isFeinted = false
 			humObj.cooldowns:trigger("feint2")
 			fireVFX("feintfx", char)
@@ -126,6 +141,7 @@ local function useFunc(this:myself)
 		end
 	end
 
+	stopBeam()
 	if anim then anim:Stop(0.2) end
 	this:endLag(0.3)
 end
