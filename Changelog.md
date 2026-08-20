@@ -2,6 +2,19 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.10.0 - It's Over For ROWA 2
+
+### Added ✅
+- New ability: Hollow Purple
+
+### Changes 🛠️
+- Cooldown now only shows seconds rather than decimals
+- Changed sound on Fire Stab
+- Axe heavy attack is still being worked on
+- Fixed moves that had issues after the port again
+
+<br><sub>2026-08-19</sub>
+
 ## 1.9.0 - It's Over For ROWA 2
 
 ### Added ✅
@@ -12,7 +25,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
   - New ability: Inverse Red
 
 ### Changes 🛠️
-- Fixed certain moves that had issues after the port again
+- Fixed moves that had issues after the port again
 - Improved projectile system
 - Axe heavy attack is still being worked on
 
@@ -44,7 +57,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Cooldowns now display in the hotbar above the ability used rather than the generic cooldowns on the left
 
 ### Changes 🛠️
-- Fixed certain moves that had issues after the port
+- Fixed moves that had issues after the port
 - True stun stuff
 - Axe heavy attack is being worked on
 
@@ -69,7 +82,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
   - New ability: Streak
 
 ### Changes 🛠️
-- Fixed certain moves that had issues after the port
+- Fixed moves that had issues after the port
 
 <br><sub>2026-08-18</sub>
 
