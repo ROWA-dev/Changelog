@@ -81,7 +81,18 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)
 
-	fireVFX("fdance", hurtbox)
+	--[[ !! END THE AURA ON THE REAL END, not on the duration it was started
+		with. This channel drops out early on stun and on FEINT, and a client
+		told "two seconds" up front kept the fire pouring off someone who had
+		already stopped dancing -- so a feinted FlameDance cancelled the
+		damage and changed nothing on screen. Same shape, same reason, as
+		IceBeam's stopBeam and StoneBall's ststep/bground teardown.
+		LIFETIME is passed rather than left to the fx module's default so the
+		two cannot drift apart. ]]
+	fireVFX("fdance", hurtbox, LIFETIME)
+	local function stopDance()
+		fireVFX("fdance", hurtbox, 0)
+	end
 
 	local anim2 = this:PlayAnim(script.Anim2, 0, 1, 1)
 
@@ -94,11 +105,15 @@ local function useFunc(this:myself)
 	while tick() < started + LIFETIME do
 		local dt = task.wait()
 
-		if humObj:inStun() then break end
+		if humObj:inStun() then
+			stopDance()
+			break
+		end
 		if this.isFeinted then
 			this.isFeinted = false
 			humObj.cooldowns:trigger("feint2")
 			fireVFX("feintfx", char)
+			stopDance()
 			break
 		end
 

@@ -73,7 +73,7 @@ local BLDR = table.freeze({
 
 --- rowa1 Attacking.Time 0.7; its waits are 0.3 to the dig, 0.5 to the kick
 local WINDUP = 0.3
-local GATHER = 0.5
+local GATHER = 0.7
 
 --[[ BoulderGrab cuts THREE overlapping boxes at 1.5 x smallBreakSizes --
 	(12,6,6), (6,12,6), (6,6,12) -- a three-axis star centred 6 studs ahead
@@ -99,8 +99,8 @@ local GRAB_COUNT = 6
 	burst, the crater and the shake all land ON the person hit. ]]
 local SPEED    = 110
 local GRAVITY  = 40
-local MAX_DIST = 120
-local LIFETIME = 4
+local MAX_DIST = 400
+local LIFETIME = 8
 
 local function useFunc(this:myself)
 	local cooldownID = "boulderKick"
@@ -177,7 +177,7 @@ local function useFunc(this:myself)
 		Vector3.new(7, 7, 0.5), 0.9, true)
 
 	--- re-read: the caster may have turned during the gather
-	forward = hurtbox.CFrame.LookVector
+	forward = (hurtbox.CFrame.LookVector + Vector3.new(0,0.1,0)).Unit
 	local originCF = CFrame.new(gatherCF.Position, gatherCF.Position + forward)
 
 	--[[ built per cast, not frozen at module scope like every other config in

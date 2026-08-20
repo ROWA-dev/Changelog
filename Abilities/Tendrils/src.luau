@@ -160,8 +160,7 @@ local function useFunc(this:myself)
 	end
 
 	local finisher = this:makeAtk(BLODBREAK, target, hurtbox.CFrame.LookVector)
-	finisher.knockback = this:knockback(
-		finisher.atkDir * 6 + Vector3.new(0, 8, 0), 0.2, false, -1)
+	--[[finisher.knockback = this:knockback(finisher.atkDir * 6 + Vector3.new(0, 8, 0), 0.2, false, -1)]]
 	this:executeAttack(finisher)
 
 	fireVFX("bldtendrils", 3, eroot, finisher:isHit())

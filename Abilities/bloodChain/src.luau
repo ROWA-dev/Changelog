@@ -15,7 +15,12 @@
 
 	The chain WINDS UP as it flies -- 60 studs/s accelerating to 160 -- which
 	is why acceleration is a base projectile property rather than something
-	bolted onto this ability. ]]
+	bolted onto this ability.
+
+	PARRYING IT DOES NOT BREAK IT, IT REDIRECTS IT -- the same reward the
+	rocket and the crescent give, and the reason BaseProjectile:deflect is
+	shared. See the parry branch in `onHit` for who the chain may pick next
+	and, more importantly, who it may not. ]]
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -60,13 +65,13 @@ local CHAIN = {
 	end,
 }
 
-local WINDUP     = 0.7
+local WINDUP     = 0.8
 local RANGE      = 200
 local YANK_TIME  = 1
 --- rowa1 stopped pulling once they were this close
 local YANK_STOP  = 4
 --- rowa1 MiniDash(-look + up*0.4, 60); bodyForce scales by 5, so 60/5 = 12
-local HOP_FORCE  = 12
+local HOP_FORCE  = 16
 
 --[[ the mutual yank. rowa1 used two BodyPositions, one per root, both aimed
 	at the midpoint. AlignPosition is the modern equivalent and nothing in
@@ -148,11 +153,15 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
+	--[[ the chain hangs off this for its whole life and the fx module KEYS
+		ON IT (bchain's `active` registry), so all four stages have to be
+		handed the same part. Looked up once. ]]
+	local arm = char:FindFirstChild("Right Arm")
 
 	--- the backward wind-up hop, root-relative so it follows your facing
 	local hop = this:bodyForce(Vector3.new(0, 0.4, 1).Unit * HOP_FORCE, 0.3, true)
 
-	fireVFX("bchainWindup", humObj.HRootPart, char:FindFirstChild("Right Arm"), WINDUP)
+	fireVFX("bchainWindup", humObj.HRootPart, arm, WINDUP)
 
 	if this:feintWait(WINDUP + 0.08) then
 		if anim then anim:Stop(0.1) end
@@ -181,6 +190,45 @@ local function useFunc(this:myself)
 	local cfg = table.clone(CHAIN_CFG)
 	cfg.target = target
 	cfg.onHit = function(proj, attack)
+		--[[ PARRIED: THE CHAIN IS SLAPPED ASIDE, NOT CUT. It used to simply
+			die here, which is a fine reward and a boring one. Whipped onto
+			somebody else it keeps the read (it is no longer YOUR problem)
+			and hands the parrier the aim. ]]
+		if attack:isParried() then
+			local proot = attack.enemyEntity.HRootPart
+			if proot == nil then
+				Projectile.kill(proj)
+				return
+			end
+			local look = proot.CFrame.LookVector
+			--[[ the new victim is whoever the PARRIER is pointing at, on the
+				same TIGHT cone the cast itself used.
+
+				!! `me` IS THE CASTER, AND THAT IS THE WHOLE POINT: it is the
+				one argument that excludes both people the chain must not
+				pick. The CASTER, because the beam hangs off their own hand --
+				a chain that turned around onto its thrower draws as a
+				zero-length chain and then yanks a root to the midpoint
+				between itself and itself, i.e. nothing happens twice. And the
+				PARRIER, who is the search ORIGIN and therefore sits at
+				distance 0, which Targeting skips -- handing the chain
+				straight back to the person who just parried it is the
+				opposite of a reward (BaseProjectile.deflect's own note).
+				Nobody in the cone means nobody: deflect re-decides the target
+				unconditionally, so the chain flies off straight and times
+				out rather than re-locking whoever it had. ]]
+			local newTarget = Targeting.nearestInDirection(
+				proot.Position, look, humObj, RANGE, Targeting.TIGHT)
+			--- rowa1's rocket blend, degeneracy handled. See parryDir.
+			proj:deflect(proj:parryDir(look), newTarget, 0.15, attack.enemyEntity)
+			--[[ this projectile has NO fxId (see CHAIN_CFG), so the generic
+				projSteer correction has nothing to correct -- the drawn chain
+				is bchain's own stage 1 loop and stage 3 is how it is turned. ]]
+			fireVFX("bchain", 3, arm, proj.pos, proj.dir,
+				newTarget and newTarget.HRootPart or nil)
+			return
+		end
+
 		if not attack:isHit() then
 			--- rowa1 only kept flying on a DODGE; anything else ended it
 			if not attack:isDodged() then Projectile.kill(proj) end
@@ -190,11 +238,21 @@ local function useFunc(this:myself)
 		local eroot = attack.enemyEntity.HRootPart
 		if eroot == nil or myRoot == nil or myRoot.Parent == nil then return end
 
+		--[[ a DEFLECTED chain can run back into its own thrower -- they stop
+			being the ignored owner the moment someone parries it -- and the
+			targeting above only keeps it from AIMING at them, not from
+			flying through them. There is nothing to yank in that case, so it
+			takes its damage and drops. ]]
+		if eroot == myRoot then
+			Projectile.kill(proj)
+			return
+		end
+
 		fireVFX("bchainYank", myRoot, eroot)
 		--[[ LATCH the flying chain onto them for the pull. Without this the
 			beam just timed out mid-air and the yank played with nothing
 			visibly connecting the two -- see bchain's header. ]]
-		fireVFX("bchain", 2, char:FindFirstChild("Right Arm"), eroot, YANK_TIME)
+		fireVFX("bchain", 2, arm, eroot, YANK_TIME)
 		local release = yankTogether(myRoot, eroot)
 		--- hard stop: the yank must never outlive its own window
 		task.delay(YANK_TIME + 0.2, release)
@@ -205,7 +263,7 @@ local function useFunc(this:myself)
 	--[[ fired by hand rather than through cfg.fxId, because the beam's NEAR
 		end has to be the caster's hand -- see the note on fxId above. ]]
 	fireVFX("bchain", 1, originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
-		char:FindFirstChild("Right Arm"), target.HRootPart)
+		arm, target.HRootPart)
 
 	this:projectile(table.freeze(cfg), originCF)
 

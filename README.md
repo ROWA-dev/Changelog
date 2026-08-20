@@ -1,8 +1,6 @@
-# Hollow Purple
-Update 1.4.1
+# Rowa1 Weps
+Update 1.4.2
 
-hollow purple
-cooldown seconds indicator now rounded to first decimal place... and ceild so no .9s
-firestab abit dif sound still bad tho
+ported slayer and oblitar
 
 and more

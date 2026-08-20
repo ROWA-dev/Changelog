@@ -25,24 +25,21 @@
 	to RPG, and it carries a zeroed dmgTbl for the identical reason -- contact
 	still has to RESOLVE so it can be parried and so iframes are respected.
 
-	THE PURPLE COMBO IS STILL NOT HERE, BUT HALF OF IT NOW EXISTS. rowa1's
-	orb checks every part it sweeps for a `MaxBlue` -- FullBlue's field --
-	carrying a `PurpleReady` attribute, and triggers a 2.2s delayed
-	95-radius nuke on the `purple` dmgID.
+	THE PURPLE COMBO IS CUT -- DECIDED, do not build it. rowa1's orb checks
+	every part it sweeps for a `MaxBlue` -- FullBlue's field -- carrying a
+	`PurpleReady` attribute, and triggers a 2.2s delayed 95-radius nuke on
+	the `purple` dmgID.
 
-	FullBlue has since shipped (id 41) and DOES set that attribute, on the
-	field, the moment its chip damage kills someone. So the setup half is
-	real now; what is still absent is the detonation: the `purple` dmgTbl,
-	Destruction's PurpleNukeBreak equivalent, the "purpNuke" fx and the
-	corpse-vanish. Do not add the trigger until the payload exists -- a
-	branch that finds a flag and then does nothing is worse than no branch.
+	FullBlue (id 41) still SETS that attribute and that is fine: the field
+	owns the flag and setting it costs nothing. But the detonation half --
+	the `purple` dmgTbl, Destruction's PurpleNukeBreak equivalent, the
+	"purpNuke" fx and the corpse-vanish -- is NOT being ported.
 
-	AND WHEN IT LANDS IT GOES ON THE FIELD, NOT ON THE ORB. rowa1 swept
-	every part in the orb's path looking for a named Part, which is why it
-	needed `workspace:HasTag("dungeon")` guards. FullBlue already owns the
-	flag, already runs a loop, and already knows where it is; a distance
-	check from the blast is one line there and no lines here.
-	PORT_InverseRed step 7. ]]
+	So there is deliberately NO branch here looking for the flag. That is
+	the correct end state, not an unfinished one: a branch that finds a flag
+	and then does nothing is worse than no branch. If it is ever revived it
+	goes on the FIELD, not the orb -- FullBlue already owns the flag, already
+	runs a loop and already knows where it is. README S8 Tier D. ]]
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
