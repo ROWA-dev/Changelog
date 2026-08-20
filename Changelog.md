@@ -2,6 +2,22 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.9.0 - It's Over For ROWA 2
+
+### Added ✅
+- Ported even more abilities from ROWA
+  - New ability: Armor
+  - New ability: Boulder Kick
+  - New ability: Full Blue
+  - New ability: Inverse Red
+
+### Changes 🛠️
+- Fixed certain moves that had issues after the port again
+- Improved projectile system
+- Axe heavy attack is still being worked on
+
+<br><sub>2026-08-19</sub>
+
 ## 1.8.1 - It's The Small Things That Count
 
 ### Added ✅
@@ -10,6 +26,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 ### Changes 🛠️
 - The X button in the settings works now
 - Axe heavy attack is still being worked on
+- Inventory patch thing
 
 <br><sub>2026-08-18</sub>
 
@@ -126,7 +143,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 ## 1.4.1 - The Refactoring
 ### Added ✅
-- New card: Ability Haste (testing card)
 - Added VFX for Axe heavy attack
 - Debug stuff for development
 
