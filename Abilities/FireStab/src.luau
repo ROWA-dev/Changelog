@@ -19,6 +19,7 @@ end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
+local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
 local function useFunc(this:myself & any)
 	local cooldownID = "fireStab"
@@ -27,8 +28,7 @@ local function useFunc(this:myself & any)
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 	local root = this._humObj.HurtBox
 
-	local vfx = game.ReplicatedStorage.RemoteEvents.VFX	
-	vfx:FireAllClients("fsShine2",
+	fireVFX("fsShine2",
 		-- "Right Arm" is an R6-rig assumption, but it is already a FALLBACK to
 		-- GetBlade() and the whole chain nil-degrades, so an odd-shaped entity
 		-- using this ability just gets no shine rather than an error. Left as
@@ -47,7 +47,7 @@ local function useFunc(this:myself & any)
 		this._lastUsed = math.max(this._lastUsed or 0, tick() - cd*0.5)
 		return
 	end
-	vfx:FireAllClients("fstabb", root)
+	fireVFX("fstabb", root)
 	this:useMana()
 
 

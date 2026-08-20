@@ -88,7 +88,7 @@ local function useFunc(this:myself)
 
 	-- rowa1 froze input outright for the whole cast; walkSpeed is the rowa2
 	-- equivalent. MUST come off on every exit path.
-	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
+	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 
 	--[[ THE BREATH IN. rowa1's first act after the anim is to clone BreathOut
 		onto the root and play it -- 1.2 seconds of drawing breath is the

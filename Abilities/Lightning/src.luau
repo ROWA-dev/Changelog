@@ -130,12 +130,21 @@ local function useFunc(this:myself)
 		-- no knockback in the original: the 1.2s stun is the whole effect.
 		this:executeAttack(attack)
 
-		if attack:isHit() and enemy.HRootPart then
-			fireVFX("pauseF2", char, enemy.HRootPart.Parent)
-			--[[ rowa1 emitted the HIT effect on `selffx` -- the CASTER's
-				emitter -- while parenting an unused `hitfx` to the victim.
-				A copy-paste slip; the victim never got the effect. Fixed. ]]
-			fireVFX("emit", enemy.HRootPart, "lvfx3", 20, 1)
+		if attack:isHit() then
+			--[[ Shock marks the BLUE lightning specifically, not the whole
+				lightning family. Fulminate was the only source; this is the
+				other blue one, so it gets it too. rowa1 had no such status --
+				it is a rowa2 addition, and it is deliberately NOT given to
+				BoltPunch/JoltKick (which rowa1 flagged `magic` anyway). ]]
+			enemy.statusEffects:apply(enemy.statusEffects.Shock, 3)
+
+			if enemy.HRootPart then
+				fireVFX("pauseF2", char, enemy.HRootPart.Parent)
+				--[[ rowa1 emitted the HIT effect on `selffx` -- the CASTER's
+					emitter -- while parenting an unused `hitfx` to the victim.
+					A copy-paste slip; the victim never got the effect. Fixed. ]]
+				fireVFX("emit", enemy.HRootPart, "lvfx3", 20, 1)
+			end
 		end
 	end
 

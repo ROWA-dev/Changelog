@@ -18,6 +18,7 @@ end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
+local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local function useFunc(this:myself)
 	local cooldownID = "strongLeft"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -98,7 +99,7 @@ local function useFunc(this:myself)
 		parryH   = -0.04,
 		onHit    = function(attack, source)
 			local eroot = attack.enemyEntity.HRootPart
-			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("strpunch", eroot)
+			fireVFX("strpunch", eroot)
 		end,
 	}
 	

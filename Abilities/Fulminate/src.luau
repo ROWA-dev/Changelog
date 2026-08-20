@@ -18,6 +18,7 @@ end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
+local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local function useFunc(this:myself)
 	local cooldownID = "fulminate"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -62,7 +63,7 @@ local function useFunc(this:myself)
 	
 	vfx.dash:Play()
 	vfx.idash:Emit(4)
-	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("speedBeams", vfx)
+	fireVFX("speedBeams", vfx)
 	
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)

@@ -109,7 +109,7 @@ local function useFunc(this:myself)
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
-	local anim = this:PlayAnim(script.Kick, 0, 1, 1.5)
+	local anim = this:PlayAnim(script.Kick, 0, 1, 1)
 
 	if this:feintWait(WINDUP) then
 		if anim then anim:Stop(0.1) end

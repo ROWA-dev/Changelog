@@ -21,7 +21,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	
-	fxModel.flame.star:Emit(1)
+	--fxModel.flame.star:Emit(1)
 	
 	local leftLeg = char:FindFirstChild("Left Leg")
 	for i,v in pairs(fxModel.start:GetChildren()) do

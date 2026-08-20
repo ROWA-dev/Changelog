@@ -129,6 +129,9 @@ local function useFunc(this:myself)
 			Debris:AddItem(inst, 0)
 		end
 	end
+	
+	local SLOW_KEY = "freeze"
+	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 
 	keep(attach("Flare1", castHost, 1))
 	keep(attach("PointLight", castHost))
@@ -159,6 +162,7 @@ local function useFunc(this:myself)
 	fireVFX("emit", castHost, "Wind", 6, 4)
 
 	if this:feintWait(0.13) then
+		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		cleanup()
 		return
 	end
@@ -180,9 +184,11 @@ local function useFunc(this:myself)
 	end
 
 	if this:feintWait(0.53) then
+		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		cleanup()
 		return
 	end
+	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 
 	--[[ everything below is measured off the root ONCE, exactly as rowa1 does.
 		The line does not re-aim, so turning mid-cast does not bend it. ]]

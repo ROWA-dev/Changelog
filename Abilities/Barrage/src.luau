@@ -18,6 +18,7 @@ end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
+local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local function useFunc(this:myself)
 	local cooldownID = "Barrage"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -71,11 +72,10 @@ local function useFunc(this:myself)
 	}
 
 	local Char = hurtbox.Parent
-	local FxRemote = game.ReplicatedStorage.RemoteEvents.VFX
-	FxRemote:FireAllClients("hideArms", Char)
+	fireVFX("hideArms", Char)
 	local hitlanded = false
 	for i = 1,18 do
-		FxRemote:FireAllClients("brrgArms", Char)
+		fireVFX("brrgArms", Char)
 
 		local _, hits = this:hitbox(hitboxOffset, hitboxSize)
 		for _,enemy in pairs(hits) do
@@ -105,7 +105,7 @@ local function useFunc(this:myself)
 		if humObj:inStun() then
 			if anim then anim:Stop() end
 			if sound then sound:Stop() end
-			FxRemote:FireAllClients("showArms", Char)
+			fireVFX("showArms", Char)
 			return true
 		end
 		local wantedFeint = this.isFeinted
@@ -119,10 +119,10 @@ local function useFunc(this:myself)
 
 			local now = tick()
 			if wantedFeint and now > st + 0.18 then
-				game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("feintfx", this._humObj.Hum.Parent)
+				fireVFX("feintfx", this._humObj.Hum.Parent)
 			end
 			
-			FxRemote:FireAllClients("showArms", Char)
+			fireVFX("showArms", Char)
 			
 			if hitlanded == false then
 				this:endLag(0.2)
@@ -132,7 +132,7 @@ local function useFunc(this:myself)
 
 		if i == 14 then
 			print("SHOW ARMS!")
-			FxRemote:FireAllClients("showArms", Char)
+			fireVFX("showArms", Char)
 		end
 	end
 

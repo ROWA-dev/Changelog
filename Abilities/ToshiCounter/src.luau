@@ -18,6 +18,7 @@ end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
+local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local function useFunc(this:myself)
 	local cooldownID = "ToshiCounter"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -73,7 +74,7 @@ local function useFunc(this:myself)
 	
 	print("trigger", triggeredBy)
 	local char = humObj.Hum.Parent
-	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("phantom", char)
+	fireVFX("phantom", char)
 
 	local victimAnim = if triggeredBy.PlayAnim then triggeredBy:PlayAnim(script.Victim) else nil
 	anim = this:PlayAnim(script.Land)
@@ -89,7 +90,7 @@ local function useFunc(this:myself)
 	local _, hits	   = this:hitbox(hitboxOffset, hitboxSize)
 	local hurtbox  = humObj.HurtBox
 	
-	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("bostaffShock", hurtbox.CFrame * CFrame.new(0,0,-6))
+	fireVFX("bostaffShock", hurtbox.CFrame * CFrame.new(0,0,-6))
 
 
 	local dmgTbl = {
@@ -101,7 +102,7 @@ local function useFunc(this:myself)
 		parryH   = 0.1,
 		onHit    = function(attack, source)
 			local eroot = attack.enemyEntity.HRootPart
-			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("punch", eroot)
+			fireVFX("punch", eroot)
 		end,
 	}
 
@@ -160,7 +161,7 @@ local function useFunc(this:myself)
 				parryH   = -0.08,
 				onHit    = function(attack, source)
 					local eroot = attack.enemyEntity.HRootPart
-					game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("strpunch", eroot)
+					fireVFX("strpunch", eroot)
 				end,
 			}
 			

@@ -1,7 +1,8 @@
-# Projectiles
-Update 1.4.0
+# Hollow Purple
+Update 1.4.1
 
-an actual and better implemented projectile system
-allows for things like blue now affecting every projectile (boulder gets stuck in blue, rpg, ice slash etc)
+hollow purple
+cooldown seconds indicator now rounded to first decimal place... and ceild so no .9s
+firestab abit dif sound still bad tho
 
 and more
