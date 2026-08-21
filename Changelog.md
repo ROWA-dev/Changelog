@@ -2,16 +2,17 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
-## 1.10.0 - It's Over For ROWA 2
+## 1.11.0 - ROWA 2 Is Coming Back?
 
 ### Added ✅
-- New ability: Hollow Purple
+- New weapon: Oblitar
+- New weapon: Slayer
 
 ### Changes 🛠️
-- Cooldown now only shows seconds rather than decimals
-- Changed sound on Fire Stab
 - Axe heavy attack is still being worked on
 - Fixed moves that had issues after the port again
+- Players spawn with a set of randomized moves per slot
+  - This is temporary until base progression is added
 
 <br><sub>2026-08-19</sub>
 
