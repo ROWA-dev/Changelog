@@ -49,25 +49,14 @@ local dmgFlag    = dmgUtils.dmgFlags
 local Targeting  = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
---[[ rowa1 "explo3": Heavy, fire, 16 dmg, truestun 0 / stun 0.2, posMult 0.5.
-	It sits in `unparriers`, `noparrystun` AND `autoParries` -- an explosion
-	is not something you parry. `parryH = -10` is the one-field way to say
-	that; there is no boolean, and adding one would start rowa1's lookup
-	tables over (README S1.2, PORT_PaperBomb WATCH). ]]
 local EXPLO3 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.fire,
-	dmg      = 10,
+	dmg      = 12,
 	stun     = 0.2,
 	posMult  = 0.5,
-	parryH   = -10,
+	parryH   = 0.2,
 	stunMeOnParried = 0,
-	--[[ NO onHit SOUND, deliberately. rowa1's explo3 row ships `sounds = {}`
-		-- empty -- because the bang belongs to the EXPLOSION, not to each
-		body it catches, and kunaiBoom already plays `explode` with a
-		randomised pitch. An earlier pass added HardPunchHit here, so every
-		victim in the blast got a dry punch impact layered over the boom.
-		That is the "explosion hit sound is weird / wrong sound". ]]
 }
 
 local KUNAI_COUNT  = 4

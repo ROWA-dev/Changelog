@@ -45,10 +45,10 @@ local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 local CERO = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
-	dmg      = 38,
+	dmg      = 32,
 	stun     = 0.5,
 	posMult  = 4,
-	parryH   = -0.04,
+	--parryH   = -0.04,
 	--- replaces rowa1's `noparrystun` membership for this id.
 	stunMeOnParried = 0,
 }

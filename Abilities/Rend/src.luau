@@ -47,9 +47,9 @@ local HOP_2 = 50 / 5
 local REND_1 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
-	dmg      = 22,
+	dmg      = 14,
 	stun     = 1,
-	posMult  = 3,
+	posMult  = 2,
 	parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit")
@@ -59,7 +59,7 @@ local REND_2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
 	dmg      = 14,
-	stun     = 0.8,
+	stun     = 1,
 	posMult  = 2,
 	parryH   = -0.04,
 	onHit    = function(attack)
@@ -67,7 +67,7 @@ local REND_2 = {
 	end,
 }
 
-local HIT_SIZE = Vector3.new(8, 8, 8)
+local HIT_SIZE = Vector3.new(10, 10, 10)
 local GROUND_PROBE = 60
 
 local groundParams = RaycastParams.new()

@@ -71,7 +71,7 @@ local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 local BLAST = table.freeze({
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
-	dmg      = 24,
+	dmg      = 20,
 	truestun = 0.2,
 	stun     = 1,
 	posMult  = 0.5,
@@ -102,6 +102,32 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	if action == nil or action._humObj == nil then return end
 
 	local dir = proj.dir
+
+	--[[ !! IT GOES OFF ON THE BODY, NOT WHERE THE ORB WAS.
+		rowa1 re-centres the ENTIRE explosion on whoever it swept, and this
+		port dropped it:
+		    local hitPos = endp
+		    for _,v in pairs(humsH) do
+		        if v:FindFirstChild("HumanoidRootPart") then
+		            hitPos = v.HumanoidRootPart.Position
+		        end
+		    end
+		-- and hitPos is then used for the fx, the camera shake, the crater
+		and the 16x16x25 box. Every one of them.
+
+		Centring on the ORB instead is centring on the point where a 6-stud
+		proximity volume first TOUCHED a hurtbox -- half the orb plus half
+		the box short of the person, and more at low server framerate, where
+		the substep clamp makes the contact point coarser still. The blast
+		then fires from behind their heels: the near edge of a 25-deep box
+		clips them or misses outright, and the explosion visibly happens
+		SHORT of the target rather than on it.
+
+		`victimRoot` is stamped by onHit below. It stays nil when the orb
+		died on a wall or ran out, which is when `pos` is already right. ]]
+	local vr = proj.victimRoot
+	if vr ~= nil and vr.Parent ~= nil then pos = vr.Position end
+
 	fireVFX("inverseRedBoom", pos, dir)
 
 	--[[ rowa1 broke at `hitPos - norm`, i.e. just INSIDE the surface it hit,
@@ -171,13 +197,25 @@ local ORB_CFG = table.freeze({
 		when `deflected` is set), so the orb survives to detonate wherever it
 		ends up, which is the entire point. ]]
 	onHit = function(proj: any, attack: any)
-		if not attack:isParried() then return end
-		local eroot = attack.enemyEntity.HRootPart
-		if eroot == nil then return end
-		fireVFX("rocketDeflect", proj.pos, eroot.CFrame.LookVector)
-		--- rowa1's rocket blend, degeneracy handled. See parryDir.
-		proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15,
-			attack.enemyEntity)
+		if attack:isParried() then
+			local eroot = attack.enemyEntity.HRootPart
+			if eroot == nil then return end
+			fireVFX("rocketDeflect", proj.pos, eroot.CFrame.LookVector)
+			--- rowa1's rocket blend, degeneracy handled. See parryDir.
+			proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15,
+				attack.enemyEntity)
+			--- a deflected orb belongs to whoever it reaches next
+			proj.victimRoot = nil
+			return
+		end
+
+		--[[ rowa1's `humsH`, which is the list the explosion is re-centred
+			on -- see detonate. It stamps EVERY body the sweep touches, hit or
+			not, exactly as the original does (it inserts before it looks at
+			iframes at all), so a blocked or i-framed contact still puts the
+			blast on the person instead of in the air behind them. ]]
+		local enemy = attack.enemyEntity
+		proj.victimRoot = enemy and enemy.HRootPart or nil
 	end,
 })
 

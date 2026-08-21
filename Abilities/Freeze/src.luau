@@ -237,7 +237,7 @@ local function useFunc(this:myself)
 				--[[ the spike's OWN transform is the hitbox, in world space, so
 					what you see and what hits cannot drift apart. That is worth
 					keeping; rowa1 got it right. ]]
-				local _, hits = this:hitbox(cf, SPIKE_SIZE, nil, true)
+				local _, hits = this:hitbox(cf, SPIKE_SIZE+Vector3.new(2,2,2), nil, true)
 				for _, enemy in pairs(hits) do
 					if victims >= MAX_VICTIMS then break end
 					if seen[enemy.entityId] then continue end

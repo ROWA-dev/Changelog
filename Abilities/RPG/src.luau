@@ -78,6 +78,38 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
 
+	--[[ !! AND THE OWNER, ADDED BY HAND, BECAUSE ROWA1'S BLAST HAS NO OWNER
+		CHECK AT ALL:
+		    local Stuff2 = RegModule.Box(CFrame.new(endp, last), (12,12,12))
+		    for i,v in pairs(Stuff2) do
+		        if v.Parent and v.Parent:FindFirstChild("Humanoid")
+		            and not table.find(humsH2, v.Parent) then
+		Compare InverseRed and PaperBomb, which BOTH carry an explicit
+		`v.Parent ~= owner` on the same loop. The rocket does not, and it is
+		not an oversight there either: the flight sweep has no owner check
+		either, only a 0.05s arming delay (`st = tick() + 0.05`), i.e. the
+		rocket is armed against EVERYONE including you the moment it clears
+		the launcher. Blowing yourself up with the joke ultimate is the joke.
+
+		It has to be added by hand because HitboxQuery ignores the caster's
+		Humanoid on every query in the game (`toIgnore = humObj.Hum`), which
+		is correct for every attack except a bomb. Doing it here rather than
+		with a new query flag keeps that guarantee intact for everything
+		else -- this is the only projectile in the game that wants it.
+
+		The radius reject below still applies, so this is only ever an owner
+		genuinely INSIDE their own explosion.
+
+		!! WATCH THE RADIUS. rowa1's box is a TWELVE STUD CUBE -- (12,12,12)
+		into GetPartBoundsInBox is a full size, so its blast reaches 6 studs,
+		not 12. BLAST_RADIUS here is 12, which is double the original in
+		every direction, and it now applies to YOU as well. If the RPG starts
+		killing its own user from across the room that number is why, and
+		6 is what the original actually was. Left alone because it is a
+		balance call, not a port bug to fix silently. ]]
+	local me = action._humObj
+	if me ~= nil then table.insert(hits, me) end
+
 	for _, enemy in pairs(hits) do
 		local eroot = enemy.HRootPart
 		if eroot == nil then continue end

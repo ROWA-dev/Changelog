@@ -57,9 +57,9 @@ local CHAIN = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blood),
 	dmg      = 10,
-	stun     = 0.8,
+	stun     = 1,
 	posMult  = 4,
-	parryH   = -0.1,
+	--parryH   = -0.1,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "grab")
 	end,
@@ -71,7 +71,7 @@ local YANK_TIME  = 1
 --- rowa1 stopped pulling once they were this close
 local YANK_STOP  = 4
 --- rowa1 MiniDash(-look + up*0.4, 60); bodyForce scales by 5, so 60/5 = 12
-local HOP_FORCE  = 16
+local HOP_FORCE  = 14
 
 --[[ the mutual yank. rowa1 used two BodyPositions, one per root, both aimed
 	at the midpoint. AlignPosition is the modern equivalent and nothing in
@@ -159,7 +159,7 @@ local function useFunc(this:myself)
 	local arm = char:FindFirstChild("Right Arm")
 
 	--- the backward wind-up hop, root-relative so it follows your facing
-	local hop = this:bodyForce(Vector3.new(0, 0.4, 1).Unit * HOP_FORCE, 0.3, true)
+	local hop = this:bodyForce(Vector3.new(0, 0.5, 1).Unit * HOP_FORCE, 0.3, true)
 
 	fireVFX("bchainWindup", humObj.HRootPart, arm, WINDUP)
 

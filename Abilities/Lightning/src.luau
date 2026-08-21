@@ -42,9 +42,9 @@ local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local LNING = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,
-	dmg      = 19,
+	dmg      = 18,
 	stun     = 1.2,
-	posMult  = 2,
+	--posMult  = 1,
 	--[[ a targeted, no-travel AoE is unavoidable by construction, so this is
 		the ability that most needs rowa2's dodge knob -- rowa1 had no such
 		field and leaned entirely on the loud 4-stage telegraph. Both. ]]

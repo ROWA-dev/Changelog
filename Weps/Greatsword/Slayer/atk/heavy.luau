@@ -296,7 +296,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	-- THE LAUNCH
 	if not cancelled then
 		--- rowa1 Knockback (0,12,0) + look*12 -> S7 rule 9, K * 0.6
-		beat(this, held, dmgConfig.heavyLaunch, Vector3.new(0, 5, 0) + hurtbox.CFrame.LookVector*5)
+		beat(this, held, dmgConfig.heavyLaunch, Vector3.new(0, 4, 0) + hurtbox.CFrame.LookVector*4)
 	end
 
 	if anim2 then anim2:Stop() end

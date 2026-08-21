@@ -50,7 +50,7 @@ local LION_FALL = {
 	dmg      = 20,
 	stun     = 1,
 	posMult  = 3,
-	parryH   = -0.04,
+	parryH   = -0.1,
 	onHit    = function(attack)
 		local eroot = attack.enemyEntity.HRootPart
 		hitSfx(eroot, "LionFall", "DawnHeavyPunch", "Sugarcoat")

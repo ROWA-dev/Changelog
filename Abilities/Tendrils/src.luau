@@ -50,7 +50,7 @@ local BLODGRAB = {
 	--[[ a ranged catch with no travel time needs an out, and rowa2 has the
 		knob rowa1 did not. ]]
 	dodgeH   = 0.15,
-	parryH   = -0.04,
+	--parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "grab")
 	end,
@@ -60,7 +60,7 @@ local BLODGRAB = {
 local BLODBREAK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = BLOOD_MAGIC,
-	dmg      = 32,
+	dmg      = 28,
 	stun     = 0.7,
 	posMult  = 4,
 	onHit    = function(attack)
@@ -150,6 +150,17 @@ local function useFunc(this:myself)
 		anchor is a permanently frozen player. ]]
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 	fireVFX("bldtendrils", 2, eroot, movePos)
+
+	--[[ TRUE stun for the hoist, same call shape as ToshiCounter. This IS a
+		grab (see the header) and the victim spends HOLD_TIME anchored in the
+		air by the client tween -- an ordinary :Stun is refused under hyper
+		armour, so an armoured target hung there still able to attack.
+		rowa1's `blodgrab` row asked for this outright: truestun 1.4.
+		GUARDED: TrueStun is not in the Combatant contract (SimpleEntity has
+		:Stun and no :TrueStun). ]]
+	if target.TrueStun then
+		target:TrueStun(HOLD_TIME)
+	end
 
 	local cancelled = this:feintWait(HOLD_TIME)
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)

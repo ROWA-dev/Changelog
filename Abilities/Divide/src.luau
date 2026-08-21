@@ -127,7 +127,7 @@ local function useFunc(this:myself)
 	local myRoot = humObj.HRootPart
 	local forward = hurtbox.CFrame.LookVector
 
-	local _, hits = this:hitbox(CFrame.new(0, 0, -2), Vector3.new(5, 5, 4))
+	local _, hits = this:hitbox(CFrame.new(0, 0, -2), Vector3.new(5.5, 5.5, 5.5))
 
 	local caught = nil
 	for _, enemy in pairs(hits) do
@@ -253,6 +253,16 @@ local function useFunc(this:myself)
 			CFrame.Angles(math.rad(90), 0, math.rad(230)), 1.5,
 			char:FindFirstChild("Right Arm"))
 		held = true
+
+		--[[ TRUE stun for the hold, same call as ToshiCounter. The hold is
+			the payoff of the move and an ordinary :Stun is refused under
+			hyper armour, which let an armoured victim act through the one
+			beat the camera is reading. 0.7 is the atkWait below.
+			GUARDED: TrueStun is not part of the Combatant contract
+			(SimpleEntity has :Stun only). ]]
+		if caught.TrueStun then
+			caught:TrueStun(0.7)
+		end
 
 		--[[ the VICTIM's own reaction animation. PlayAnim only drives self,
 			so this goes through their Animator directly -- guarded, because

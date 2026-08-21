@@ -41,7 +41,7 @@ local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local BLDR2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.earth),
-	dmg      = 26,
+	dmg      = 20,
 	stun     = 0.6,
 	posMult  = 2,
 	--- positive on purpose: it is a big slow telegraphed rock. Keep the sign.

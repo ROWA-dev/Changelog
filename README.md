@@ -1,6 +1,6 @@
-# Rowa1 Weps
-Update 1.4.2
+# Balancing
+Update 1.4.3
 
-ported slayer and oblitar
+fixed zombie state upon killing urself and healing from that kill
 
-and more
+and alot more

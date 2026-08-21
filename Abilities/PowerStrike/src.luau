@@ -39,10 +39,10 @@ local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local GOLD = {
 	weight   = dmgUtils.weighEnum.Medium,
 	type     = dmgFlag.slash,
-	dmg      = 13,
+	dmg      = 10,
 	stun     = 0.8,
-	posMult  = 2,
-	parryH   = -0.1,
+	posMult  = 1,
+	parryH   = -0.06,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HitSound", "HitChop", "SlashHit")
 	end,

@@ -34,10 +34,6 @@ local PBLOW = {
 	dmg      = 20,
 	stun     = 0.85,
 	posMult  = 3,
-	--[[ -0.1 on a 0.65s telegraph IS the design: slow enough to read, hard to
-		parry on purpose. If it feels unfair, shorten the windup -- do not
-		soften this number. ]]
-	parryH   = -0.1,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HeavyCut", "SlashHit")
 	end,

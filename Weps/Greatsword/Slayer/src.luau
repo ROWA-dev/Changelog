@@ -93,6 +93,32 @@ function module.wield(self:myself&any)
 	baseWep.wield(self)
 end
 
+--- unwield
+--[[ PUTTING THE WEAPON AWAY GOES THROUGH :unwield, NOT :unequip.
+	Two callers, both unwield: Items/uniqueItem/wepItem.unEquip (the hotbar)
+	and WepBase.wield when it swaps out the previous weapon. :unequip is only
+	reached from HumObj's _clearWieldedWeapon and destroy.
+	Greatsword parks the model in :unequip ONLY, so without this the blade
+	stayed Motor6D'd to the Right Arm on every ordinary unequip -- the base
+	:unwield stops anims and clears wielding_weapon, it never touches _model.
+	DOC_WEAPONS step 5 and PORTW_00 step 5 both say to override
+	":wield()/:unequip()", which is where this came from; every other shipped
+	weapon quietly carries this body too (Executer, Mace, Hammer, TreeLog).
+	lastAnim is force-stopped first because baseWep.unwield goes through
+	stopLastAnim, which honours dontStopAnim and can leave a swing running. ]]
+function module.unwield(self:myself&any)
+	if self.lastAnim then
+		self.lastAnim:Stop()
+	end
+
+	local model = self._model
+	if model then
+		model.Parent = script
+	end
+
+	baseWep.unwield(self)
+end
+
 --- attack
 module.attack = require(script.attack)
 

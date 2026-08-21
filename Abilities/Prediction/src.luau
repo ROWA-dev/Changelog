@@ -65,18 +65,50 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 	fireVFX("predictStance", humObj.HRootPart, WINDOW)
 
-	humObj.statusEffects:apply(statusEffects.Reflect, WINDOW, ABSORB_CAP)
+	local reflect: any = humObj.statusEffects:apply(statusEffects.Reflect, WINDOW, ABSORB_CAP)
 
 	--[[ rowa1 tagged this `noFeint`, so the stance cannot be cancelled once
 		committed -- atkWait, not feintWait. See PORT_LionFall step 2 for why
-		a framework flag is the wrong way to express that. ]]
-	this:atkWait(WINDOW)
+		a framework flag is the wrong way to express that.
+
+		A CORRECT READ ENDS IT EARLY though. `atkWait` is a bare task.wait and
+		cannot be interrupted, so this is that same scaled wait rewritten as a
+		poll. `use` clears `attacking` the instant useFunc returns, so
+		returning early IS the cancel -- no framework support needed. Guessing
+		right buys you the turn; guessing wrong still pays the full window.
+
+		Reads `reflected`, not `absorbed`: the hit that SHATTERS the stance
+		must not count as a read.
+
+		`or 0` is load-bearing. The effect's cleanup thread can destroy it
+		mid-poll (destroy does table.clear), and a nil compare here would
+		throw inside useFunc -- which `use` pcalls into a mere warn, leaking
+		the walkSpeed mod below and slowing the player forever. ]]
+	local total  = this:scaledTime(WINDOW)
+	local waited = 0
+	local landed = false
+	while waited < total do
+		if (reflect.reflected or 0) > 0 then
+			landed = true
+			break
+		end
+		waited += task.wait()
+	end
 
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 	if anim then anim:Stop(0.2) end
 
-	--- a whiffed stance leaves you open, which is the cost of guessing wrong
-	this:endLag(0.3)
+	--[[ a whiffed stance leaves you open, which is the cost of guessing wrong.
+		A landed one skips it entirely -- that IS the reward.
+
+		The reflect itself is still running here, and still extending on every
+		hit (HIT_EXTEND). That is rowa1-faithful, since pframes outlived the
+		0.8s ability body -- but it does mean you attack WHILE reflecting. If
+		you want one read to answer exactly one attack, drop the effect on the
+		landed branch: humObj.statusEffects:remove(statusEffects.Reflect) ]]
+	if not landed then
+		this:endLag(0.3)
+	end
 end
 
 function module.use(self:myself)

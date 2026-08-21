@@ -47,10 +47,10 @@ local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local ICE2 = {
 	weight   = dmgUtils.weighEnum.Medium,
 	type     = bit32.bor(dmgFlag.ice, dmgFlag.slash),
-	dmg      = 12,
+	dmg      = 10,
 	stun     = 0.6,
 	posMult  = 1,
-	parryH   = -0.04,
+	--parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "IceSplash2")
 	end,

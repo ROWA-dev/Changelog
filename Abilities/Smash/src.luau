@@ -118,7 +118,7 @@ local function useFunc(this:myself)
 	this:triggerCD(cooldownID, 14, true)
 
 	local forward = hurtbox.CFrame.LookVector
-	local _, hits = this:hitbox(CFrame.new(0, 0, -2), Vector3.new(6, 7, 6))
+	local _, hits = this:hitbox(CFrame.new(0, 0, -2), Vector3.new(7, 7, 7))
 
 	local caught = nil
 	for _, enemy in pairs(hits) do
@@ -134,10 +134,14 @@ local function useFunc(this:myself)
 			rowa1 is lookVec*30 + (0,40,0), which converts to 18 + 24 at the
 			x0.6 ratio. Pulled a little under that: the apex only has to be
 			high enough for the pin to hold them there. ]]
-		attack.knockback = this:knockback(
-			forward * 15 + Vector3.new(0, 21, 0), 0.25, false, -1)
+		attack.knockback = this:knockback(forward * 15 + Vector3.new(0, 21, 0), 0.25, false, -1)
 		this:executeAttack(attack)
 		if attack:isHit() or attack:isBlocked() then caught = enemy end
+		if attack:isHit() then
+			if enemy.TrueStun then
+				enemy:TrueStun(1)
+			end
+		end
 		break
 	end
 
@@ -166,6 +170,19 @@ local function useFunc(this:myself)
 	local apex = caught.HRootPart.Position + forward * 4
 	local release = pinTo(caught.HRootPart, function() return apex end,
 		{ maxTime = 1.2 })
+
+	--[[ TRUE stun for the pin, same call as ToshiCounter. THIS IS THE ONE
+		GRAB THAT HAD A REAL GAP: UCUT's stun is 1.0 and the uppercut lands
+		0.46 before the pin even starts, so the last ~0.1s of the 0.66 hold
+		was already unstunned even without armour -- they could act while
+		frozen at the apex. Under hyper armour the whole pin was free, since
+		:Stun refuses to write and only :TrueStun passes bypassArmour.
+		0.66 is the hold below, not a new number.
+		GUARDED: TrueStun is not in the Combatant contract (SimpleEntity
+		has :Stun only). ]]
+	if caught.TrueStun then
+		caught:TrueStun(0.66)
+	end
 
 	fireVFX("phantom", char, char.PrimaryPart and char.PrimaryPart.CFrame or hurtbox.CFrame)
 	fireVFX("fstep", char, 0.4)

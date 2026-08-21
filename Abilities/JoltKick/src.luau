@@ -36,7 +36,7 @@ local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
 local JOLT = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
-	dmg      = 19,
+	dmg      = 16,
 	stun     = 0.9,
 	posMult  = 2,
 	parryH   = -0.04,
@@ -84,12 +84,12 @@ local function useFunc(this:myself)
 
 	joltBurst(hurtbox)
 
-	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(5, 5, 7))
+	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(6,6, 7))
 
 	local connected = nil
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(JOLT, enemy, hurtbox.CFrame.LookVector)
-		attack.knockback = this:knockback(attack.atkDir * 18, 0.2, false, -1)
+		attack.knockback = this:knockback(attack.atkDir * 14, 0.2, false, -1)
 		this:executeAttack(attack)
 		if attack:isHit() or attack:isBlocked() then
 			connected = enemy
@@ -147,7 +147,7 @@ local function useFunc(this:myself)
 
 	if connected.isActive == true then
 		local attack = this:makeAtk(JOLT, connected, hurtbox.CFrame.LookVector)
-		attack.knockback = this:knockback(attack.atkDir * 18, 0.2, false, -1)
+		attack.knockback = this:knockback(attack.atkDir * 14, 0.2, false, -1)
 		this:executeAttack(attack)
 	end
 

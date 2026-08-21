@@ -72,7 +72,7 @@ local BASTARD = {
 	--- 2.0 halved: see the header
 	stun     = 1,
 	posMult  = 4,
-	parryH   = -0.04,
+	--parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HitCrush")
 	end,
@@ -133,7 +133,7 @@ local function useFunc(this:myself)
 	--[[ rowa1's second beat: 0.1s between the arc and the impact, and it
 		re-checked stun across it. +0.08 because this is an inter-beat wait,
 		not the windup (README 7f). 0.55 + 0.1 is the 0.65 rowa1 declares. ]]
-	if this:feintWait(0.18) then
+	if this:feintWait(0.2) then
 		if anim then anim:Stop() end
 		return
 	end
@@ -188,6 +188,18 @@ local function useFunc(this:myself)
 			--- rowa1: C0 = CFrame.Angles(90, 0, 180).
 			enemy.grab:grab(humObj,
 				CFrame.Angles(math.rad(90), 0, math.rad(180)), 2, blade)
+			--[[ TRUE stun for the pin, same call shape as ToshiCounter: an
+				ordinary :Stun REFUSES TO WRITE under hyper armour, so an
+				armoured victim was being impaled on the blade and could still
+				swing off it. 0.88 is the hold below, not a new number.
+				GUARDED because TrueStun is NOT in the Combatant contract --
+				SimpleEntity has :Stun and no :TrueStun, so a boss caught by
+				this would hard-error. Same guard Freeze and ToshiCounter use.
+				No extra lockout: TrueStun maxes against stun.Value, and
+				BASTARD's own stun (1.0) already outlasts the pin. ]]
+			if enemy.TrueStun then
+				enemy:TrueStun(0.88)
+			end
 			table.insert(pinned, enemy)
 		end
 	end

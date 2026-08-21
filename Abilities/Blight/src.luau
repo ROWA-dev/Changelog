@@ -51,7 +51,7 @@ local BLIGHT = {
 	end,
 }
 
-local TRAVEL_TIME  = 0.3
+local TRAVEL_TIME  = 0.4
 local TRAVEL_DIST  = 22   -- rowa1: 30 steps of a decelerating 1.5..0 stud stride
 local BLAST_RADIUS = 20
 

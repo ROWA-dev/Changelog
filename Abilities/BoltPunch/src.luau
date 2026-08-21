@@ -86,7 +86,7 @@ local function useFunc(this:myself)
 
 	local _, hits
 	for i = 1,3 do
-		_, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(5, 5, 6))
+		_, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(6, 6, 6))
 		if #hits ~= 0 then
 			break
 		end

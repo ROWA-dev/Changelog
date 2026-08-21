@@ -44,7 +44,9 @@ local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 	point; it is no longer a two-touch break. ]]
 local BRST1 = {
 	weight   = dmgUtils.weighEnum.Medium,
-	type     = dmgFlag.fire,
+	--- rowa1's row is bor(fire, blunt); the blunt half was dropped on the way
+	--- over. It picks the block sound (resolution/resolveBlock), nothing else.
+	type     = bit32.bor(dmgFlag.fire, dmgFlag.blunt),
 	dmg      = 4,
 	stun     = 1,
 	posMult  = 5,
@@ -76,18 +78,53 @@ local TICK_RATE  = 0.05
 	An earlier pass used 16, applying a "sustained movers want two thirds"
 	rule -- but that rule came from ONE data point (StoneBall's one-second
 	roll) and does not generalise. rowa1 sets a BodyVelocity, which reaches
-	its target speed immediately and holds it; the honest conversion is the
-	literal one, and decayT -1 keeps it flat rather than ramping down.
+	its target speed immediately and holds it.
+
+	!! THE CALL SITE DOES NOT DO THAT. It passes decayT = RUSH_TIME+0.2, so
+	bodymover scales VectorVelocity by (remaining/decayT)^0.8 every frame and
+	the charge arrives at its own detonation on ~a third of its launch speed.
+	rowa1 lines 108-120 are flat: Velocity = Dir*120, wait 0.6, MaxForce = 0.
+	Left as-is on purpose for now -- removing the decay is a real speed change
+	and wants to be felt on its own, not smuggled in with something else.
 
 	rowa1's MaxForce is `abs(Dir) * mass * 10000` -- force only along the
 	TRAVEL axes, so gravity is untouched. A root-relative horizontal vector
-	is the same thing. ]]
+	is the same thing: bodymover flattens Y when forceVector.Y == 0. ]]
 local RUSH_FORCE = 24
 local RUSH_TIME  = 0.6
 --- rowa1 budgets its carving so a long rush cannot shred the whole map
 local BREAK_BUDGET = 24
 --- the burn rowa1 hardcoded in the resolver for brst2
 local BURN_TIME, BURN_DMG = 6, 3
+
+--[[ THE DETONATION THROW. rowa1 `Knockback(Hum, EnemyHum, look*17)`.
+
+	!! 17 IS NOT AN ARBITRARY NUMBER AND THE STRAIGHT x0.6 CONVERSION THREW
+	IT AWAY. rowa1's Knockback only runs its smash-through-the-scenery pass
+	-- the ray, the Destruction call, the Shockwave and the CamShake -- when
+	`pow > 16`. brst2 sits ONE unit over that gate on purpose: the whole
+	read of the finisher is that the explosion puts someone THROUGH
+	something. StrongLeft's look*16 is on the other side of the same gate,
+	deliberately, so this is a distinction rowa1 was making, not noise.
+
+	rowa2's equivalent gate is knockBreakStuff's `if forceMag < 60 then
+	return`, measured AFTER Knockback's x5. So the intent needs |force| >= 12
+	and the honest-looking 10.2 landed at 51 -- just under, silently, with
+	the entire impact pass never running. That is the missing "recoil".
+
+	The (0,5,0) lift is the launch shape Slayer's finisher and StrongLeft
+	both use. Without it the throw is perfectly horizontal, the victim never
+	leaves the floor, and RowaRagdoll's stopOnGround ray finds ground the
+	instant its 0.5s floor expires -- which is the "why is it not
+	ragdolling" failure its own comment records against Divide.
+
+	decayT -1 = flat, no ramp: a throw commits its whole velocity at once
+	(StrongLeft's comment). Safe here because nothing follows the blast --
+	README 7h's warning is about a launch that has to fall back into a
+	FOLLOW-UP hitbox, and this is the last beat. ]]
+local function BLAST_KB(atkDir: Vector3): Vector3
+	return atkDir * 12 + Vector3.new(0, 5, 0)
+end
 
 local function useFunc(this:myself)
 	local cooldownID = "burst"
@@ -119,6 +156,24 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
 
+	--[[ !! DO NOT SET isRootRelative FALSE HERE TO GET A WORLD-FIXED LINE.
+
+		It reads like a pure direction flag and it is not. Knockback.luau
+		spawns knockBreakStuff BEFORE it does anything else, and that module's
+		only two escapes are `if isRootRelative then return end` and
+		`if forceMag < 60 then return end`. This force is 24, and Knockback
+		multiplies by 5 on the way in -> 120. So flipping the flag arms the
+		smash pass ON THE CASTER'S OWN ROOT: a shock1 ring at your feet, and a
+		FOUR SECOND loop (endt = st + 4, not t) raycasting ahead of you that
+		fires destruction.Sphere into whatever the charge is pointed at.
+		You tunnel through the scenery instead of being stopped by it.
+
+		Every other sustained mover in the game is root-relative for this
+		reason. The two world-vector callers, StrongLeft (6 -> 30) and HitSelf
+		(14 -> 70), sit either side of the same gate.
+
+		So the steering is a known, still-open gap, not something to fix by
+		toggling this argument -- see the note by the catch loop. ]]
 	local rush = this:bodyForce(Vector3.new(0, 0, -RUSH_FORCE), RUSH_TIME, true, RUSH_TIME+0.2)
 
 	--[[ the trailing burn. rowa1 fired this as its own `igniteBFx` id at the
@@ -187,6 +242,16 @@ local function useFunc(this:myself)
 					flat across the fist. ]]
 				enemy.grab:grab(humObj,
 					CFrame.Angles(math.rad(90), 0, math.rad(180)), 2, rightArm)
+				--[[ TRUE stun for the ride (ToshiCounter's shape). :Stun alone
+					is refused under hyper armour, so an armoured victim rode
+					the fireball swinging. Duration is exactly what is left of
+					the rush -- they are released the moment it ends, and the
+					blast's own stun takes over from there.
+					GUARDED: TrueStun is not in the Combatant contract
+					(SimpleEntity has no :TrueStun). ]]
+				if enemy.TrueStun then
+					enemy:TrueStun((TICKS - i) * TICK_RATE)
+				end
 				table.insert(caught, enemy)
 			end
 		end
@@ -220,16 +285,27 @@ local function useFunc(this:myself)
 	this:bodyForce(Vector3.new(0, 0, -12), 0.1, true)
 
 	local forward = hurtbox.CFrame.LookVector
-	local _, blast = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(9, 9, 9))
+	local blastBox, blast = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(9, 9, 9))
 	for _, enemy in pairs(blast) do
 		local attack = this:makeAtk(BRST2, enemy, forward)
-		-- rowa1 look*17, at the x0.6 knockback ratio (README S7)
-		attack.knockback = this:knockback(attack.atkDir * 10.2, 0.2, false, -1)
+		attack.hitbox = blastBox
+		attack.knockback = this:knockback(BLAST_KB(attack.atkDir), 0.2, false, -1)
 		this:executeAttack(attack)
 
 		if attack:isHit() then
-			--- rowa1's onHit is ragdtillground: a CAP ended by landing
-			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 10)
+			--[[ rowa1's onHit is ragdtillground: a CAP ended by landing.
+				SAME SHAPE AS Slayer's heavy launch (dmgConfig/launch.luau) --
+				both are "carried on a grab, released, then thrown" finishers,
+				and both need the release to happen BEFORE the attack (it does,
+				above) so the knockback has a free body to push.
+
+				GUARDED like Slayer's is. `ragdoll` is not in the Combatant
+				contract -- a SimpleEntity has none -- and AbilityBase.use pcalls
+				the whole useFunc, so indexing it raw did not error loudly, it
+				silently ate the burn, every remaining victim and the endLag. ]]
+			if attack.enemyEntity.ragdoll then
+				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 12)
+			end
 			--[[ rowa1 hardcoded `if dmgID == "brst2" then BurnEnemy(...)`
 				INSIDE the resolver. One line at the call site here. ]]
 			attack.enemyEntity.statusEffects:apply(

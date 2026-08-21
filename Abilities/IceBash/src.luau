@@ -36,7 +36,7 @@ local ICE3 = {
 	dmg      = 19,
 	stun     = 0.6,
 	posMult  = 2,
-	parryH   = -0.04,
+	--parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "IceSplash2")
 	end,
