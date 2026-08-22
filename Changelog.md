@@ -2,6 +2,64 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.12.0 - The Great Balancing
+
+> Note: Hitboxes changes are more specific now.
+
+### Changes 🛠️
+- Added true stun during all grabs except Slayer crit (for some reason)
+- Fixed zombie state on suicide and any healing that came with it
+- Increased Bastar parry window (0.16s -> 0.2s)
+- Increased Bastar wind up (0.18s -> 0.2s)
+- Increased Blight travel time (0.3s -> 0.4s)
+- Increased Blood Chain stun duration (0.8s -> 1s)
+- Increased Blood Chain parry window (0.1s -> 0.2s)
+- Decreased how far Blood Chain sends you back
+- Bolt Punch hitbox increased (+1 stud X and Y)
+- Burst first hit damage type changed (fire -> fire and burst)
+- Adjusted Burst exposion knockback
+- Decreased Cero damage (38 -> 32)
+- Increased Cero parry window (0.16s -> 0.2s)
+- Divide hitbox increased (+0.5 studs X and Y, +1.5 Z)
+- Drop Kick damage decreased (26 -> 20)
+- Increased Freeze hitbox (+2 studs)
+- Increased Ice Bash parry window (0.16s -> 0.2s)
+- Decreased Ice Slash damage (12 -> 10)
+- Increased Ice Slash parry window (0.16s -> 0.2s)
+- Decreased Inverse Red damage (24 -> 20)
+- Inverse Red explodes on body if it hits player
+- Inverse Red deflects on parry
+- Decreased Jolt Kick damage (19 -> 16)
+- Increased Jolt Kick hitbox (+1 stud X and Y)
+- Decreased Jolt Kick knockback
+- Decreased Lightning damage (19 -> 18)
+- Decreased Lightning posture damage multiplier (2x -> 1x)
+- Decreased Bastar parry window (0.16s -> 0.1s)
+- Increased Paper Bomb damage (10 -> 12)
+- Increased Paper Bomb parry window (-10.20s -> 0.4s)
+- Increased Piercing Stab parry window (0.1s -> 0.2s)
+- Decreased Power Strike damage (13 -> 10)
+- Decreased Power Strike posture damage multiplier (2x -> 1x)
+- Increased Power Strike parry window (0.1s -> 0.14s)
+- Prediction duration extends when hit
+- You can now hit yourself with RPG
+- Decreased Rend damage (22 -> 14)
+- Decreased Rend posture damage multiplier (3x -> 2x)
+- Increased Rend stun duration (0.8s -> 1s)
+- Increased Rend hitbox (+2 studs)
+- Decreased Stone Ball damage (26 -> 20)
+- Decreased Storm Up posture damage multiplier (2x -> 1x)
+- Increased Stronger Left damage (33 -> 40)
+- Increased Tendrils parry window (0.16s -> 0.2s)
+- Decreased Tendrils damage (32 -> 28)
+- Decreased Zoltraak damage (10 -> 9)
+- Decreased Oblitar M1 damage (16 -> 14)
+- Decreased Oblitar heavy attack damage (40 -> 34)
+- Decreased Slayer heavy attack knockback
+- Fixed Slayer still showing when unequipped
+
+<br><sub>2026-08-21</sub>
+
 ## 1.11.0 - ROWA 2 Is Coming Back?
 
 ### Added ✅
@@ -14,7 +72,20 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Players spawn with a set of randomized moves per slot
   - This is temporary until base progression is added
 
-<br><sub>2026-08-19</sub>
+<br><sub>2026-08-20</sub>
+
+## 1.10.0 - THE ROWAPOCALPYSE
+
+### Added ✅
+- New ability: Hollow Purple
+
+### Changes 🛠️
+- Cooldown now only shows seconds rather than decimals
+- Changed sound on Fire Stab
+- Axe heavy attack is still being worked on
+- Fixed moves that had issues after the port again
+
+<br><sub>2026-08-20</sub>
 
 ## 1.9.0 - It's Over For ROWA 2
 
