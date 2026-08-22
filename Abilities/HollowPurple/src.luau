@@ -333,13 +333,9 @@ local function useFunc(this:myself)
 
 	fireVFX("hideTool", char)
 	--[[ the entire cinematic. Pattern B: the client owns every instance of it.
-
-		TOLD THE TRUTH, NOT THE PAPER NUMBER. feintWait really waits t - 0.08
-		(README 7f), so the wall-clock span from here to the shot is 4.17, not
-		the 4.25 the two constants add up to. The cinematic's last beat is the
-		screen flash and it is supposed to land ON the release; handing it the
-		paper number puts the flash 0.08 after the orb has already gone. ]]
-	fireVFX("hollowPurpleCharge", char, CHARGE_TOTAL - 0.08)
+		The cinematic's last beat is the screen flash and it is supposed to
+		land ON the release, so it gets the whole span. ]]
+	fireVFX("hollowPurpleCharge", char, CHARGE_TOTAL)
 
 	local function bail()
 		if anim then anim:Stop(0.2) end

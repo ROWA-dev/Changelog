@@ -228,7 +228,7 @@ local function useFunc(this:myself)
 	local rightArm = char:FindFirstChild("Right Arm")
 	fireVFX("rpgLauncher", rightArm, 1.4)
 
-	if this:feintWait(0.8) then
+	if this:feintWait(0.72) then
 		if anim then anim:Stop() end
 		fireVFX("rpgLauncher", nil, 0) -- tell the client to bin it early
 		return

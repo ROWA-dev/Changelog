@@ -101,7 +101,7 @@ local function useFunc(this:myself)
 		accumulator restores rowa1's cadence and makes the emit rate
 		independent of framerate. ]]
 	local sinceEmit, ticks = 0, 0
-	local feinted = this:feintWait(0.8, function(dt: number)
+	local feinted = this:feintWait(0.72, function(dt: number)
 		sinceEmit += dt
 		if sinceEmit < 0.05 then return end
 		sinceEmit -= 0.05

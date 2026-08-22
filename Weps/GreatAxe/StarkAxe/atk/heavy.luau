@@ -66,7 +66,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	
 	Hold.Parent.heavy.Enabled = false
 	--Hold.Parent.Trail1.Enabled = true
-	if this:feintWait(0.75) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy()  Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
+	if this:feintWait(0.67) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy()  Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
 	
 	
 	if not humObj or not humObj.isActive or humObj:inStun() then

@@ -57,8 +57,8 @@ local DROP_KICK = {
 	SOMETHING, usually well under half a second, so it behaves like an
 	impulse and wants the full converted value. At 12 the fall was visibly
 	floaty. ]]
-local DIVE_FORCE = 18
-local MAX_DIVE   = 1.2
+local DIVE_FORCE = 16
+local MAX_DIVE   = 2
 --[[ the hop only has to get you off the ground -- the dive is the move.
 	rowa1's MiniDash(.., 40) converts to 8, but it held for 0.3s and read as
 	a long hang before anything happened. Shorter and softer. ]]
@@ -83,7 +83,7 @@ local function useFunc(this:myself)
 		(Vector3.new(0, 1, 0) + Vector3.new(0, 0, -0.25)).Unit * HOP_FORCE,
 		HOP_TIME, true)
 
-	if this:feintWait(0.42) then
+	if this:feintWait(0.34) then
 		if first then first:Stop() end
 		if hop then hop:destroy() end
 		return
@@ -93,8 +93,7 @@ local function useFunc(this:myself)
 
 	fireVFX("dropKickCharge", char:FindFirstChild("Right Leg"), 1.5)
 
-	--- +0.08: every feintWait after the first needs it back (README S7 7f)
-	if this:feintWait(0.28) then
+	if this:feintWait(0.2) then
 		if first then first:Stop() end
 		fireVFX("dropKickCharge", nil, 0)
 		return
@@ -110,11 +109,33 @@ local function useFunc(this:myself)
 	--- down and forward: rowa1's dir was UpVector*-10 + LookVector*8
 	local dive = this:bodyForce(Vector3.new(0, -1.2, -1).Unit * DIVE_FORCE, MAX_DIVE, true)
 
-	diveParams.FilterDescendantsInstances = { char, workspace.Effects }
+	--[[ !! A BODY IS NOT THE FLOOR, AND THIS IS WHY THE KICK MISSED.
+		This ray answers "have I landed", and it used to exclude only the
+		caster and workspace.Effects. A live entity's HumanoidRootPart is
+		CanCollide, CanQuery AND in the Default collision group, so diving AT
+		someone made THEM the landing surface: the loop broke with `landing`
+		set and `hits` still nil, and the kick then carved the ground, played
+		every effect and dealt nothing. That is the "drop kick just lands but
+		doesn't actually hit them" report, and it is why it was intermittent --
+		it depended on whether the ray happened to clip a body or open floor.
+		workspace.Entities is excluded so ONLY world geometry can end the ride.
+		People are answered by the hitbox, which is the thing that can
+		actually damage them. ]]
+	diveParams.FilterDescendantsInstances = { char, workspace.Effects, workspace.Entities }
 
 	local hits = nil
 	local landing = nil
 	local started = tick()
+
+	--[[ rowa1 offset the query by velocity/16 -- "blaze likes relative
+		position" -- so a fast dive tests where it is ABOUT to be, not where
+		it was one frame ago. ]]
+	local function sweepAhead(from: BasePart, dir: Vector3)
+		local rpos = from.Position + from.AssemblyLinearVelocity / 16
+		local cf = CFrame.new(rpos + dir.Unit * 3, rpos + dir.Unit * 6)
+		local _, found = this:hitbox(cf, Vector3.new(7,7,7), nil, true)
+		return found
+	end
 
 	--- fixed-rhythm ride -> BARRAGE PATTERN for the interrupt checks
 	while tick() < started + MAX_DIVE do
@@ -124,19 +145,22 @@ local function useFunc(this:myself)
 		if root == nil then break end
 
 		local dir = root.CFrame.UpVector * -10 + root.CFrame.LookVector * 8
-		local result = workspace:Raycast(root.Position, dir, diveParams)
-		if result and result.Instance and result.Instance.CanCollide then
-			landing = result
+
+		--[[ PEOPLE ARE ASKED FIRST. They used to be asked second, after the
+			surface ray had already broken the loop -- and this ray is 12.8
+			studs long against a hop that only clears a few, so on most dives
+			the floor answered on the FIRST iteration and the hitbox below
+			never ran once. Whoever you are diving at decides the dive, not the
+			ground they happen to be standing on. ]]
+		local found = sweepAhead(root, dir)
+		if #found > 0 then
+			hits = found
 			break
 		end
 
-		--- rowa1 offset the query by velocity/16 -- "blaze likes relative
-		--- position" -- so a fast dive tests where it is ABOUT to be
-		local rpos = root.Position + root.AssemblyLinearVelocity / 16
-		local cf = CFrame.new(rpos + dir.Unit * 3, rpos + dir.Unit * 6)
-		local _, found = this:hitbox(cf, Vector3.new(6, 6, 6), nil, true)
-		if #found > 0 then
-			hits = found
+		local result = workspace:Raycast(root.Position, dir, diveParams)
+		if result and result.Instance and result.Instance.CanCollide then
+			landing = result
 			break
 		end
 	end
@@ -157,6 +181,22 @@ local function useFunc(this:myself)
 		Destruction.Sphere(nil, origin, 3.5, 2.1, dir * 40)
 	end
 	fireVFX("dropKickLand", origin, dir)
+
+	--[[ THE IMPACT ITSELF STILL SWINGS.
+		rowa1 seeded its hit list BEFORE the ride and then resolved damage
+		unconditionally at the end, so even its "I hit the floor" exit swung
+		at whatever was in the box. rowa2 moved the query inside the loop and
+		dropped that, leaving `hits` nil on every landing -- so a kick that
+		slammed down right next to someone did nothing at all.
+		One query AT the impact point restores it, without rowa1's stale
+		pre-dive list. Lifted 2 studs so it covers a standing target's body
+		rather than being buried in the floor it just cratered. ]]
+	if hits == nil and not humObj:inStun() then
+		local _, found = this:hitbox(
+			CFrame.new(origin + Vector3.new(0, 2, 0)),
+			Vector3.new(7, 7, 7), nil, true)
+		if #found > 0 then hits = found end
+	end
 
 	if hits and not humObj:inStun() then
 		for _, enemy in pairs(hits) do

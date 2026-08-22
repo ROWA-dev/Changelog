@@ -14,7 +14,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 
-	if this:feintWait(0.8) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
+	if this:feintWait(0.72) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
 	this:triggerCD("heavy")
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("cyldrshock",
 		hurtbox.CFrame*CFrame.Angles(0,math.rad(90),math.rad(90))

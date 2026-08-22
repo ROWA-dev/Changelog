@@ -142,11 +142,9 @@ local function useFunc(this:myself)
 
 	--[[ WINDUP. rowa1 declares Attacking.Time 1.0 but the real waits are
 		0.3 + 0.05 + 0.4 + 0.05 = 0.8 (README S5 note 7g -- the claim and the
-		truth disagree, port the truth). Split across three feintWaits, and
-		only the FIRST one takes the -0.08 lead: the two after it are plain
-		beats and are passed n + 0.08, so the move loses 0.08 in TOTAL rather
-		than 0.08 per beat (note 7f). 0.22 + 0.05 + 0.45 = 0.72. ]]
-	if this:feintWait(0.3) then
+		truth disagree, port the truth). Split across three feintWaits:
+		0.22 + 0.05 + 0.45 = 0.72. ]]
+	if this:feintWait(0.22) then
 		cleanup()
 		return
 	end
@@ -161,7 +159,7 @@ local function useFunc(this:myself)
 	keep(attach("IceHit", castHost))
 	fireVFX("emit", castHost, "Wind", 6, 4)
 
-	if this:feintWait(0.13) then
+	if this:feintWait(0.05) then
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		cleanup()
 		return
@@ -183,7 +181,7 @@ local function useFunc(this:myself)
 		fireVFX("placeSnow", castHit.Position, castHit.Normal, 9)
 	end
 
-	if this:feintWait(0.53) then
+	if this:feintWait(0.45) then
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		cleanup()
 		return

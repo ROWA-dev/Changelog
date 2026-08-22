@@ -16,7 +16,7 @@ return function(this:wepBase.myself&any)
 	end
 
 	this:indicateAtk()
-	if this:feintWait(0.5) then return end
+	if this:feintWait(0.42) then return end
 
 	local hitboxOffset = CFrame.new(0,0,-4)
 	local hitboxSize   = Vector3.new(6,6,6)

@@ -43,7 +43,7 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	
 	local st = tick()
-	local feinted = this:feintWait(0.7, function()
+	local feinted = this:feintWait(0.62, function()
 		vfx2:Emit(1)
 		vfx3:Emit(1)
 	end)

@@ -78,7 +78,7 @@ local function flourish(this:wepBase.myself&any)
 	if sharp and sharp:IsA("ParticleEmitter") then sharp:Emit(1) end
 
 	-- the REAL waits, 0.2 + 0.3. NOT the declared 0.45. See the header.
-	if this:feintWait(0.5) then return end
+	if this:feintWait(0.42) then return end
 
 	local hitbox, hits = this:hitbox(
 		CFrame.new(0, 0, -3),
@@ -139,7 +139,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 			in playtest because the axe should commit harder than the sword it
 			was first modelled on. It is NOT a translation of a rowa1 number,
 			so do not "correct" it back to 0.5 by reading Main. ]]
-		0.6, -- windup BASE
+		0.52, -- windup BASE
 		CFrame.new(0,0,-3.5), -- hitboxoffset
 		Vector3.new(6,6.5,6), -- hitbox sz
 		indicator,

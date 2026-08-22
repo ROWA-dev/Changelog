@@ -33,7 +33,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 			Hold.Swing2:Play()
 		end
 	end
-	if this:feintWait(0.75, cb) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy() Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
+	if this:feintWait(0.67, cb) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy() Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
 	this:triggerCD("heavy")
 	Hold.slideSfx:Stop()
 	

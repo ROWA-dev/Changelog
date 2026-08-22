@@ -119,7 +119,7 @@ local function useFunc(this:myself)
 		fireVFX("partOutline", blade, Color3.fromRGB(255, 0, 0), 0.4)
 	end
 
-	if this:feintWait(0.55) then
+	if this:feintWait(0.47) then
 		if anim then anim:Stop() end
 		return
 	end
@@ -131,9 +131,8 @@ local function useFunc(this:myself)
 		hurtbox)
 
 	--[[ rowa1's second beat: 0.1s between the arc and the impact, and it
-		re-checked stun across it. +0.08 because this is an inter-beat wait,
-		not the windup (README 7f). 0.55 + 0.1 is the 0.65 rowa1 declares. ]]
-	if this:feintWait(0.2) then
+		re-checked stun across it. ]]
+	if this:feintWait(0.12) then
 		if anim then anim:Stop() end
 		return
 	end
@@ -221,7 +220,6 @@ local function useFunc(this:myself)
 
 	--[[ the hold. rowa1 waits 0.8s pinned before the throw, and releases the
 		welds on the same 0.8s timer.
-		+0.08 because this is an inter-beat wait, not the windup (README 7f).
 		THE PIN MUST COME OFF ON EVERY EXIT -- a stranded weld is a player
 		who can never move again, and it is silent. ]]
 	local function unpin()
@@ -230,7 +228,7 @@ local function useFunc(this:myself)
 		end
 	end
 
-	if this:feintWait(0.88) then
+	if this:feintWait(0.8) then
 		if throwAnim then throwAnim:Stop() end
 		unpin()
 		return

@@ -17,7 +17,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	Hold.inhale:Play()
 	
 	humObj.walkSpeed:SetMod("stopMoving", -100)
-	if this:feintWait(0.46) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
+	if this:feintWait(0.38) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
 	this:triggerCD("heavy")
 	
 	local hitboxOffset = CFrame.new(0, 0, -3)

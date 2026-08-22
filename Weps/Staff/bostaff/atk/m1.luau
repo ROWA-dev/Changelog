@@ -16,7 +16,7 @@ local function flourish(this:wepBase.myself&any)
 	if this.flourishHook and this:flourishHook() == true then return end
 
 	this:indicateAtk()
-	if this:feintWait(0.65) then return end
+	if this:feintWait(0.57) then return end
 
 	local hitboxOffset = CFrame.new(0,0,-3.5)
 	local hitboxSize   = Vector3.new(5,5,5)
@@ -46,7 +46,7 @@ local function flourish(this:wepBase.myself&any)
 			end)
 		end
 		--task.wait(0.1)
-		if this:feintWait(0.18) then
+		if this:feintWait(0.1) then
 			track:Stop()
 			return
 		end
@@ -105,7 +105,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		script, -- animsParent
 		4, -- m1CycleCount
 		dmgConfig.m1,
-		0.5, -- windup
+		0.42, -- windup
 		CFrame.new(0,0,-2.5), -- hitboxoffset
 		Vector3.new(6,6,6), -- hitbox sz
 		indicator,

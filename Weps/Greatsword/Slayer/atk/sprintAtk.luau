@@ -39,7 +39,7 @@ return function(this:wepTyp&any): wepType.atkResult
 		this,
 		script.sprintAtk, -- anim
 		dmgConfig.m1, -- dmgtbl
-		0.52, -- windup BASE; atkRate 1.18 scales it
+		0.45, -- windup BASE; atkRate 1.18 scales it
 		--[[ 10, not 26/5. rowa1's MiniDash holds 26 studs/s FLAT for 0.5s;
 			rowa2's bodyForce decays over the same window, so the naive P/5
 			undershoots badly. Same correction Oblitar's thrust needed. ]]

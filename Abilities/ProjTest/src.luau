@@ -91,7 +91,7 @@ local function useFunc(this:myself)
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
 
-	if this:feintWait(0.25) then return end
+	if this:feintWait(0.17) then return end
 
 	this:triggerCD(cooldownID, 1, true)
 

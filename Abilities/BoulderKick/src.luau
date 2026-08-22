@@ -72,7 +72,7 @@ local BLDR = table.freeze({
 })
 
 --- rowa1 Attacking.Time 0.7; its waits are 0.3 to the dig, 0.5 to the kick
-local WINDUP = 0.3
+local WINDUP = 0.22
 local GATHER = 0.7
 
 --[[ BoulderGrab cuts THREE overlapping boxes at 1.5 x smallBreakSizes --
@@ -153,8 +153,7 @@ local function useFunc(this:myself)
 		fireVFX("partOutline", leftLeg, Color3.fromRGB(255, 0, 0), GATHER + 0.2)
 	end
 
-	--- +0.08: every feintWait after the first needs it back (README S7 7f)
-	if this:feintWait(GATHER + 0.08) then
+	if this:feintWait(GATHER) then
 		if anim then anim:Stop(0.1) end
 		--- rowa1 LEAKED the half-lifted terrain here. Ours is client-drawn,
 		--- so calling it off actually calls it off (PORT step 5).

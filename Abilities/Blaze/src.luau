@@ -27,7 +27,7 @@ local function useFunc(this:myself)
 	
 	this:bodyForce(Vector3.new(0,0,-10), 0.5, true, 0.5, 0.5)
 	local st = tick()
-	local feinted = this:feintWait(0.6, function(dt: number)
+	local feinted = this:feintWait(0.52, function(dt: number)
 		local t = tick()-st
 		--Idle.Squash = NumberSequence.new(t-0.4)
 		--Idle:Emit(1)
@@ -110,7 +110,7 @@ local function useFunc(this:myself)
 		end
 	end
 	
-	if this:feintWait(0.3) then -- if canceled
+	if this:feintWait(0.22) then -- if canceled
 		if anim then anim:Stop() end
 		return
 	end
@@ -118,7 +118,7 @@ local function useFunc(this:myself)
 	for i = 1,3 do
 		spinHit()
 		
-		if this:feintWait(0.2) then -- if canceled
+		if this:feintWait(0.12) then -- if canceled
 			if anim then anim:Stop() end
 			return
 		end 

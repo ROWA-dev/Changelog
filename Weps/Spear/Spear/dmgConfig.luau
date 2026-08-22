@@ -24,6 +24,27 @@ local config:configs = {
 		posMult  = 1.2,
 		onHit    = require(script:WaitForChild("punch"))
 	},
+	--[[ THE THROWN SPEAR. rowa1 `spH`: Medium, slash+weaponHeavy, 28 dmg,
+		truestun 0.4 + stun 0.9 (collapsed to one, README S4.2), posMult 2.
+		Damage brought down to 20: this pierces, ragdolls, and cannot be
+		blocked out of existence -- a block only bends it -- and the reach is
+		the whole point of the move.
+		NO parryH/dodgeH: rowa1's row carries neither, and the parry reward
+		here is already large (the spear goes home and can stick in the
+		thrower). Do not add one without a playtest.
+		NO knockback either: rowa1 PINS on a clean hit and only shoves on a
+		block. See PORTW_SpearThrow 3.2 and heavy.luau. ]]
+	throw = {
+		weight   = weighEnum.Medium,
+		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
+		dmg      = 20,
+		stun     = 0.8,
+		posMult  = 2,
+		onHit    = require(script.throw)
+	},
+	--[[ UNUSED. The heavy is a throw, so nothing reads this row. Kept
+		because it is the only home the decap onHit has; wire it up only if
+		the spear ever grows a melee heavy again. ]]
 	heavy = {
 		weight   = weighEnum.Medium,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),

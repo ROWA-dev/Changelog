@@ -139,7 +139,7 @@ local function useFunc(this:myself)
 	fireVFX("igniteBall", 1, rightArm, 2)
 
 	--- rowa1: 0.1 + 0.4 then the shockwave, then 0.2 more
-	if this:feintWait(0.5) then
+	if this:feintWait(0.42) then
 		if anim then anim:Stop() end
 		fireVFX("igniteBall", 0)
 		return
@@ -147,7 +147,7 @@ local function useFunc(this:myself)
 
 	fireVFX("burstRing", humObj.HRootPart, false)
 
-	if this:feintWait(0.28) then
+	if this:feintWait(0.2) then
 		if anim then anim:Stop() end
 		fireVFX("igniteBall", 0)
 		return

@@ -115,7 +115,7 @@ local function useFunc(this:myself)
 	fireVFX("hshock", humObj.HRootPart)
 	fireVFX("bFlashTrail", char:FindFirstChild("Left Arm"), 0.5)
 
-	if this:feintWait(0.5) then
+	if this:feintWait(0.47) then
 		if anim then anim:Stop(0.1) end
 		fireVFX("bFlashTrail", nil, 0)
 		return
@@ -154,7 +154,10 @@ local function useFunc(this:myself)
 		attack.knockback = this:knockback(Vector3.new(0, 6, 0), 0.2, false, -1)
 		this:executeAttack(attack)
 
-		if attack:isHit() then caught = enemy end
+		if attack:isHit() then
+			enemy:TrueStun(1)
+			caught = enemy
+		end
 		break
 	end
 
@@ -171,7 +174,7 @@ local function useFunc(this:myself)
 	end, DRAG_OPTS)
 	
 	-- to wait for them to fall down alittlebit...
-	if this:feintWait(0.2) then
+	if this:feintWait(0.12) then
 		if anim then anim:Stop(0.1) end
 		release()
 		return
@@ -182,7 +185,7 @@ local function useFunc(this:myself)
 	local part2 = this:PlayAnim(script.Part2, 0, 1, 1)
 	fireVFX("divergant", char:FindFirstChild("Right Arm"), 0.8)
 
-	if this:feintWait(0.68) then
+	if this:feintWait(0.6) then
 		if part2 then part2:Stop(0.1) end
 		release()
 		return
@@ -309,6 +312,25 @@ local function useFunc(this:myself)
 		end
 	end
 
+	--[[ !! THE BLACK FLASH. This is the payoff and it was missing entirely.
+		rowa1's last two lines before its tail are, together, gated on the
+		bflash beat having landed:
+		    FxRemote:FireAllClients("bflash2", Root)
+		    CamShake:FireAllClients(Root.Position, 400, 1, 0.3)
+		Only the second one got ported, so the finisher ended on a ring, a
+		hit sound and a camera shake with nothing between them. `bflash2` is
+		the black flash itself AND the only place LightningClash + bflash2 +
+		bflash play -- which is why the move's audio read as thin and
+		unresolved even though every dmgTbl sound was correct.
+		Ported as VFXQuiver/blackFlash (cold). Fired HERE, in rowa1's order:
+		after the finisher resolves, immediately before the shake.
+
+		The `landed` gate above is rowa1's `therehit2` -- the flash only ever
+		goes off on a connected finisher, never on a whiffed one. ]]
+	fireVFX("blackFlash", humObj.HRootPart)
+	--- rowa1's second RedFlash pulse. rowa2 has no such Lighting effect, so
+	--- the participants' screen flash is what carries it (see bflashScreen).
+	fireVFX("bflashScreen", char, caught.HRootPart and caught.HRootPart.Parent)
 	fireVFX("camShake", hurtbox.Position, 400, 1, 0.3)
 	this:endLag(0.3)
 end

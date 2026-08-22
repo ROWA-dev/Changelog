@@ -18,7 +18,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 		script, -- animsParent
 		3, -- m1CycleCount
 		dmgConfig.m1,
-		0.62, -- windup
+		0.54, -- windup
 		CFrame.new(0,0,-3.5), -- hitboxoffset
 		Vector3.new(7,6,7), -- hitbox sz
 		indicator,

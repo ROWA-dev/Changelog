@@ -21,7 +21,7 @@ return function(this:wepTyp): wepType.atkResult
 	
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	
-	if this:feintWait(0.5) then vfx:Destroy() floorVfx:Destroy() humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
+	if this:feintWait(0.42) then vfx:Destroy() floorVfx:Destroy() humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
 
 vfx["Critical Hit"]:Play()
 	local particles = {}
@@ -95,7 +95,7 @@ vfx["Critical Hit"]:Play()
 
 	--
 	
-	if this:feintWait(0.64, cb) then
+	if this:feintWait(0.56, cb) then
 		humObj.walkSpeed:RemoveMod("stopMoving")
 		anim:Stop()
 		

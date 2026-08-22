@@ -20,7 +20,7 @@ return function(this:wepTyp): wepType.atkResult
 		this,
 		script.Thrust, -- anim
 		dmgConfig.m1, -- dmgtbl
-		0.9, -- windup
+		0.82, -- windup
 		10, -- force
 		0.8, -- force duration
 		CFrame.new(0, 0, -7), -- hitboxoffset

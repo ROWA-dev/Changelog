@@ -13,7 +13,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 
 	local atkrate = this.atkRate.Value
-	if this:feintWait(0.6) then humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
+	if this:feintWait(0.52) then humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
 	this:triggerCD("heavy")
 	humObj.walkSpeed:RemoveMod("stopMoving")
 	
@@ -52,7 +52,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 		local grab = grabClass:grab(humObj)
 		grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0.5,3)
 		victimAnim:Play()
-		if this:feintWait(0.55) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
+		if this:feintWait(0.47) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
 		
 		local attack = this:makeAtk(
 			dmgConfig.smash,
@@ -63,7 +63,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 		task.spawn(this.executeAttack, this, attack)
 		--this:executeAttack(attack)
 		
-		if this:feintWait(1) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
+		if this:feintWait(0.92) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
 		
 		grabClass:release()
 		local attack = this:makeAtk(

@@ -33,7 +33,7 @@ local function useFunc(this:myself)
 	game.Debris:AddItem(sound2, 4)
 
 	local st = tick()
-	local feinted = this:feintWait(0.5, function(dt: number)
+	local feinted = this:feintWait(0.42, function(dt: number)
 		local t = tick()-st
 		--Idle.Squash = NumberSequence.new(t-0.4)
 		--Idle:Emit(1)

@@ -38,7 +38,6 @@ end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
-local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
@@ -103,7 +102,7 @@ local function useFunc(this:myself)
 	breath:Play()
 	game.Debris:AddItem(breath, 4)
 
-	if this:feintWait(1.2) then
+	if this:feintWait(1.12) then
 		if anim then anim:Stop(0.1) end
 		game.Debris:AddItem(breath, 0)
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
@@ -125,6 +124,22 @@ local function useFunc(this:myself)
 
 	local started = tick()
 	local nextTick = 0
+
+	--[[ ONE ignite per victim per CAST -- FlameDance has the same six lines
+		for the same reason (a third copy is the point to extract them).
+		rowa1 guarded with `if not RootPart:FindFirstChild("flameFx")`: never
+		re-light someone already alight. Without it a 3-second channel re-applied
+		Burn to the far band up to 30 times, and onStack is uncapped ON PURPOSE,
+		so a 3-a-tick DoT arrived at ~46 with the emitters scaled to match.
+		Keyed per CAST, not "is the victim burning at all": another move piling
+		onto them is the point, this move piling onto itself is not. ]]
+	local burned: {[number]: boolean} = {}
+	local function ignite(enemy: any)
+		local id = enemy.entityId
+		if burned[id] then return end
+		burned[id] = true
+		enemy.statusEffects:apply(humObj.statusEffects.Burn, 6, 3)
+	end
 
 	while tick() < started + CHANNEL do
 		task.wait()
@@ -176,7 +191,7 @@ local function useFunc(this:myself)
 					dmgID called "burn" with dmg 0 and stun 0 whose only job
 					was to make the resolver call BurnEnemy. One line here. ]]
 				if i == BANDS then
-					enemy.statusEffects:apply(humObj.statusEffects.Burn, 6, 3)
+					ignite(enemy)
 					continue
 				end
 
@@ -198,6 +213,10 @@ local function useFunc(this:myself)
 					attack.knockback = this:knockback(
 						forward * (near and 10.8 or 3.6), 0.15, false, -1)
 					this:executeAttack(attack)
+					--- rowa1 burned on "fire1"/"fire2" as well, behind that same
+					--- guard -- only the outermost band being able to set you
+					--- alight was a port gap, not a design.
+					if attack:isHit() then ignite(enemy) end
 				end)
 			end
 		end

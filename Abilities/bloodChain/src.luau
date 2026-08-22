@@ -163,7 +163,7 @@ local function useFunc(this:myself)
 
 	fireVFX("bchainWindup", humObj.HRootPart, arm, WINDUP)
 
-	if this:feintWait(WINDUP + 0.08) then
+	if this:feintWait(WINDUP) then
 		if anim then anim:Stop(0.1) end
 		if hop then hop:destroy() end
 		fireVFX("bchainWindup", nil, nil, 0)

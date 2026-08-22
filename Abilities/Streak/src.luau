@@ -84,7 +84,7 @@ local function useFunc(this:myself)
 	end
 
 	--- rowa1: 7 x 0.1
-	if this:feintWait(0.7) then
+	if this:feintWait(0.62) then
 		if first then first:Stop() end
 		return
 	end

@@ -67,7 +67,7 @@ local function useFunc(this:myself)
 	--[[ THE MOD MUST COME OFF ON EVERY EXIT. A stranded negative walkSpeed is
 		invisible, permanent and the single most common stuck state in this
 		codebase. ]]
-	if this:feintWait(0.65) then
+	if this:feintWait(0.57) then
 		if anim then anim:Stop() end
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		return

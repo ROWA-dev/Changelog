@@ -51,7 +51,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 	local hurtbox:BasePart  = humObj.HurtBox
 	task.spawn(cannonFx, this)
 	local anim = this:PlayAnim(script.windup, 0, 1, 1)
-	if this:feintWait(0.3) then this:stopLastAnim(true) return end
+	if this:feintWait(0.22) then this:stopLastAnim(true) return end
 	
 	this:triggerCD("heavy", 4)
 	this:bodyForce(Vector3.new(0,0,-10),1, true, 0.5)
@@ -68,7 +68,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 	
 	task.spawn(cannonFxShot, this)
 	
-	if this:feintWait(0.5) then
+	if this:feintWait(0.42) then
 		if humObj:inStun() then
 			humObj.HRootPart.AssemblyLinearVelocity = Vector3.zero
 			force:destroy()

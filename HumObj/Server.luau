@@ -606,7 +606,11 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 		return resolveParry(self, attack, atkSource, atkPostureDMG)
 	end
 
-	if enemyEntity.isDodge and enemyEntity:isDodge() then
+	--[[ PASS THE ATTACK. The parry branch above and the block branch below
+		both do; this one did not, and that single omission made every
+		`dmgTbl.dodgeH` in the game a no-op -- including HollowPurple's -10,
+		which is its entire i-frame-piercing design (README S10.6). ]]
+	if enemyEntity.isDodge and enemyEntity:isDodge(attack) then
 		return attack:onAttackReturn(returnEnums.dodged, atkSource)
 	end
 
@@ -747,22 +751,65 @@ function module.isParry(self:myself, atk:atkTyp?)
 	return tick() <= self.cooldowns:lastUsedAt("parry") + window
 end
 
-function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
-	local offset:number = offset or 0
-	if atk then
-		local velo = self.HRootPart.AssemblyLinearVelocity
-		local dif = velo.Unit:Dot(atk.atkDir)
-		-- dif is -1 if moving opposite of atk dir
-		-- dif is 1 if moving same dir as atk
+--- how much a MOVING defender shifts their own dodge window, and the speed
+--- it takes to earn it. One place, so it is one number to tune or to zero.
+local VELOCITY_NUDGE   = 0.1
+local NUDGE_MIN_SPEED  = 8
 
-		if velo.Magnitude > 8 then
-			self.dodgeThreshold -= dif*0.1
-		end
+--[[ isDodge -- BUILT LIKE isParry, DELIBERATELY, AND IT DID NOT USED TO BE.
+	The three defence questions are siblings: each answers "did the defender
+	beat THIS attack", each reads a per-attack knob off the dmgTbl, and each
+	is a PREDICATE. isParry accumulates a local `window` and never touches
+	self.parryWindow. This now does the same against self.dodgeThreshold.
+
+	!! IT USED TO WRITE TO dodgeThreshold, AND THAT FIELD IS THE DODGE.
+	Dash sets it (tick() + dodgeWindow), DashCancel clamps it, Clap and
+	HollowPurple push it forward. So ASKING THE QUESTION CHANGED THE ANSWER,
+	permanently and cumulatively -- there was no per-attack scope to undo it.
+	Worst caller: Cards/PingCompensation polls `humObj:isDodge(atk)` every
+	Heartbeat for up to 0.9x the attacker's ping, so a defender moving faster
+	than NUDGE_MIN_SPEED drifted their own window by 0.1 PER FRAME POLLED --
+	tenths of a second of dodge appearing or vanishing based on nothing but
+	how long someone's ping was. Nick_Amplifier and HeavensEqualizer poll it
+	too. The nudge is a local term now and expires with the question, which
+	is what it always read as.
+]]
+function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
+	local window:number = offset or 0
+
+	if atk then
+		--[[ THE PRESSURE VALVE (README S10.6). Positive widens the out;
+			a large negative is rowa1's global `bypassiframes` SET expressed
+			as a number on the ATTACKER's own table instead of an exemption
+			list inside the resolver -- HollowPurple's -10 means "i-frames do
+			not answer this".
+			IT WAS DEAD UNTIL NOW. HandleAttack called :isDodge() with no
+			attack, so for the one caller that actually decides whether a hit
+			lands, this branch never ran and every dodgeH in the game was
+			cosmetic. ]]
 		if atk.dmgTbl.dodgeH then
-			offset += atk.dmgTbl.dodgeH
+			window += atk.dmgTbl.dodgeH
+		end
+
+		local root = self.HRootPart
+		local velo = if root then root.AssemblyLinearVelocity else Vector3.zero
+		local atkDir = atk.atkDir
+		--[[ atkDir is WORLD-SPACE and NOT guaranteed unit -- call sites pass
+			everything from a bare LookVector to `dir * 20`. Normalise it, or
+			the nudge silently scales with whatever the caller multiplied by.
+			Both guards also keep :Unit away from a zero vector, which is NaN
+			(the old code computed the dot BEFORE checking the speed). ]]
+		if velo.Magnitude > NUDGE_MIN_SPEED and atkDir.Magnitude > 0 then
+			--[[ -1 moving against the blow, +1 moving with it. Moving INTO
+				an attack widens the window, running with it narrows it.
+				SIGN PRESERVED from the original -- this is a design call, not
+				a bug, and it is now decided in exactly one place if it turns
+				out to read backwards. ]]
+			window -= velo.Unit:Dot(atkDir.Unit) * VELOCITY_NUDGE
 		end
 	end
-	return tick() <= self.dodgeThreshold + (offset or 0)
+
+	return tick() <= self.dodgeThreshold + window
 end
 
 function module.isBlock(self:myself, atk:atkTyp?)

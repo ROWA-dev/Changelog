@@ -13,7 +13,7 @@ return function(this:wepTyp): wepType.atkResult
 		this,
 		script.arial, -- anim
 		dmgConfig.m1, -- dmgtbl
-		0.9, -- windup
+		0.82, -- windup
 		9, -- force
 		0.8, -- force duration
 		CFrame.new(0, -2, -7), -- hitboxoffset

@@ -70,7 +70,7 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	if this:feintWait(0.35) then
+	if this:feintWait(0.27) then
 		if anim then anim:Stop() end
 		return
 	end

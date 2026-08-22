@@ -54,9 +54,9 @@ return function(this:wepTyp&any): wepType.atkResult
 		this,
 		script.arial, -- anim
 		dmgConfig.downSlam, -- dmgtbl
-		0.6, -- windup BASE (real waits 0.3 + 0.3, NOT the declared 0.5)
+		0.58, -- windup BASE (real waits 0.3 + 0.3, NOT the declared 0.5)
 		12, -- force. rowa1 MiniDash 30 flat; rowa2 bodyForce decays.
-		0.5, -- force duration
+		0.6, -- force duration
 		CFrame.new(0, -2, -5), -- hitboxoffset
 		--- +2 per axis over the rowa1 translation (was 7,7,7.5). See m1.
 		Vector3.new(9, 9, 9.5), -- hitbox sz

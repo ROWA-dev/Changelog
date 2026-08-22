@@ -14,7 +14,7 @@ return function(this:wepTyp): wepType.atkResult
 		this,
 		script.sprintAtk, -- anim
 		dmgConfig.m1, -- dmgtbl
-		0.52, -- windup
+		0.44, -- windup
 		12, -- force
 		0.4, -- force duration
 		CFrame.new(0, 0, -4.5), -- hitboxoffset

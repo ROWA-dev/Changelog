@@ -110,14 +110,13 @@ return function(this:wepTyp&any): wepType.atkResult
 
 		rowa1's heavy windup is `local endt = tick() + 1` -- a RAW 1.0s, with
 		no AtkRate on it, unlike its m1 which writes `0.2*AtkRate`. So 1.0 is
-		already the final number, not a base to be scaled. Passing 1 here ran
-		it through scaledTime (x1.18) and then feintWait's -0.08 lead, and
-		the two do not cancel.
-		Solving `t*1.18 - 0.08 = 1.0` gives 0.915, which lands the catch at
-		exactly rowa1's 1.0s.
+		already the final number, not a base to be scaled. Passing 1 here
+		would run it through scaledTime (x1.18).
+		Solving `t*1.18 = 1.0` gives 0.847, which lands the catch at exactly
+		rowa1's 1.0s.
 		(Its DECLARED Attacking.Time is 1.4, which is a lie in the other
 		direction -- S5 note 7g. Neither number is usable as written.) ]]
-	if this:feintWait(0.915) then
+	if this:feintWait(0.847) then
 		if anim then anim:Stop() end
 		return
 	end

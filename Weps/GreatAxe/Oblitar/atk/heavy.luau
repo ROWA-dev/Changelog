@@ -17,11 +17,12 @@
 
 	NOT A CHARGE. See attack.luau for why there is no heavyEnd.
 
-	!! TIMING, README S7 rule 7f -- the single most common bug in this port.
-	feintWait waits t - 0.08 EVERY call, so chaining loses 0.08 a beat.
-	  the FIRST call is the WINDUP (rowa1's Attacking.Time 0.6) -> pass 0.6
-	  the SECOND is a plain beat between hits (0.2 + 0.2 = 0.4) -> pass 0.48
-	Total loss is 0.08 once, not twice, which is the audit rule.
+	!! TIMING. Both calls mean exactly what they say now -- feintWait has no
+	hidden lead, so a chain does not drift.
+	  the FIRST call is the WINDUP (rowa1's Attacking.Time 0.6)
+	  the SECOND is a plain beat between hits (0.2 + 0.2 = 0.4)
+	Both sit 0.08 under rowa1's own figures: that is the old lead, preserved
+	deliberately by the migration rather than retuned in the same pass.
 
 	!! AND rowa1 IS INCONSISTENT ABOUT AtkRate INSIDE THIS ONE MOVE.
 	Beat one waits `0.4` then `0.2` -- UNSCALED. Beat two waits `0.2*AtkRate`
@@ -125,9 +126,9 @@ return function(this:wepTyp&any): wepType.atkResult
 		game.Debris:AddItem(fx, 0)
 	end
 
-	--[[ BEAT ONE. 0.6 is the BASE (rowa1's 0.4 + 0.2, and its claim agrees);
-		atkRate 1.05 scales it to rowa1's real 0.63. Do not pre-multiply. ]]
-	if this:feintWait(0.6) then bail() return end
+	--[[ BEAT ONE. rowa1's own base is 0.4 + 0.2 and its claim agrees;
+		atkRate 1.05 scales what we pass. Do not pre-multiply. ]]
+	if this:feintWait(0.52) then bail() return end
 
 	playSound(hold, "BladeSwing")
 	playSound(fx, "BladeSwing")
@@ -137,8 +138,8 @@ return function(this:wepTyp&any): wepType.atkResult
 
 	local landed = swing(this, dmgConfig.heavy, 4.5)
 
-	-- BEAT TWO. 0.4 of real wait, +0.08 because this is not a windup.
-	if this:feintWait(0.48) then bail() return end
+	-- BEAT TWO.
+	if this:feintWait(0.4) then bail() return end
 
 	this:triggerCD("heavy")
 

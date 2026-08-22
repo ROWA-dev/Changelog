@@ -159,7 +159,7 @@ local function useFunc(this:myself)
 	fireVFX("icepop", leftLeg, 0.55)
 
 	-- rowa1: 0.05 + 5 * 0.1
-	if this:feintWait(0.55) then
+	if this:feintWait(0.47) then
 		if anim then anim:Stop() end
 		return
 	end
@@ -177,8 +177,7 @@ local function useFunc(this:myself)
 	local rightLeg = char:FindFirstChild("Right Leg")
 	fireVFX("icepop", rightLeg, 0.5)
 
-	--- +0.08: every feintWait after the first needs it back (README S7 7f)
-	if this:feintWait(0.58) then
+	if this:feintWait(0.5) then
 		if anim then anim:Stop() end
 		return
 	end

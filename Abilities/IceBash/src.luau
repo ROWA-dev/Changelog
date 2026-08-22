@@ -56,7 +56,7 @@ local function useFunc(this:myself)
 	fireVFX("icebsh", FX_CHARGE, humObj.Hum)
 
 	-- rowa1 was 0.1 + 5*0.1. One call, and now it is cancellable for free.
-	if this:feintWait(0.6) then
+	if this:feintWait(0.52) then
 		if anim then anim:Stop() end
 		fireVFX("icebsh", FX_FIZZLE, humObj.Hum)
 		return

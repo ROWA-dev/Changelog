@@ -181,12 +181,11 @@ local function useFunc(this:myself)
 	game.Debris:AddItem(snd, 4)
 
 	--[[ rowa1 declares Attacking.Time 0.1 AND waits 0.1 -- for once the
-		claim and the truth agree. 0.18 because feintWait waits t - 0.08
-		(README S7 note 7f). ]]
+		claim and the truth agree. ]]
 	--- the hop: rowa1 MiniDash(-look + up, 50); bodyForce scales by 5.
 	local hop = this:bodyForce(Vector3.new(0, 1, 1).Unit * 10, 0.3, true)
 
-	if this:feintWait(0.18) then
+	if this:feintWait(0.1) then
 		if anim then anim:Stop() end
 		if hop then hop:destroy() end
 		game.Debris:AddItem(snd, 0)

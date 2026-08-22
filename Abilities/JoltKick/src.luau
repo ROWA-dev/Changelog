@@ -74,7 +74,7 @@ local function useFunc(this:myself)
 	local rightLeg = char:FindFirstChild("Right Leg")
 	if rightLeg then fireVFX("joltCharge", rightLeg) end
 
-	if this:feintWait(0.7) then
+	if this:feintWait(0.62) then
 		if anim then anim:Stop() end
 		return
 	end
@@ -125,12 +125,8 @@ local function useFunc(this:myself)
 		return eroot.Position - myRoot.CFrame.LookVector * 4
 	end, { maxTime = 1.2 })
 
-	--[[ 0.38, not 0.3. feintWait waits t - 0.08, which is right for a WINDUP
-		(it is derived from rowa1's Attacking.Time) but wrong here: these are
-		plain task.wait(0.3) beats between two kicks, so they want the real
-		0.3s. Passing 0.3 made the follow-up land 0.16s early across the pair
-		and the ride never read. ]]
-	if this:feintWait(0.38) then
+	--- plain 0.3s beats between the two kicks, exactly as rowa1.
+	if this:feintWait(0.3) then
 		unpin()
 		return
 	end
@@ -138,7 +134,7 @@ local function useFunc(this:myself)
 	local leftLeg = char:FindFirstChild("Left Leg")
 	if leftLeg then fireVFX("joltCharge", leftLeg) end
 
-	if this:feintWait(0.38) then
+	if this:feintWait(0.3) then
 		unpin()
 		return
 	end

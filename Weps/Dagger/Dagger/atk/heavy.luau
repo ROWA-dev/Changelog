@@ -25,10 +25,10 @@ return function(this:wepTyp&any): wepType.atkResult
 	
 	this:indicateAtk()
 	
-	if this:feintWait(0.3) then this:stopLastAnim(true) return end
+	if this:feintWait(0.22) then this:stopLastAnim(true) return end
 	this:triggerCD("heavy")
 	Hold.unsheatheReverb:Play()
-	if this:feintWait(0.2) then this:stopLastAnim(true) return end
+	if this:feintWait(0.12) then this:stopLastAnim(true) return end
 	
 	Hold.Swing1:Play()
 	Hold.Swing1.Pitch = 1

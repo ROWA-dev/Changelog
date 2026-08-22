@@ -18,7 +18,7 @@ return function(this:wepBase.myself&any)
 	if this.flourishHook and this:flourishHook() == true then return end
 
 	this:indicateAtk()
-	if this:feintWait(0.65) then return end
+	if this:feintWait(0.57) then return end
 
 	local hitboxOffset = CFrame.new(0,0,-3.5)
 	local hitboxSize   = Vector3.new(5,5,5)

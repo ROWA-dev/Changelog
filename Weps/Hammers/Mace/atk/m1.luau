@@ -75,7 +75,7 @@ local function cannonFlourish(this:wepBase.myself&any)
 	this:PlayAnim(script.shoot, 0.2, 1, 0.9)
 	this.m1cycle = 0
 	
-	if this:feintWait(0.65) then humObj.walkSpeed:RemoveMod("stopMoving"); return end
+	if this:feintWait(0.57) then humObj.walkSpeed:RemoveMod("stopMoving"); return end
 	
 	local t = 0.5
 	this:bodyForce(Vector3.new(0,0,20), t, true, t, 3)
@@ -138,7 +138,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		script, -- animsParent
 		4, -- m1CycleCount
 		dmgConfig.m1,
-		0.62, -- windup
+		0.54, -- windup
 		CFrame.new(0,0,-3), -- hitboxoffset
 		Vector3.new(5.5,6,5.5), -- hitbox sz
 		indicator,

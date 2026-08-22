@@ -60,8 +60,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		7 is deliberately well under the flourish's 16 -- the chain nudges,
 		the flourish sends. ]]
 	local function nudge(attack)
-		attack.knockback = this:knockback(
-			this._humObj.HurtBox.CFrame.LookVector * 7, 0.25)
+		attack.knockback = this:knockback(this._humObj.HurtBox.CFrame.LookVector * 6, 0.1)
 	end
 
 	local result = this.basicAtks.m1(
@@ -69,11 +68,11 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		script, -- animsParent, expects swing1..swing3
 		3, -- m1CycleCount. THREE, not five.
 		dmgConfig.m1,
-		--[[ 0.568, and the arithmetic matters. rowa1's real windup is
-			0.2 + 0.3 = 0.5 base, x AtkRate 1.18 = 0.59s to the hit. feintWait
-			waits `scaledTime(t) - 0.08`, so solving `t*1.18 - 0.08 = 0.59`
-			gives 0.568 and the hit lands exactly where rowa1 puts it. ]]
-		0.568, -- windup
+		--[[ 0.5, and the arithmetic matters. rowa1's real windup is
+			0.2 + 0.3 = 0.5 base, x AtkRate 1.18 = 0.59s to the hit, and
+			scaledTime does exactly that multiply -- so the base passes
+			straight through and the hit lands where rowa1 puts it. ]]
+		0.5, -- windup
 		CFrame.new(0,0,-3.5), -- hitboxoffset
 		--[[ +2 on every axis over the straight rowa1 translation (was
 			6.5,7,6.5). rowa2's hurtbox is a single 4x7x4 part, where rowa1

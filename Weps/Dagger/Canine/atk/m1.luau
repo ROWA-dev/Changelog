@@ -21,7 +21,7 @@ function flourish(this:wepBase.myself&any)
 
 	humObj.limbTrails:indicatorRightLeg()
 
-	if this:feintWait(0.44) then return end
+	if this:feintWait(0.36) then return end
 
 	local hitbox, hits = this:hitbox(
 		CFrame.new(0, 0, -2), 
@@ -79,7 +79,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		script, -- animsParent
 		5, -- m1CycleCount
 		dmgConfig.m1,
-		0.44, -- windup
+		0.36, -- windup
 		CFrame.new(0, 0, -2), -- hitboxoffset
 		Vector3.new(6,6,6), -- hitbox sz
 		indicator,

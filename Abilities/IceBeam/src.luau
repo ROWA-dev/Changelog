@@ -81,7 +81,7 @@ local function useFunc(this:myself)
 	end
 
 	-- rowa1 was 0.5 + 0.2 + 0.2 with a re-check between each. One call.
-	if this:feintWait(0.9) then
+	if this:feintWait(0.82) then
 		if anim then anim:Stop(0.1) end
 		--- the hand must stop charging a cast that is not coming
 		if leftArm then fireVFX("icelst", leftArm, 0) end

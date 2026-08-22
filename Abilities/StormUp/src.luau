@@ -100,27 +100,21 @@ local function useFunc(this:myself)
 	local leftArm = char:FindFirstChild("Left Arm")
 	fireVFX("shockspin", humObj.HRootPart, leftArm, 0.8, target and target.HRootPart)
 
-	--[[ !! EVERY feintWait AFTER THE FIRST NEEDS +0.08.
-		feintWait waits t - 0.08 on EVERY call. That is correct for the first
-		one -- it is the windup, derived from Attacking.Time, and the 0.08 is
-		deliberate framework lead. It is wrong for the beats after it: rowa1
-		just does task.wait(n), so chaining three of them lost 0.24s and the
-		whole move landed a third early. See README S7 note 7f. ]]
-	if this:feintWait(0.2) then
+	if this:feintWait(0.12) then
 		if anim then anim:Stop(0.1) end
 		return
 	end
 
 	fireVFX("shockspin2", hurtbox)
 
-	if this:feintWait(0.48) then
+	if this:feintWait(0.4) then
 		if anim then anim:Stop(0.1) end
 		return
 	end
 
 	fireVFX("camShake", hurtbox.Position, 200, 0.4, 0.2)
 
-	if this:feintWait(0.28) then
+	if this:feintWait(0.2) then
 		if anim then anim:Stop(0.1) end
 		return
 	end

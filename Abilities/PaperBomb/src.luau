@@ -213,14 +213,13 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	--[[ !! 0.18, NOT 0.7. rowa1 DECLARES `Attacking.Time = 0.7` but then
+	--[[ !! 0.1, NOT 0.7. rowa1 DECLARES `Attacking.Time = 0.7` but then
 		waits `task.wait(0.1)` and throws. The declared value is only what
 		the trade logic reads; the real throw is basically instant, and that
 		snappiness is the move.
-		0.18 because feintWait waits t - 0.08 (README S7 note 7f).
 		Lesson: Attacking.Time is a CLAIM, the task.wait is the TRUTH --
 		JoltKick had the same mismatch in the other direction. ]]
-	if this:feintWait(0.18) then
+	if this:feintWait(0.1) then
 		if anim then anim:Stop() end
 		return
 	end

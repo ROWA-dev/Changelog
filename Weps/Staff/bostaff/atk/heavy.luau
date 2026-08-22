@@ -13,7 +13,7 @@ return function(this:wepBase.myself)
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 
 	local atkrate = this.atkRate.Value
-	if this:feintWait(0.6) then humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
+	if this:feintWait(0.52) then humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
 	this:triggerCD("heavy")
 	humObj.walkSpeed:RemoveMod("stopMoving")
 	
@@ -66,7 +66,7 @@ return function(this:wepBase.myself)
 		local grab = grabClass:grab(humObj)
 		grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0,4.5)
 		victimAnim:Play(0,1,1)
-		if this:feintWait(0.55) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
+		if this:feintWait(0.47) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
 		
 		game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("bostaffShock", hurtbox.CFrame * CFrame.new(0,0,-6))
 
@@ -77,7 +77,7 @@ return function(this:wepBase.myself)
 		)
 		task.spawn(this.executeAttack, this, attack1)
 		
-		if this:feintWait(1) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
+		if this:feintWait(0.92) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
 		print("THROW UP! bostaff")
 		
 		victimHumObj:TrueStun(2)
@@ -91,7 +91,7 @@ return function(this:wepBase.myself)
 		task.spawn(this.executeAttack, this, swiftKick)
 		
 		
-		if this:feintWait(0.5) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
+		if this:feintWait(0.42) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
 		
 		local attack2 = this:makeAtk(
 			dmgConfig.heavyPunch,
@@ -100,7 +100,7 @@ return function(this:wepBase.myself)
 		)
 		task.spawn(this.executeAttack, this, attack2)
 		
-		if this:feintWait(0.7) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
+		if this:feintWait(0.62) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") enableMotor() return end
 		
 		game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("bostaffShock", hurtbox.CFrame * CFrame.new(0,0,-6) * CFrame.Angles(0,math.rad(90),0))
 		

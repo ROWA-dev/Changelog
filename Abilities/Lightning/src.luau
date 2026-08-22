@@ -44,7 +44,17 @@ local LNING = {
 	type     = dmgFlag.lightning,
 	dmg      = 18,
 	stun     = 1.2,
-	--posMult  = 1,
+	--[[ !! DO NOT COMMENT THIS OUT AGAIN. It was, and it did not make the
+		bolt weightless -- it made the bolt MISS, always.
+		AttackClass:CalculatePostureDmg is the FIRST line of HandleAttack and
+		it reads `dmg * posMult` with no guard, so a nil posMult throws.
+		The throw unwinds through executeAttack into the pcall in
+		AbilityBase.use, which only warns -- so the anim, the flash-step and
+		all four lstrike stages play perfectly and NOBODY IS EVER DAMAGED.
+		"the move happens, the enemy just doesn't get hit" is the signature
+		of a dmgTbl field that HandleAttack reads unconditionally.
+		2 is rowa1's own value on the "lning" row. ]]
+	posMult  = 2,
 	--[[ a targeted, no-travel AoE is unavoidable by construction, so this is
 		the ability that most needs rowa2's dodge knob -- rowa1 had no such
 		field and leaned entirely on the loud 4-stage telegraph. Both. ]]
@@ -74,7 +84,7 @@ local function useFunc(this:myself)
 	fireVFX("lstrike", FX_CHARGE, char)
 
 	-- rowa1: 4 x 0.1s, re-checking between each.
-	if this:feintWait(0.4) then
+	if this:feintWait(0.32) then
 		if anim then anim:Stop() end
 		fireVFX("lstrike", FX_CANCEL, char)
 		return
@@ -87,11 +97,7 @@ local function useFunc(this:myself)
 		packet can no longer leave the caster permanently invisible. ]]
 	fireVFX("ststep", char, 0.4)
 
-	--[[ 0.48, not 0.4: feintWait subtracts 0.08 on EVERY call, which is
-		deliberate for the windup above but wrong for a plain inter-beat
-		wait. Chained, the two lost 0.16s and the bolt landed early.
-		README S7 note 7f. ]]
-	if this:feintWait(0.48) then
+	if this:feintWait(0.4) then
 		if anim then anim:Stop() end
 		fireVFX("lstrike", FX_CANCEL, char)
 		return

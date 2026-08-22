@@ -36,7 +36,7 @@ local function useFunc(this:myself)
 	Idle.Parent = LeftGripAttachment
 	game.Debris:AddItem(Idle,4)
 	
-	local feinted = this:feintWait(0.6, function(dt: number)
+	local feinted = this:feintWait(0.52, function(dt: number)
 		Idle:Emit(1)
 	end)
 	if feinted then

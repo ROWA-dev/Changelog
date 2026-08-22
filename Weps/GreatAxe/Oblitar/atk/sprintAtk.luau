@@ -45,7 +45,7 @@ return function(this:wepTyp): wepType.atkResult
 			commit. Carries the same +0.1. Like the m1's, this is a tuning
 			call, NOT a rowa1 number -- do not "correct" it back by reading
 			Main. ]]
-		0.55, -- windup BASE
+		0.47, -- windup BASE
 		12, -- force
 		0.4, -- force duration
 		CFrame.new(0, 0, -4.5), -- hitboxoffset

@@ -82,7 +82,7 @@ local function fastSlash(this:wepTyp&any, humObj):wepType.atkResult
 	this._model.Hold.dashingslice:Play()
 	this._model.Hold.dashingslice.TimePosition = 0.1
 	--this._model.Hold.heavySlice:Play()
-	if this:feintWait(0.25) then force1:destroy() this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") this._model.Hold.dashingslice:Stop() return end
+	if this:feintWait(0.17) then force1:destroy() this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") this._model.Hold.dashingslice:Stop() return end
 	local mover = this:bodyForce(Vector3.new(0,0,-14), 0.4, true, 0.4, 1)
 
 	local hitboxOffset = CFrame.new(0, 0, -3)
@@ -138,7 +138,7 @@ local function multipleSlash(this:wepTyp&any, humObj):wepType.atkResult
 	
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	this._model.Hold.longwindyslash:Play()
-	if this:feintWait(0.2) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") this._model.Hold.longwindyslash:Stop() return end
+	if this:feintWait(0.12) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") this._model.Hold.longwindyslash:Stop() return end
 	this:triggerCD("heavy", 8)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("rHandWepFlicker", humObj.Hum, true, this._model, hurtbox)
 	

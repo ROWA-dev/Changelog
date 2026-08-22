@@ -78,7 +78,7 @@ local WHIFF_CD    = 1
 
 	An earlier pass resolved each volley bolt immediately at a 0.06s stagger,
 	which collapsed a ~2.1 second sequence into ~0.6 -- that is the "zoltraak
-	is so fast" read, and it was here, not in feintWait's 0.08. ]]
+	is so fast" read, and it was here, not in the windup. ]]
 local function resolveBolt(this: myself, target: any, offset: Vector3): boolean
 	local humObj = this._humObj
 	if humObj == nil or humObj.isActive ~= true then return false end

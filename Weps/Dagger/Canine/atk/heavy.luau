@@ -17,7 +17,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	Hold.swish:Play()
 	Hold.afterswing2:Play()
 	
-	if this:feintWait(0.4) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
+	if this:feintWait(0.32) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
 	this:triggerCD("heavy")
 	
 	--game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("fistHvy", hurtbox)

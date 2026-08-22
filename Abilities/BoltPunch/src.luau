@@ -74,7 +74,7 @@ local function useFunc(this:myself)
 		by 5 internally, so 40/5 = 8. ]]
 	local dash = this:bodyForce(Vector3.new(0, 0, -8), 0.3, true)
 
-	if this:feintWait(0.45) then
+	if this:feintWait(0.42) then
 		if anim then anim:Stop() end
 		if dash then dash:destroy() end
 		fireVFX("boltp", FX_FIZZLE, humObj.Hum)

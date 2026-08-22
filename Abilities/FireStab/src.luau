@@ -37,7 +37,7 @@ local function useFunc(this:myself & any)
 			or (this._humObj.Model and this._humObj.Model:FindFirstChild("Right Arm"))
 	) -- LAMBDA OF DOOM	
 
-	local feinted = this:feintWait(0.5)
+	local feinted = this:feintWait(0.42)
 	local cd = 10
 
 	if feinted then
