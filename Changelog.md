@@ -2,6 +2,26 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.12.1 - The Great Balancing's Lesser Known Younger Brother
+
+### Changes 🛠️
+- Removed magic number that was moving all the wind ups back by 0.08s
+  - Ability wind ups decreased by 0.08s to keep stuff the same
+  - Everything feels the same but wind ups are accurate now
+- Dodge window changes are now functional (they weren't before)
+- Added true stun to Divide because it wasn't there
+- Adjusted Divide VFX
+- Decreased Drop Kick dive force
+- Increased Drop Kick max dive distance
+- Fixed Drop Kick hit detection issues
+- Added Drop Kick impact hitbox
+- Huozai now only burns each victim one time
+- Lightning posture damage multiplier increased (1x -> 2x)
+- Smash damage increased (34 -> 40)
+- Spear heavy ported from ROWA
+
+<br><sub>2026-08-21</sub>
+
 ## 1.12.0 - The Great Balancing
 
 > Note: Hitboxes changes are more specific now.
@@ -219,7 +239,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 ### Added ✅
 - Heavy weapons now have hyperarmor at the start of an M1
-  - The duration of said hyperarmor is determined by the windup length of the M1
+  - The duration of said hyperarmor is determined by the wind up length of the M1
 
 ### Changes 🛠️
 - Barrage windup decreased (0.6s -> 0.5s)
