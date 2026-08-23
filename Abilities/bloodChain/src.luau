@@ -1,26 +1,11 @@
 --!strict
---[[ bloodChain - rowa1 Items/Ability/bloodChain.
-	Notes: README.md/PORT_bloodChain.
-
-	Hop backwards, spin up a blood chain, and hurl it at a locked target. On
-	a connect, BOTH parties are yanked to the point between them.
-
-	!! THE DOC'S OPEN DESIGN QUESTION IS ANSWERED BY THE SOURCE.
-	  It asked whether this is a disengage (only the caster moves) or a
-	  gap-closer (the victim is pulled in), and guessed the former.
-	  rowa1 does BOTH: two BodyPositions, one on each root, both targeting
-	  `(targRoot.Position + Root.Position)/2`. It is a MUTUAL yank to the
-	  midpoint, running until they are within 4 studs or one second passes.
-	  So the caster's backward hop is a wind-up, not the point of the move.
-
-	The chain WINDS UP as it flies -- 60 studs/s accelerating to 160 -- which
-	is why acceleration is a base projectile property rather than something
-	bolted onto this ability.
-
-	PARRYING IT DOES NOT BREAK IT, IT REDIRECTS IT -- the same reward the
-	rocket and the crescent give, and the reason BaseProjectile:deflect is
-	shared. See the parry branch in `onHit` for who the chain may pick next
-	and, more importantly, who it may not. ]]
+--- bloodChain - hop backwards, spin up a blood chain, hurl it at a locked
+--- target. On a connect BOTH parties are yanked to the midpoint between them
+--- (rowa1 runs two BodyPositions, one per root) -- so the backward hop is a
+--- wind-up, not a disengage, whatever PORT_bloodChain guessed.
+--- The chain WINDS UP as it flies, 60 -> 160 studs/s.
+--- Parrying REDIRECTS it rather than breaking it; see the parry branch in onHit
+--- for who it may pick next and, more importantly, who it may not.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -201,22 +186,13 @@ local function useFunc(this:myself)
 				return
 			end
 			local look = proot.CFrame.LookVector
-			--[[ the new victim is whoever the PARRIER is pointing at, on the
-				same TIGHT cone the cast itself used.
-
-				!! `me` IS THE CASTER, AND THAT IS THE WHOLE POINT: it is the
-				one argument that excludes both people the chain must not
-				pick. The CASTER, because the beam hangs off their own hand --
-				a chain that turned around onto its thrower draws as a
-				zero-length chain and then yanks a root to the midpoint
-				between itself and itself, i.e. nothing happens twice. And the
-				PARRIER, who is the search ORIGIN and therefore sits at
-				distance 0, which Targeting skips -- handing the chain
-				straight back to the person who just parried it is the
-				opposite of a reward (BaseProjectile.deflect's own note).
-				Nobody in the cone means nobody: deflect re-decides the target
-				unconditionally, so the chain flies off straight and times
-				out rather than re-locking whoever it had. ]]
+			--- whoever the PARRIER is pointing at, on the cone the cast used.
+			--- !! `me` is the CASTER and that is the point: it excludes both people
+			--- the chain must not pick -- the caster (a chain onto its own thrower
+			--- draws zero-length and yanks a root to its own midpoint) and the
+			--- parrier (search origin, distance 0, and handing it back is not a
+			--- reward). Nobody in the cone means nobody: deflect re-decides
+			--- unconditionally, so it flies straight and times out.
 			local newTarget = Targeting.nearestInDirection(
 				proot.Position, look, humObj, RANGE, Targeting.TIGHT)
 			--- rowa1's rocket blend, degeneracy handled. See parryDir.

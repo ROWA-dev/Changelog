@@ -1,28 +1,13 @@
 --!strict
---[[ Oblitar sprint attack - rowa1's THRUST (Main `typ == 3`, Anims.Thrust).
-
-	rowa1: Attacking.Time 0.45 * AtkRate, MiniDash(LookVector, 30, 0.4),
-	Hold.Swing1 + Hold.afterswing, then Damage(6).
-
-	!! Damage(6) IS `oblM1`, NOT `oblH2`. PORTW_Oblitar's PORT section reads
-	as though oblH2 were the thrust; it is not, it is the heavy's second beat
-	(Damage(9)). The two sit four branches apart in the same if-chain. The
-	thrust is an m1-strength poke with a lunge, which is also why it is bound
-	to sprintAtk rather than to a heavy.
-
-	FORCE 12, not the 6 a literal MiniDash conversion gives.
-	S7 rule 10 converts a rowa1 MiniDash power P to P/5 -- but that ratio is
-	for a FLAT mover. rowa1's BodyVelocity holds 30 studs/s for the whole
-	0.4s; rowa2's bodyForce DECAYS across the same window, so it needs roughly
-	double the number to cover the same ground. 12 is also exactly what the
-	shipped Claymore sprint uses, and PORTW_00's rule for weapons is to
-	compare against the nearest shipped rowa2 weapon rather than against
-	rowa1.
-
-	NOT PORTED: rowa1 re-queried the hitbox twice more on a whiff
-	(`if #Damage(6) == 0 then ... if #Damage(6) == 0 then`). basicAtks.sprint
-	owns whiff handling for every weapon; re-adding a bespoke retry here is
-	the per-caller duplication PORTW_00 exists to prevent. ]]
+--- Oblitar sprint attack - rowa1's THRUST (Main `typ == 3`, Anims.Thrust).
+--- !! Damage(6) is `oblM1`, NOT `oblH2` -- the doc reads as though oblH2 were
+--- the thrust; that is the heavy's second beat, four branches away. This is an
+--- m1-strength poke with a lunge, which is why it binds to sprintAtk.
+--- FORCE 12, not the 6 a literal MiniDash conversion gives: S7's P/5 is for a
+--- FLAT mover, and rowa2's bodyForce DECAYS across the window, so it needs
+--- roughly double to cover the same ground. Also exactly Claymore's sprint.
+--- NOT PORTED: rowa1's two extra whiff re-queries. basicAtks.sprint owns whiff
+--- handling for every weapon.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 

@@ -1,13 +1,10 @@
-# More Balancing and Cleanup
-Update 1.4.4
+# quality of life
+Update 1.4.5
 
-smash got a lil rework
-fixed up the true stun on things..
-EVERY feintwait aka windup call site value has been changed BUT the timings are actually the same... why?
-removed the magic - 0.08 from feintwait function... it was an artifact for bots reading attackat so they could parry attacks 0.08 earlier
-all the callsites values are accounted for that one change.
-for the sake of future code and windup accuracy
+combat tags UI visual
+attempting to use ability with insufficient mana now has a sound played on your character and shows whats needed in your mana bar (shaky vfx)
+fixed mana system desyncing and lazy state
 
-dodgeH value actually works now
+debloated a bunch of code
 
-and alot more
+and more (sum balancing stuff i think)

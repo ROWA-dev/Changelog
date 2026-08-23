@@ -1,20 +1,12 @@
 --!strict
---[[ IceShards - rowa1 Items/Ability/IceShards.
-	Notes: README.md/PORT_IceShards.
-
-	Hop backwards and rain TWENTY ice shards down on a target -- five waves
-	of 2, 3, 4, 5 and 6, each shard forming in the air for 0.4s before it
-	dives.
-
-	NOT HOMING, despite the doc. Each shard picks its direction ONCE, when it
-	launches, and then flies dead straight; rowa1 re-aims at the target only
-	during the 0.4s formation. So this is BaseProjectile, not Homing.
-
-	The shards dive at a PITCH: rowa1 rotates each one 70 degrees about X and
-	then flies it along its own -UpVector, which is what makes them come down
-	at an angle instead of straight forward. That pitch is why the ability
-	aims at LookVector + (0,-0.4,0) -- it is looking slightly DOWN so the
-	arc lands on the target rather than over their head. ]]
+--- IceShards - hop backwards and rain TWENTY ice shards on a target: five waves
+--- of 2/3/4/5/6, each forming in the air for 0.4s before it dives.
+--- rowa1 port: README.md/PORT_IceShards.
+--- NOT homing despite the doc -- each shard picks its direction ONCE at launch;
+--- rowa1 only re-aims during the 0.4s formation. BaseProjectile, not Homing.
+--- They dive at a PITCH (70 deg about X, flown along -UpVector), which is why
+--- the aim is LookVector + (0,-0.4,0): looking down so the arc lands on the
+--- target rather than over their head.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

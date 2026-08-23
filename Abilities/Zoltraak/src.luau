@@ -1,17 +1,12 @@
 --!strict
---[[ Zoltraak - rowa1 Items/Ability/Zoltraak. Notes: README.md/PORT_Zoltraak.
-
-	A lock-on piercing bolt. Acquire, charge 0.6s, fire; on a connect inside
-	60 studs, follow up with a 10-shot volley at randomised offsets.
-
-	THERE IS NO PROJECTILE. rowa1 resolved the hit INSTANTLY on the target and
-	let the client draw a beam between the two roots -- there is no travel
-	simulation anywhere in the original. This is PLAN_PROJECTILE section 2D:
-	do not build a projectile for something that never had one.
-
-	STUN IS ZERO, DELIBERATELY. Eleven bolts at 10 damage each with the victim
-	fully mobile the whole time IS the counterplay. Adding stun "so it feels
-	better" turns it into an eleven-hit lock. ]]
+--- Zoltraak - a lock-on piercing bolt. Acquire, charge 0.6s, fire; on a connect
+--- inside 60 studs, follow up with a 10-shot volley at randomised offsets.
+--- rowa1 port: README.md/PORT_Zoltraak.
+--- THERE IS NO PROJECTILE: rowa1 resolved instantly on the target and let the
+--- client draw a beam. PLAN_PROJECTILE 2D -- do not build one for something
+--- that never had one.
+--- STUN IS ZERO, DELIBERATELY: eleven bolts with the victim fully mobile IS the
+--- counterplay. Adding stun turns it into an eleven-hit lock.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -67,18 +62,11 @@ local CD          = 18
 --- rowa1 refunded a whiff down to a 1 second cooldown. Good design, kept.
 local WHIFF_CD    = 1
 
---[[ one bolt: it CHARGES, then it fires. Shared by the opener and by every
-	volley shot.
-
-	!! EVERY BOLT HAS ITS OWN 0.6s CHARGE. rowa1's sendShot is one function
-	that spawns the orb, spins beziers for 0.6s and only then resolves -- and
-	the volley calls that SAME function ten times, staggered 0.15s. So the
-	volley is ten overlapping 0.6s charges spread across 1.5s, not ten
-	instant hits.
-
-	An earlier pass resolved each volley bolt immediately at a 0.06s stagger,
-	which collapsed a ~2.1 second sequence into ~0.6 -- that is the "zoltraak
-	is so fast" read, and it was here, not in the windup. ]]
+--- one bolt: it CHARGES, then it fires. Shared by the opener and every volley shot.
+--- !! EVERY BOLT HAS ITS OWN 0.6s CHARGE -- the volley is ten overlapping
+--- charges staggered 0.15s across 1.5s, not ten instant hits. Resolving them
+--- immediately collapses a ~2.1s sequence into ~0.6 (the "zoltraak is so fast"
+--- read; it is here, not in the windup).
 local function resolveBolt(this: myself, target: any, offset: Vector3): boolean
 	local humObj = this._humObj
 	if humObj == nil or humObj.isActive ~= true then return false end

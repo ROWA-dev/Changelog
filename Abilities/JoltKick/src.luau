@@ -1,14 +1,9 @@
 --!strict
---[[ JoltKick - rowa1 Items/Ability/JoltKick. Notes: README.md/PORT_JoltKick.
-
-	A charged lightning roundhouse. If the first kick connects it chains into
-	a second animation and a second jolt on the SAME victim, with the caster
-	magnetically dragged along behind them.
-
-	rowa1 set `Attacking.Time = 0.1` on a move with a 0.7s windup. That field
-	is what the trade logic reads to decide who wins a simultaneous exchange,
-	so the old version won trades it had no business winning. feintWait gets
-	the honest 0.7 here -- JoltKick will lose some trades it used to win. ]]
+--- JoltKick - a charged lightning roundhouse. If the first kick connects it
+--- chains into a second animation and a second jolt on the SAME victim, with
+--- the caster dragged along behind them. rowa1 port: README.md/PORT_JoltKick.
+--- feintWait gets the honest 0.7 windup; rowa1 declared 0.1, which is what the
+--- trade logic reads, so the old version won trades it had no business winning.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

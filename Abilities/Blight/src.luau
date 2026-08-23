@@ -1,13 +1,10 @@
 --!strict
---[[ Blight - rowa1 Items/Ability/Blight. Notes: README.md/PORT_Blight.
-
-	Launch a blinding orb; it travels ~22 studs over 0.3s and detonates in a
-	20-stud sphere. Weak damage, wide area, long cooldown -- a zoning poke.
-
-	THE ORB DOES NOT DAMAGE IN FLIGHT. rowa1's travel loop has no hit query in
-	it at all; the whole move is one delayed AoE at the end point. So this is
-	NOT a projectile (PLAN_PROJECTILE section 2E) and does not wait on that
-	class -- the client draws the orb, the server schedules one hitbox. ]]
+--- Blight - launch a blinding orb; it travels ~22 studs over 0.3s and detonates
+--- in a 20-stud sphere. Weak damage, wide area, long cd -- a zoning poke.
+--- rowa1 port: README.md/PORT_Blight.
+--- THE ORB DOES NOT DAMAGE IN FLIGHT: the whole move is one delayed AoE at the
+--- end point, so it is NOT a projectile. Client draws the orb, server schedules
+--- one hitbox.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -80,16 +77,10 @@ local function useFunc(this:myself)
 
 	fireVFX("blightOrb", hurtbox.CFrame, forward, TRAVEL_DIST, TRAVEL_TIME)
 
-	--[[ The detonation OUTLIVES the ability call -- rowa1 cleared Attacking
-		before the travel finished and so does this. `:use()` returning does
-		not cancel a task.delay, so the behaviour carries over.
-
-		This DOES capture `this`, and that is fine here: 0.3s is far inside the
-		ability instance's own lifetime (it lives on the humObj until unequip).
-		PLAN_PROJECTILE 3.4's "never hold the ability" rule is about things
-		that fly for SECONDS and can outlive an unequip or a death -- a real
-		projectile must hold the entity and a frozen table instead.
-		The guard below is what makes the short capture safe. ]]
+	--- the detonation OUTLIVES the ability call, as in rowa1: :use() returning
+	--- does not cancel a task.delay. Capturing `this` is fine at 0.3s -- the
+	--- "never hold the ability" rule is about things that fly for SECONDS and can
+	--- outlive an unequip. The guard below makes the short capture safe.
 	task.delay(TRAVEL_TIME, function()
 		if humObj.isActive ~= true or this._humObj == nil then
 			return

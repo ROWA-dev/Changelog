@@ -1,21 +1,11 @@
 --!strict
---[[ IceBeam - rowa1 Items/Ability/IceBeam. Notes: README.md/PORT_IceBeam.
-
-	A sustained freezing beam down a 4x4x40 lane. 19 ticks of tiny damage --
-	individually the weakest hit in rowa1's whole table.
-
-	THE BEAM DOES NOT STUN. IT FREEZES.
-	  rowa1 gave every tick a 0.3s stun and then needed FOUR resolver
-	  exemptions to stop it being an unbreakable lock: "ice" sat in
-	  unparriers, noparrystun AND autoParries, and onStun clamped StunS to 1
-	  for that id specifically. None of that exists in rowa2 and none of it
-	  should.
-	  Instead each tick pours into the Freeze meter
-	  (Class/StatusEffects/Freeze). ~7 connected ticks fill it, the victim
-	  freezes ONCE, and a 4-second refractory blocks the rest of the beam
-	  from refilling it. The per-tick stun drops to a nudge.
-	  That is the entire reason the Freeze effect exists -- see
-	  PORT_Freeze section 1. ]]
+--- IceBeam - a sustained freezing beam down a 4x4x40 lane. 19 ticks of tiny
+--- damage. rowa1 port: README.md/PORT_IceBeam.
+--- THE BEAM DOES NOT STUN, IT FREEZES. rowa1 stunned every tick and then needed
+--- four resolver exemptions to stop it being an unbreakable lock. Here each
+--- tick pours into the Freeze meter: ~7 connected ticks fill it, the victim
+--- freezes ONCE, and a 4s refractory blocks the rest of the beam from refilling
+--- it. That is the entire reason StatusEffects/Freeze exists.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

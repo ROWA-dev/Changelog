@@ -1,41 +1,17 @@
 --!strict
---[[ Slayer - rowa1 Items/Weps/Slayer/Main (613 lines, ties Katana for the
-	largest rowa1 weapon). Notes: README.md/PORTW_Slayer, PORTW_00 first.
-
-	!! PORTW_Slayer IS SUBSTANTIALLY WRONG ABOUT THIS WEAPON. It describes
-	"a FIVE-HIT m1 chain" whose five dmg tables escalate and "that is the
-	entire weapon". None of that survives reading Main:
-
-	  1. THE m1 IS THREE LINKS, not five. `combo` runs 0 -> 1 -> 2 -> 0
-	     (Main:385/413/441) and MeleeAnims/Slayer only ever had THREE attack
-	     animations: Atk1, Atk2, Atk3. There is no Atk4 or Atk5 to rename, so
-	     the doc's step 4 ("there must be FIVE swings named swing1..swing5")
-	     could never have been followed.
-
-	  2. ALL THREE m1 LINKS USE THE SAME ROW, `slM1`. They differ only in
-	     flinch direction and, on link 3, a knockback. So the "designed
-	     escalation curve" the doc tells you to copy is not in the m1 at all.
-
-	  3. slM2/slM3/slM4/slM5 ARE ALL INSIDE THE HEAVY, which is a
-	     GRAB-AND-DRAG, not a swing:
-	         slM2  the catch. On anything but parry/dodge the victim is
-	               WELDED TO THE BLADE and carried.
-	         slM3  a guard-break beat once they are on the blade
-	         slM5  x13 at 0.05s, the grind while you drag them forward
-	         slM4  the launch that ends it
-	     That IS the escalation, and it is one move rather than a chain.
-
-	  4. `gsM2` is the DOWNSLAM (Damage id 6), not "the heavy".
-
-	  So the doc's WATCH -- "slM2's stun 2.0 mid-chain means links 3-5 are
-	  guaranteed, a 74-damage confirmed combo off one m1" -- is reasoning
-	  about a chain that does not exist. The 2.0 stun is the GRAB HOLD. It is
-	  supposed to be guaranteed; that is what being impaled on a sword is.
-
-	FAMILY: Heavy/Greatsword, alongside Executer, which the doc did get
-	right. Built on Executer's shape rather than Claymore's -- Greatsword
-	parks the model on unequip, so there is no `strap` weld to invent, and
-	rowa1's own Motor6D name carries over unchanged. ]]
+--- Slayer - rowa1 Items/Weps/Slayer/Main. Notes: README.md/PORTW_Slayer,
+--- PORTW_00 first.
+--- !! THE DOC IS SUBSTANTIALLY WRONG: there is no five-hit m1 chain.
+---   m1 is THREE links (combo 0->1->2->0, and only Atk1/2/3 exist), and all
+---   three share the SAME row, slM1 -- they differ only in flinch direction.
+---   slM2/3/5/4 are the four beats of the HEAVY, which is a grab-and-drag:
+---   catch (welds them to the blade), guard-break, x13 grind, launch. THAT is
+---   the escalation the doc thought was an m1 chain, and it is one move.
+---   gsM2 is the DOWNSLAM, not "the heavy".
+---   So the doc's 74-damage-confirmed-combo warning reasons about a chain that
+---   does not exist; slM2's 2.0 stun is the GRAB HOLD and is meant to be guaranteed.
+--- FAMILY: Heavy/Greatsword, built on Executer's shape -- Greatsword parks the
+--- model on unequip, so there is no `strap` weld to invent.
 local baseWep = require(script.Parent)
 
 export type myself = baseWep.myself & {

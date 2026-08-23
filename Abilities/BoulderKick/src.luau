@@ -1,35 +1,15 @@
 --!strict
---[[ BoulderKick - rowa1 Items/Ability/BoulderKick.
-	Notes: README.md/PORT_BoulderKick, PLAN_PROJECTILE.
-
-	Rip a chunk of the actual MAP out of the ground and punt it at someone.
-
-	!! THE PORT DOC SAID TO CUT THIS ONE.
-	  "THIS IS THE HARDEST ABILITY IN THE PORT AND IT SHOULD BE LAST... If any
-	  single ability is worth cutting from the port, it is this one." The
-	  blocker was step 2, and it was a real one: rowa1's BoulderGrab RETURNS
-	  the parts it carved, rowa2's Destruction returned nothing, and without
-	  that this is a recolour of StoneBall.
-
-	  Destruction.Grab -- added for Armor, which needed the same answer --
-	  closes it. So step 3's fallback ("give up and launch a pre-made
-	  boulder") is not needed: this throws the ground it actually dug up, at
-	  the size, colour and material it really was. That is the whole point of
-	  the move and it is the one thing the fallback could not do.
-
-	  What is NOT ported is rowa1's flying physics assembly: six unanchored,
-	  network-owned terrain parts under a BodyVelocity, box-queried from the
-	  server every frame. PLAN_PROJECTILE 3.1 exists to refuse exactly that,
-	  and PORT_BoulderKick's own WATCH section flags it as the cost. Server
-	  runs Arcing math and owns no Instance; the clients draw it.
-	  The trade, stated plainly: rowa1 ground a trench with SmallBreak every
-	  frame the rock moved and stalled itself once it had chewed enough
-	  (`amtBroken > 16`). Ours carves where it lands.
-
-	FIZZLE IS A FEATURE. rowa1 checks `#brokens > 0` and, on nothing, sets
-	the cooldown to TWO SECONDS instead of twelve. Kicking a floor with no
-	breakable under it is a whiff, not a cast -- keep it, it is the only
-	ability in the game that reads the map before it commits. ]]
+--- BoulderKick - rip a chunk of the actual MAP out of the ground and punt it at
+--- someone. rowa1 port: README.md/PORT_BoulderKick, PLAN_PROJECTILE.
+--- The doc said to CUT this; the blocker was that rowa2's Destruction returned
+--- nothing. Destruction.Grab (added for Armor) closes it, so this throws the
+--- ground it actually dug up, at its real size, colour and material.
+--- NOT ported: rowa1's flying assembly of six unanchored network-owned terrain
+--- parts (PLAN_PROJECTILE 3.1 refuses exactly that). Server runs Arcing math
+--- and owns no Instance. rowa1 ground a trench as the rock flew; ours carves
+--- where it lands.
+--- FIZZLE IS A FEATURE: no breakable underfoot means a 2s cooldown instead of
+--- 12. The only ability in the game that reads the map before it commits.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -86,17 +66,11 @@ local DIG_MINSZ = 3.6
 	1..6 and breaks on the seventh. Not seven. ]]
 local GRAB_COUNT = 6
 
---[[ rowa1 launches at look*160 with the Y MaxForce left at mass*100, so it
-	is thrown flat and hard and then sags -- an arc, not a line. 110 and 40
-	keep the read (fast, heavy, dropping) at rowa2's shorter engagement
-	ranges; PORT step 4 guessed 70/40 without the real BodyVelocity in front
-	of it.
-	IT SHATTERS ON THE FIRST BODY IT HITS. rowa1 counted to two
-	(`deadCounter > 1`) and ploughed through the first victim, which fights
-	its own onExpire: the whole payoff is a rock the size of a car breaking
-	apart on impact, and a boulder that clips someone and sails on reads as
-	weightless. pierce 1 means the first resolved hit runs the expiry -- the
-	burst, the crater and the shake all land ON the person hit. ]]
+--- rowa1 threw flat and hard at look*160 and let it sag -- an arc, not a line.
+--- 110/40 keeps that read at rowa2's shorter ranges.
+--- IT SHATTERS ON THE FIRST BODY: pierce 1 so the expiry -- burst, crater and
+--- shake -- lands ON the person hit. rowa1 ploughed through the first victim,
+--- which fights its own onExpire and reads as weightless.
 local SPEED    = 110
 local GRAVITY  = 40
 local MAX_DIST = 400

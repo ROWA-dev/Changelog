@@ -1,29 +1,13 @@
 --!strict
---[[ ProjTest - a test harness for Class/Projectile, not a real move.
-
-	Fires 2-4 arcing pellets in a spread, each with its own speed, all of
-	them dying on the first wall. Nothing here is ported from rowa1; it
-	exists to make the projectile system OBSERVABLE:
-
-	  * several projectiles alive at once, from one cast, so the scheduler's
-	    flat array and swap-remove get exercised rather than argued about.
-	  * a different speed per pellet, which is the cheapest way to see
-	    whether the client's drawn copy and the server's maths agree -- if
-	    they drift, pellets land visibly apart from where they hit.
-	  * stopOnWorld, so "it vanished at the wall" is the pass condition and
-	    needs no instrumentation.
-	  * Arcing, whose first customer was BoulderKick and which had none at
-	    all before that. A slow, high arc is where an integration mismatch
-	    shows up worst, so it is the useful case to have on tap.
-
-	It is ALSO the rig for the FullBlue gravity-well work: a black hole that
-	drags projectiles needs something cheap to throw at it from a distance,
-	repeatedly, from a known heading.
-
-	KEEP IT REGISTERED BUT KEEP IT HONEST -- it is in the ability list only
-	because the admin `ability` command skips anything moduleToID cannot
-	resolve, so an unregistered module cannot be handed out in game. It has
-	no mana cost and a 1 second cooldown on purpose. ]]
+--- ProjTest - a test harness for Class/Projectile, NOT a real move. Nothing
+--- here is ported from rowa1.
+--- Fires 2-4 arcing pellets in a spread, each with its own speed, all dying on
+--- the first wall: several projectiles alive at once exercises the scheduler,
+--- differing speeds expose client/server drift, stopOnWorld makes "it vanished
+--- at the wall" the pass condition, and Arcing is where mismatches show worst.
+--- Also the rig for the FullBlue gravity-well work.
+--- Registered ONLY because the admin `ability` command skips anything
+--- moduleToID cannot resolve. No mana cost and a 1s cooldown, on purpose.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

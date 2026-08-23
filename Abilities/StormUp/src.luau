@@ -1,16 +1,9 @@
 --!strict
---[[ StormUp - rowa1 Items/Ability/StormUp. Notes: README.md/PORT_StormUp.
-
-	A rising lightning spin that launches the victim straight up WITH you.
-	The air-combo opener of the lightning set.
-
-	THE AIR COMBO IS THE POINT. rowa1 called AirCombo:Make(hum, enemyhum)
-	explicitly. rowa2's HumObj does the same handoff automatically inside
-	onAttacked -- but ONLY when both parties are ALREADY airborne
-	(FloorMaterial == Air). StormUp launches from the ground, so the
-	automatic path does not fire and the handoff is done by hand below,
-	using HumObj's own field pattern so there is exactly one air-combo
-	model in the game. ]]
+--- StormUp - a rising lightning spin that launches the victim straight up WITH
+--- you. The air-combo opener of the lightning set. rowa1 port: PORT_StormUp.
+--- HumObj's automatic air-combo handoff only fires when both parties are
+--- ALREADY airborne, and this launches from the ground -- so the handoff is
+--- done by hand below, using HumObj's own fields so there is one model.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

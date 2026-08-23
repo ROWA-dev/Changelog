@@ -1,29 +1,16 @@
 --!strict
---[[ FlameDance - rowa1 Items/Ability/FlameDance.
-	Notes: README.md/PORT_FlameDance.
-
-	A 2-second spinning fire aura. Ticks damage every 0.1s inside 20 studs
-	and sets light to anything in the outer band. A zoning tool, not a burst
-	tool.
-
-	!! THE STUN LOCK WARNING FROM THE PORT DOC IS REAL AND IS HANDLED HERE --
-	but NOT with a re-hit cooldown. That was tried and it is the wrong shape.
-	rowa1's "fd" sat in noparrystun AND unparriers AND autoParries, and the
-	third is the one that mattered: a parry against the dancer bought 0.4s in
-	which everything auto-parried. THE HITS NEVER SLOWED DOWN, THE VICTIM GOT
-	AN OUT. A per-entity 0.4s re-hit cooldown is not that -- it quartered the
-	damage (4 hits a cast, not 14), made the aura chug, and did not even break
-	the lock, because 0.5s of stun re-applied every 0.44s is still a lock.
-	Same three outs, translated:
-	  1. parryH 0.1 (rowa1 had this too -- it is trivially parryable)
-	  2. stunMeOnParried 0, the one-field replacement for `noparrystun`
-	  3. parryH ESCALATES TO 1 the moment the aura makes contact with anyone.
-	     That is `autoParries` in rowa2 terms, copied off Barrage -- the other
-	     multi-hit that had to solve exactly this. The victim still has to
-	     press parry; the press just stays live ~1.2s instead of 0.2s.
-	Which is why the dmgTbl is built PER CAST inside useFunc: (3) mutates it,
-	and a module-scope table would carry the escalation into every later cast
-	by every entity. ]]
+--- FlameDance - a 2s spinning fire aura. Ticks damage every 0.1s inside 20
+--- studs and ignites anything in the outer band. Zoning, not burst.
+--- rowa1 port: README.md/PORT_FlameDance.
+--- !! the stun-lock the doc warns about is handled by giving the victim an OUT,
+--- not by slowing the hits (a re-hit cooldown was tried: it quartered the
+--- damage, chugged, and 0.5s of stun every 0.44s is still a lock). Three outs:
+---   1. parryH 0.1 -- trivially parryable, as in rowa1
+---   2. stunMeOnParried 0, the one-field replacement for `noparrystun`
+---   3. parryH ESCALATES TO 1 on first contact (rowa1's `autoParries`, copied
+---      off Barrage). The press stays live ~1.2s instead of 0.2s.
+--- (3) mutates the table, which is why the dmgTbl is built PER CAST inside
+--- useFunc -- a module-scope one would carry the escalation into every cast.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

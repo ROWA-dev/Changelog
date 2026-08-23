@@ -1,22 +1,11 @@
 --!strict
---[[ Freeze - rowa1 Items/Ability/Freeze. Port notes: README.md/PORT_Freeze.
-
-	Slam the ground and send a line of ice erupting forward: two spikes a step
-	across seven steps, marching seven studs at a time, each one laying its own
-	sheet of ground ice. A ground-line AoE, not a projectile.
-
-	!! THE STUN IS NOT IN THE DAMAGE TABLE ANY MORE.
-	rowa1's "freeze" row carried truestun 1.3 AND stun 2.0 -- the longest lockup
-	in that game. Here the row is an ordinary heavy hit and the payoff is the
-	Freeze METER: this ability fills the whole thing in ONE application, so it
-	lands the full 1.1s TrueStun and then cannot be re-applied for four seconds.
-	IceBash/IceBeam/IceSlash/IceShards CHIP that meter; this DETONATES it, and
-	neither side knows the other exists.
-	See Class/StatusEffects/Freeze and PORT_Freeze section 1.
-
-	Worth noting for once: "freeze" appears in NONE of rowa1's nine resolver
-	string sets, so unlike the rest of the ice kit there were no hidden
-	exemptions to translate. ]]
+--- Freeze - slam the ground and send a line of ice erupting forward: two spikes
+--- a step across seven steps, each laying its own sheet of ground ice.
+--- A ground-line AoE, not a projectile. rowa1 port: README.md/PORT_Freeze.
+--- !! THE STUN IS NOT IN THE DAMAGE TABLE ANY MORE. The row is an ordinary
+--- heavy hit; the payoff is the Freeze METER, which this fills in ONE
+--- application (full 1.1s TrueStun, then 4s before it can re-apply). The other
+--- ice moves CHIP that meter; this DETONATES it. See StatusEffects/Freeze.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

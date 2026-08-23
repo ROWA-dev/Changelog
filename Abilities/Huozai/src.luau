@@ -1,24 +1,6 @@
 --!strict
---[[ Huozai - rowa1 Items/Ability/Huozai. Notes: README.md/PORT_Huozai.
-
-	A 3-second forward flamethrower. Six nested bands of increasing size step
-	away from the caster and are re-fired every 0.1s. 60-second cooldown --
-	this is an ultimate.
-
-	!! A REAL ROWA1 BUG IS FIXED HERE.
-	  rowa1's band loop is `for i = 1,6 do ... for i,v in pairs(Stuff) do`.
-	  The inner loop SHADOWS `i`, so the band selection underneath
-	  (`if i == 6 ... elseif i == 1 or i == 2`) reads the PART INDEX inside
-	  the query result, not the band. Which damage table you got was
-	  therefore effectively random and had nothing to do with how far away
-	  you were stood. Ported as the obvious intent -- close bands push hard,
-	  far bands chip, the outermost only burns.
-
-	!! CROSS-BAND DEDUPE IS LOAD-BEARING.
-	  rowa1 shares ONE humsH across all six bands, so a target in the overlap
-	  is hit once per tick, not six times. :hitbox only dedupes WITHIN one
-	  query, so the `seen` table below is what stops 6 damage becoming 36.
-	  Same trap as Cero and Freeze. ]]
+--- Huozai - 3s flamethrower, six nested bands re-fired every 0.1s. Ultimate.
+--- rowa1 port: README.md/PORT_Huozai. Band select fixes rowa1's shadowed `i`.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -42,10 +24,7 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---[[ rowa1 "fire1"/"fire2": both Light, magic+fire, stun 0.1, posMult 0.5.
-	BOTH BANDS ARE LIGHT WITH A 0.1 STUN, and that is what stops a 3-second
-	channel being a lock -- it is DoT pressure, not control. Do not raise the
-	stun to make it "feel better"; the counterplay is walking around them. ]]
+--- Both bands Light with a 0.1 stun on purpose: DoT pressure, not a 3s lock.
 local FIRE_NEAR = {
 	weight   = dmgUtils.weighEnum.Light,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.fire),
@@ -85,18 +64,10 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	-- rowa1 froze input outright for the whole cast; walkSpeed is the rowa2
-	-- equivalent. MUST come off on every exit path.
+	-- rowa1 froze input outright; walkSpeed is the rowa2 equivalent. MUST come off on every exit path.
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 
-	--[[ THE BREATH IN. rowa1's first act after the anim is to clone BreathOut
-		onto the root and play it -- 1.2 seconds of drawing breath is the
-		entire tell for this move, and without it the flame arrives with no
-		warning at all. The sound is longer than the windup on purpose; it
-		carries under the first bands of fire.
-		rowa1 calls sound:Stop() on its interrupt path, so a cancelled cast
-		does not keep breathing. Debris 0 is the rowa2 spelling of that
-		(StrongLeft and StrongerLeft both do it this way). ]]
+	--- the breath-in is the whole tell; Debris 0 on the cancel path kills it.
 	local breath = script.BreathOut:Clone()
 	breath.Parent = humObj.HRootPart
 	breath:Play()
@@ -112,27 +83,13 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 45, true)
 
-	--[[ !! END THE PLUME ON THE REAL END, not on the duration it was started
-		with. This channel breaks out early on stun and on FEINT, and the
-		client was told "3 seconds" up front -- so a feinted Huozai stopped
-		dealing damage while the flamethrower, the camera shake and the
-		pushed FOV all carried on. The feint looked like it did nothing.
-		rowa1 could stop it whenever it liked: its signal was a TAG it
-		removed, not a duration (README S5 step 7b). This is that tag.
-		Same shape as StoneBall's ststep/bground teardown. ]]
+	--- !! killed by the explicit 0-duration call at the end, not this 3s: the channel breaks out early on stun/feint.
 	fireVFX("huozai", char, CHANNEL)
 
 	local started = tick()
 	local nextTick = 0
 
-	--[[ ONE ignite per victim per CAST -- FlameDance has the same six lines
-		for the same reason (a third copy is the point to extract them).
-		rowa1 guarded with `if not RootPart:FindFirstChild("flameFx")`: never
-		re-light someone already alight. Without it a 3-second channel re-applied
-		Burn to the far band up to 30 times, and onStack is uncapped ON PURPOSE,
-		so a 3-a-tick DoT arrived at ~46 with the emitters scaled to match.
-		Keyed per CAST, not "is the victim burning at all": another move piling
-		onto them is the point, this move piling onto itself is not. ]]
+	--- ONE ignite per victim per CAST: onStack is uncapped, so 30 re-applies land ~46 dmg.
 	local burned: {[number]: boolean} = {}
 	local function ignite(enemy: any)
 		local id = enemy.entityId
@@ -156,13 +113,10 @@ local function useFunc(this:myself)
 
 		local root = hurtbox
 		local forward = root.CFrame.LookVector
-		--- ONE table across all six bands -- see the header.
+		--- ONE table across all six bands: :hitbox only dedupes within one query, so this is what stops 6 dmg becoming 36.
 		local seen: {[number]: boolean} = {}
 
-		--[[ rowa1 rolled a 1-in-5 destruction chance PER BAND PER TICK: up to
-			five carves every 0.1s for three seconds. That is ~150 carve
-			attempts a cast and it will stall a busy server. One roll per
-			tick, on a random band. ]]
+		--- one carve roll per tick, not rowa1's per-band 1-in-5 (~150 carves a cast).
 		local carveBand = math.random(1, BANDS - 1)
 
 		for i = 1, BANDS do
@@ -171,15 +125,11 @@ local function useFunc(this:myself)
 			local cf = CFrame.new(root.Position + forward * dist, root.Position)
 
 			if i == carveBand then
-				--- rowa1 BlockBreak2 took its size as an argument and is
-				--- genuinely box-shaped, so it maps straight onto OBB.
+				--- rowa1 BlockBreak2 is genuinely box-shaped, so it maps straight onto OBB.
 				local carveSize = size / (math.random(100, 150) / 100)
 				Destruction.OBB(nil, cf * CFrame.new(0, size.Y / 3, 0),
 					carveSize, math.max(1.5, math.min(carveSize.X, carveSize.Y, carveSize.Z) * 0.6),
-					--[[ studs/SECOND. Gentler than the impact moves: this is
-						a flame washing over the ground, so the rubble should
-						be nudged along the lane rather than blown off it. ]]
-					forward * 25)
+					forward * 25) --- studs/SECOND, gentle: flame nudges rubble along the lane.
 			end
 
 			local _, hits = this:hitbox(cf, size, nil, true)
@@ -187,9 +137,7 @@ local function useFunc(this:myself)
 				if seen[enemy.entityId] then continue end
 				seen[enemy.entityId] = true
 
-				--[[ the outermost band is NOT an attack. rowa1 resolved a
-					dmgID called "burn" with dmg 0 and stun 0 whose only job
-					was to make the resolver call BurnEnemy. One line here. ]]
+				--- outermost band is not an attack: rowa1's "burn" dmgID was dmg 0, stun 0.
 				if i == BANDS then
 					ignite(enemy)
 					continue
@@ -197,25 +145,14 @@ local function useFunc(this:myself)
 
 				local near = (i <= 2)
 
-				--[[ !! DO NOT COPY rowa1's `vector.create(math.random(-1,1),0,0)`.
-					rowa1's `dir` is a LOCAL-SPACE FLINCH SELECTOR -- victimHitAnims
-					reads dir.Z > 0.8 as "front", dir.X < 0 as "left", dir.X > 0 as
-					"right" -- so that literal means "pick a random left/right hit
-					animation", not a direction.
-					rowa2's atkDir is a WORLD-SPACE vector (HumObj does
-					myTorso.CFrame:VectorToObjectSpace(attack.atkDir) and also uses
-					it as extraVelo). Porting the literal across gave every band a
-					knockback pointing along world -X regardless of facing.
-					A flamethrower pushes along the CASTER'S FACING. ]]
+				--- !! atkDir is WORLD-SPACE here; rowa1's `dir` was a local-space flinch selector, so do not copy its math.random literal.
 				task.spawn(function()
 					local attack = this:makeAtk(near and FIRE_NEAR or FIRE_FAR, enemy, forward)
 					-- rowa1 Root.CFrame.LookVector*18 / *6, at the x0.6 ratio (README S7)
 					attack.knockback = this:knockback(
 						forward * (near and 10.8 or 3.6), 0.15, false, -1)
 					this:executeAttack(attack)
-					--- rowa1 burned on "fire1"/"fire2" as well, behind that same
-					--- guard -- only the outermost band being able to set you
-					--- alight was a port gap, not a design.
+					--- rowa1 burned on both bands too, behind that same guard.
 					if attack:isHit() then ignite(enemy) end
 				end)
 			end

@@ -1,32 +1,13 @@
 --!strict
---[[ PaperBomb - rowa1 Items/Ability/PaperBomb.
-	Notes: README.md/PORT_PaperBomb.
-
-	Throw four explosive kunai. They fly straight, stick in whatever they
-	hit, and detonate on a short fuse.
-
-	!! THE PORT DOC CALLED THIS AN ARC. IT IS NOT.
-	  There is no gravity anywhere in the original -- the kunai travel dead
-	  straight at 200 studs/s for up to one second. What makes them land
-	  around a target is the AIMING, not a trajectory: rowa1 predicts where
-	  the target will be, then raycasts for a WALL BEHIND THEM, and failing
-	  that for the GROUND BENEATH THEM, and aims at that point with scatter.
-	  So they pepper the surface a target is standing on or against.
-	  That aiming is the whole feel of the move and it is ported below;
-	  Projectile.Arcing is not involved.
-
-	HOLD THE KEY TO KEEP THEM ARMED, LET GO TO SET THEM OFF. rowa1 had no
-	such thing -- every kunai burned a fixed ~0.6s fuse on its own, so the
-	only timing you controlled was when you threw. Holding makes the
-	detonation a second decision: pin someone, wait for them to commit, then
-	blow it. Tapping still behaves like the original, see MIN_HOLD.
-
-	You hold the HOTBAR key -- the one that cast it. That release did not
-	exist: the hotbar bind opened with `if not down then return end`, so
-	key-up never left the client. inputEnums.endAbility looks like the
-	obvious source and is not; it fires off E, which casts nothing.
-	CombatAction:chargeWait is the shared half; anything else that wants a
-	hold can use it. ]]
+--- PaperBomb - throw four explosive kunai. They fly straight, stick in what
+--- they hit, and detonate on a fuse. rowa1 port: README.md/PORT_PaperBomb.
+--- !! the doc calls this an ARC and it is not -- no gravity anywhere, dead
+--- straight at 200 studs/s. What makes them land around a target is the AIMING:
+--- predict the target, raycast for a wall behind them or the ground beneath
+--- them, aim at that with scatter. Projectile.Arcing is not involved.
+--- HOLD THE HOTBAR KEY to keep them armed, let go to set them off -- a second
+--- decision rowa1 never had. Tapping behaves like the original, see MIN_HOLD.
+--- CombatAction:chargeWait is the shared half.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -68,16 +49,10 @@ local PAPERBOMB_CONE = table.freeze({
 	distWeight = 4, maxAngle = 0.8, closeRange = 20, closeBonus = 1.5,
 	requireLOS = true, useHead = true,
 })
---[[ rowa1's fuse was 0.6 +- 0.2 and fixed. MIN_HOLD replaces it: a tap
-	behaves like the old move, because the ability fires on the same press
-	the charge later watches for, so a normal tap has ALREADY sent
-	endAbility by the time the watcher starts. Without a floor every tap
-	would read as an instant release and there would be no fuse at all.
-
-	MAX_HOLD is capped by the VISUAL, not by balance: kunaiProj lingers the
-	stuck kunai for 4s after it lands, so a longer hold would detonate a
-	kunai that is no longer on screen. If this ever needs to be longer, the
-	linger has to move with it. ]]
+--- replaces rowa1's fixed 0.6 fuse. The floor is required: the cast fires on
+--- the same press the charge watches, so a tap has already sent endAbility by
+--- the time the watcher starts and would read as an instant release.
+--- MAX_HOLD is capped by the VISUAL -- kunaiProj lingers 4s -- not by balance.
 local MIN_HOLD     = 0.6
 local MAX_HOLD     = 3
 
@@ -116,23 +91,11 @@ local function blast(action: any, pos: Vector3, fallbackDir: Vector3)
 	end
 end
 
---[[ HOLD TO KEEP THEM ARMED, LET GO TO SET THEM OFF.
-
-	rowa1 had no such thing: every kunai burned a ~0.6s fuse and went off on
-	its own, so the only timing you controlled was when you threw. Holding
-	turns that into a real decision -- pin someone down, wait for them to
-	commit, then blow it -- and it is why the ability now runs a charge.
-
-	The state is PER CAST, not per module. Four kunai from one throw share
-	one `cast` table so they detonate together, and two players (or one
-	player twice) never see each other's. A module-level flag would have
-	them cross-triggering, which is the same class of bug the shared
-	`aimParams` above still has.
-
-	A kunai that lands while charging is ARMED and waits. One that lands
-	AFTER the release -- still in the air when you let go -- goes off on
-	arrival instead, which is what you would expect from a thrown bomb whose
-	trigger has already been pulled. ]]
+--- state is PER CAST, not per module: four kunai share one `cast` table so they
+--- detonate together, and two casters never see each other's. A module-level
+--- flag would cross-trigger.
+--- A kunai landing while charging is ARMED and waits; one landing after the
+--- release goes off on arrival.
 local function makeCast(this: any)
 	local cast = { armed = {}, charging = true, dir = Vector3.zAxis }
 

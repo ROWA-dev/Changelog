@@ -1,21 +1,12 @@
 --!strict
---[[ Prediction - rowa1 Items/Ability/Prediction.
-	Notes: README.md/PORT_Prediction.
-
-	A counter STANCE. For a short window every attack that would hit you is
-	turned back on whoever threw it, until enough damage breaks through.
-
-	THE ABILITY IS THIS SHORT ON PURPOSE. rowa1's aEvent is also a stub --
-	it creates a `pframes` NumberValue on the Humanoid and the actual
-	mechanic is ~50 lines inside AttackModule keyed on that value. Here the
-	mechanic is Class/StatusEffects/Reflect and the resolver is untouched,
-	which is the whole argument in README S1.2.
-
-	NOT the same shape as LionFall/ToshiCounter. Those wait for ONE attack
-	and answer it with a move of their own; this reflects EVERYTHING for the
-	duration and has no follow-up. So it does not use their
-	connect-then-abort pattern -- it just applies an effect and gets out of
-	the way. ]]
+--- Prediction - a counter STANCE: for a short window every attack that would
+--- hit you is turned back on whoever threw it, until enough damage breaks
+--- through. rowa1 port: README.md/PORT_Prediction.
+--- Short on purpose -- the mechanic is Class/StatusEffects/Reflect and the
+--- resolver is untouched (rowa1 kept ~50 lines of it inside AttackModule).
+--- NOT LionFall/ToshiCounter's shape: those answer ONE attack with a move of
+--- their own, this reflects everything and has no follow-up, so it applies an
+--- effect and gets out of the way rather than using connect-then-abort.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -62,28 +53,19 @@ local function useFunc(this:myself)
 	this:triggerCD(cooldownID, 14, true)
 
 	--- rowa1 locked input for the stance
-	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
+	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 	fireVFX("predictStance", humObj.HRootPart, WINDOW)
 
 	local reflect: any = humObj.statusEffects:apply(statusEffects.Reflect, WINDOW, ABSORB_CAP)
 
-	--[[ rowa1 tagged this `noFeint`, so the stance cannot be cancelled once
-		committed -- atkWait, not feintWait. See PORT_LionFall step 2 for why
-		a framework flag is the wrong way to express that.
-
-		A CORRECT READ ENDS IT EARLY though. `atkWait` is a bare task.wait and
-		cannot be interrupted, so this is that same scaled wait rewritten as a
-		poll. `use` clears `attacking` the instant useFunc returns, so
-		returning early IS the cancel -- no framework support needed. Guessing
-		right buys you the turn; guessing wrong still pays the full window.
-
-		Reads `reflected`, not `absorbed`: the hit that SHATTERS the stance
-		must not count as a read.
-
-		`or 0` is load-bearing. The effect's cleanup thread can destroy it
-		mid-poll (destroy does table.clear), and a nil compare here would
-		throw inside useFunc -- which `use` pcalls into a mere warn, leaking
-		the walkSpeed mod below and slowing the player forever. ]]
+	--- rowa1 tagged this `noFeint`: the stance cannot be cancelled once
+	--- committed, so atkWait, not feintWait. A CORRECT READ still ends it early,
+	--- which is why the wait is rewritten as a poll -- returning early IS the
+	--- cancel, since `use` clears `attacking` the moment useFunc returns.
+	--- Reads `reflected`, not `absorbed`: the hit that SHATTERS the stance must
+	--- not count as a read.
+	--- `or 0` is load-bearing: the effect's cleanup can destroy it mid-poll, and
+	--- a nil compare throws into use()'s pcall, leaking the walkSpeed mod below.
 	local total  = this:scaledTime(WINDOW)
 	local waited = 0
 	local landed = false

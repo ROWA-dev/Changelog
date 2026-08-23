@@ -113,15 +113,6 @@ local function useFunc(this:myself)
 			enemy,
 			hurtbox.CFrame.LookVector
 		)
-		
-		--[[local newkb = this:knockback(
-			attack.atkDir*14,
-			0.1,
-			false,
-			-1
-		)
-		
-		attack.knockback = newkb]]
 
 		if anim and victimAnim then
 			anim:AdjustSpeed(0)

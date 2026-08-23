@@ -10,7 +10,6 @@ local numVal        = require(packages.valueBase.numberValue)
 
 local weaponBase = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 local baseClass  = require(classes.HumObjClient)
-local Debug      = require(game.ReplicatedStorage.Modules.Debug)
 
 local DmgUtils        = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgRecord       = require(script.damageRecord)
@@ -132,32 +131,10 @@ local resolveParry = require(script.resolution.resolveParry)
 local resolveBlock = require(script.resolution.resolveBlock)
 local resolveHit   = require(script.resolution.resolveHit)
 
---[[ One regen loop, four call sites.
-
-	Preserves the exact `while active do while active and belowMax do step end
-	Changed:Wait() end` shape the four hand-written loops used -- that nested
-	idiom is deliberate throttling and is an explicit non-goal to change.
-
-	  changedSignal  what to wait on when the value is already full
-	  isBelowMax()   should we keep stepping?
-	  step(dt)       do one tick. Return FALSE to kill the loop entirely.
-	  stepTime       nil     = wait()      -- legacy ~30Hz, returns elapsed
-	                 number  = wait(n)
-	                 "frame" = task.wait() -- true per-frame
-
-	wait() vs task.wait() IS A BALANCE DIFFERENCE, NOT A STYLE ONE.
-	posture and mana used BARE wait(), which yields ~30Hz. floating used
-	task.wait(), which is per-frame (~60Hz+). Since every one of these
-	loops integrates `dt * rate`, swapping the two changes how much regen
-	lands per second on a fast client. An earlier draft of this helper used
-	task.wait() for all of them and would have silently doubled posture and
-	mana regen. Each call site keeps the timer it actually had.
-
-	The `step` return value exists for health, which alone did
-	`if not active or isDead then RETURN end` -- exiting the whole loop rather
-	than just the inner one. Flattening that to a `break` would leave a dead
-	player's regen coroutine alive and waiting on HealthChanged forever.
-]]
+--- One regen loop, three call sites; the nested while/Changed:Wait is deliberate throttling.
+--- stepTime nil = wait() ~30Hz, n = wait(n), "frame" = task.wait() -- steps integrate dt, so
+--- swapping a call site's timer changes its regen RATE, not just its resolution.
+--- `step` returning false kills the coroutine, not just the inner loop (health needs that on death).
 local function regenLoop(self: any, changedSignal: any, isBelowMax: () -> boolean, step: (number) -> boolean, stepTime: (number | string)?)
 	task.spawn(function()
 		while self.isActive do
@@ -275,13 +252,7 @@ function module.new(hum: Humanoid): myself
 			self.ragdoll:unragdoll()
 		elseif attack:isHit() then
 			local now = tick()
-		--[[ HYPER ARMOUR. This cancel is a SECOND, INDEPENDENT interrupt --
-				it hangs off onAttacked and never consults stun, so gating
-				:Stun alone left an armoured player still losing their swing to
-				every chip hit. "Cannot be stunned" has to mean "cannot be
-				interrupted" or the effect does nothing that a player can feel.
-				True stun still cancels: it goes through :Stun, which fires
-				onStunned -> the stopLastAnim at the top of module.Stun. ]]
+			--- HYPER ARMOUR: a SECOND interrupt path that never consults stun, so it gates itself; true stun still cancels via :Stun -> onStunned.
 			if now < self.attackAt - 0.1 and self.wielding_weapon and not self:inHyperArmour() then
 				local equippedWep:any = self.wielding_weapon
 				equippedWep:stopLastAnim(true)
@@ -370,9 +341,8 @@ function module.new(hum: Humanoid): myself
 	self:AddConnection(self.onAttack:Connect(function(attack, returnValue: number, atkSource: any?) 
 		if attack:isHit() then
 			if attack:isWep() then
-				local maxMana = self.maxMana.Value
-				local mana = self.mana
-				mana.Value = math.min(mana.Value + attack:CalculateDamage() / 4, maxMana) -- increase mana
+				-- increase mana. :setMana clamps and re-anchors; never write .Value
+				self:setMana(self:manaNow() + attack:CalculateDamage() / 4)
 			end
 
 			blockedOrHit(attack)
@@ -421,7 +391,6 @@ function module.new(hum: Humanoid): myself
 			if v > 0 and self.isDead ~= true then
 				self.ragdoll:unragdoll()
 			--[[if self.ragdoll:inRagdoll() then
-					Debug.dprint("STOP floatin!")
 					self.ragdoll:unragdoll()
 					self.targetFloatY.Value = nil
 					self.floating.Value = 0
@@ -451,23 +420,6 @@ function module.new(hum: Humanoid): myself
 		self:AddConnection(self.blocking.Changed:Connect(stopEmote), "emote_blocking")
 		--self.onDash:Connect(stopEmote)
 	end
---[[ Four near-identical regen loops -> one helper + four call sites.
-
-		The nested `while ... Changed:Wait()` throttling idiom is CORRECT and
-		DELIBERATE -- this DEDUPES it, it does not replace it. A flat Heartbeat
-		loop would be strictly worse.
-
-		The helper takes a STEP FUNCTION, not a rate, because the four are not
-		interchangeable: health uses constants and a real Humanoid, floating
-		counts DOWN and clamps to (0,2), and mana uses a nonlinear curve
-		`baseGain * (1 - ratio)^3`. A rate-only helper would silently flatten
-		mana's curve into a linear one.
-
-		`rawset(v, "v", ...)` dodges firing Changed on every tick -- it was
-		repeated as folklore in the posture and mana loops. It now lives in
-		exactly one place: the caller's step function still does it, but the
-		reason is documented here once.
-	]]
 	regenLoop(self, hum.HealthChanged, function()
 		return hum.Health < hum.MaxHealth
 	end, function(dt)
@@ -483,23 +435,16 @@ function module.new(hum: Humanoid): myself
 			self.floating.Value = math.clamp(self.floating.Value - dt, 0, 2)
 		end
 		return true
-	end, "frame") -- floating alone used task.wait(); posture/mana used wait()
+	end, "frame") -- floating alone used task.wait(); posture used wait()
 
+	--- Posture is stepped here AND in CharController, so a client hitch loses regen the
+	--- server granted -- linear, so the mana anchor shape would fix it. Own playtest.
 	regenLoop(self, self.posture.Changed, function()
 		return self.posture.Value < self.maxPosture.Value
 	end, function(dt)
 		local posture:any, maxPosture:any = self.posture, self.maxPosture
+		-- rawset: regen must not fire Changed (i.e. replicate) every tick
 		rawset(posture, "v", math.min(posture.v + dt * self.postureHeal.Value, maxPosture.Value))
-		return true
-	end)
-
-	regenLoop(self, self.mana.Changed, function()
-		return self.mana.Value < self.maxMana.Value
-	end, function(dt)
-		local mana:any, maxMana:any = self.mana, self.maxMana
-		local ratio = mana.v / maxMana.Value
-		local manaGain = 4 * (1 - ratio)^3 -- nonlinear ON PURPOSE, do not flatten
-		rawset(mana, "v", math.min(mana.v + dt * manaGain, maxMana.Value))
 		return true
 	end)
 
@@ -715,6 +660,30 @@ function module.inCombat(self:myself): boolean
 	return self.dmgRecord:inCombat()
 end
 
+--[[ Combatant contract. What killing me is worth in xp, TOTAL, before
+	onDeath/processXp splits it by damage share.
+
+	A kill is KILL_LEVELS levels AT MY OWN LEVEL, so an even 1v1 pays the
+	winner exactly one level at any level -- both sides ride the same curve.
+	The curve is NOT copied: slot.nextLevelXp is the single source, and
+	`lvlStub` reuses one table so this allocates nothing.
+
+	THIS is the only place that asks "is this thing player-backed?". Keep it
+	that way -- the moment the payout has to ask, we are back to rowa1, where
+	the rule lived in seven files. Anything not player-backed answers with
+	`.xpLevel`, one plain number a summon or boss script sets in one line,
+	exactly like it sets cards. Unset == 0 == worth nothing. ]]
+local slotCurve = require(game.ReplicatedStorage.Class.plrObjClient.slot)
+local KILL_LEVELS = 2
+local lvlStub = { lvl = 0 }
+
+function module.xpWorth(self:myself): number
+	local plrObj = self.plrObj
+	local slot = plrObj and plrObj.loadedSlot
+	lvlStub.lvl = (slot and slot.lvl) or (self :: any).xpLevel or 0
+	return slotCurve.nextLevelXp(lvlStub :: any) * KILL_LEVELS
+end
+
 --
 
 function module.isParry(self:myself, atk:atkTyp?)
@@ -874,8 +843,6 @@ function module.GuardBreak(self:myself)
 	self.posture.Value = self.maxPosture.Value
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("postureBreak", self.HRootPart)
 
-	Debug.dprint(self, "POSTURE BROKEN!")
-
 	self:TrueStun(1.6) -- 1.6 second of posturebreak true stun
 	self:Stun(1.9)     -- 1.9 second of posturebreak stun
 	if self.blocking.Value == true then
@@ -947,8 +914,6 @@ function module.setTransparency(self: myself & { _ogTransparency: ogTransparency
 	local ogTransparency = self._ogTransparency
 	local char = self.Model or (self.HRootPart and self.HRootPart.Parent)
 	if not char then return end
-
-	Debug.dprint("set transparency", transparency)
 
 	if transparency == nil or transparency == 0 then
 		for inst:any, value in pairs(ogTransparency) do
@@ -1051,7 +1016,6 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 		if self:canBlock() == false then
 			return false
 		end
-		Debug.dprint("atkend", setTo)
 	end
 	--setTo = self._wantblock
 	if self.blocking.Value ~= setTo then
@@ -1228,6 +1192,23 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 	self:AddConnection(self.mana.Changed:Connect(function(number: number) 
 		remoteEvent:FireClient(plr, 23, number)
 	end), "repl_23_mana")
+
+	--[[ id 24 -- WHO am I fighting, and how long is left on them.
+		(enemyModel, joined, remaining?). Membership only changes on an edge, so
+		this is two packets per enemy per fight plus one correction per TTL --
+		never a stream. The enemy's Model is already replicated, so health,
+		posture and name must NOT go on this wire; the client reads those off
+		the Model it is handed.
+
+		Being inside initReplicateServer IS the player gate -- only loadChar
+		calls it -- so an NPC's dmgRecord keeps onEdge nil and arms no timers.
+
+		Not AddConnection'd because it is a field, not a connection:
+		dmgRecord:destroy() (in this class's destroy) clears it, which is also
+		what kills any expiry timer still in flight. ]]
+	self.dmgRecord.onEdge = function(enemyModel: Instance, joined: boolean, remaining: number?)
+		remoteEvent:FireClient(plr, 24, enemyModel, joined, remaining)
+	end
 
 
 --[[local rcon = remoteEvent.OnServerEvent:Connect(function(plr: Player, id:number, value: any)

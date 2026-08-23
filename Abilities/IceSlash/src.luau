@@ -1,21 +1,11 @@
 --!strict
---[[ IceSlash - rowa1 Items/Ability/IceSlash. Notes: README.md/PORT_IceSlash.
-	*** FIRST CUSTOMER OF Class/Projectile. ***
-
-	Throw TWO ice crescents, one off each leg. Each travels 200 studs/s for
-	up to 3 seconds, cutting through targets, DEFLECTING off blocks, and
-	shattering on the first parry or wall.
-
-	(The port doc said "up to 5 crescents". Reading the source: it is two --
-	sendIceSlash is called twice, at angles -30 and 10.)
-
-	!! THE BUG THIS PORT FIXES
-	rowa1 accumulates `distance += dt` -- SECONDS -- then compares it against
-	3 as though it were studs, while advancing 200*dt per frame through a
-	4-stud-deep box. At 30fps that is 6.6 studs a step: the crescent passes
-	clean THROUGH a player. Class/Projectile substeps so no step exceeds half
-	the box's smallest extent, which is exactly why this ability was chosen
-	to go first -- the improvement is visible in a playtest. ]]
+--- IceSlash - throw TWO ice crescents, one off each leg. Each travels 200
+--- studs/s for up to 3s, cutting through targets, DEFLECTING off blocks, and
+--- shattering on the first parry or wall. rowa1 port: README.md/PORT_IceSlash
+--- (which says "up to 5"; the source calls sendIceSlash twice).
+--- First customer of Class/Projectile: rowa1 compared accumulated SECONDS
+--- against a stud count while stepping 6.6 studs through a 4-stud box, so
+--- crescents passed clean through people. The class substeps.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -67,16 +57,10 @@ local CRESCENT = table.freeze({
 	maxDistance = 600,
 	size        = Vector3.new(9, 9, 4),
 	dmgTbl      = ICE2,
-	--[[ IT SHATTERS ON THE FIRST BODY IT CONNECTS WITH. rowa1 capped humsH
-		at 4 and carried on through all of them, which fights the effect it
-		already has: the fx SHATTERS the crescent on impact, plays Hit and
-		Shatter and emits `mess` -- and then the crescent kept flying, so the
-		shatter was a thing that happened to a projectile still visibly
-		intact. One clean break on the first target reads correctly and makes
-		the throw a commitment rather than a mower.
-		A BLOCK still does not consume this: resolveHits skips the pierce
-		decrement on a deflection, so a blocked crescent bends away with its
-		one hit intact, which is the mechanic worth keeping. ]]
+	--- it shatters on the FIRST body: rowa1 carried on through four, so the
+	--- shatter fx played on a crescent that was still visibly flying.
+	--- A BLOCK does not consume this -- resolveHits skips the pierce decrement
+	--- on a deflection, so a blocked crescent bends away with its hit intact.
 	pierce      = 1,
 	stopOnWorld = true,
 	--- rowa1 dir*8, at the x0.6 knockback ratio (README S7)
@@ -96,19 +80,10 @@ local CRESCENT = table.freeze({
 			fireVFX("iceShatter", attack.enemyEntity.HRootPart)
 
 		elseif attack:isParried() then
-			--[[ PARRIED CRESCENTS GO HOME. rowa1 killed it silently
-				(`iceExplode = false`), which is a fine reward and a boring
-				one -- the parry ends the threat and nothing else happens.
-				Sent back, the same read is still there (it is no longer YOUR
-				problem) plus the thrower now has to deal with their own
-				crescent, which is the most interesting thing that could
-				happen with a 200 studs/s projectile and a parry window.
-
-				rowa1's rocket redirect heading, via BaseProjectile.parryDir
-				-- current heading + the parrier's facing + a little lift,
-				falling back to their facing alone when a head-on parry makes
-				the first two cancel. `newOwner` is what lets it reach the
-				caster at all. No target: a crescent does not home. ]]
+			--- PARRIED CRESCENTS GO HOME. rowa1 killed it silently, which is a
+			--- fine reward and a boring one. parryDir is the rocket's heading
+			--- blend; `newOwner` is what lets it reach the caster at all.
+			--- No target: a crescent does not home.
 			local eroot = attack.enemyEntity.HRootPart
 			if eroot then
 				fireVFX("iceShatter", eroot)
@@ -120,19 +95,12 @@ local CRESCENT = table.freeze({
 			end
 
 		elseif attack:isBlocked() then
-			--[[ DEFLECTION. The only mechanic of its kind in the game: a
-				blocked crescent bends away along the blocker's facing rather
-				than dying, and it is worth keeping.
-
-				:setDir, not `proj.dir = `. Velocity is the projectile's
-				storage now and `dir` is a derived read, so the old
-				assignment would be overwritten on the very next step. This
-				also makes the intent explicit: bend the HEADING, keep the
-				speed. The old write happened to preserve speed because of
-				how the fields were laid out, which is not the same as
-				meaning to. NOT :deflect() -- that clears `seen`, and a
-				crescent that forgets who it has already hit can re-hit the
-				same blocker for the rest of its flight. ]]
+			--- DEFLECTION: a blocked crescent bends away along the blocker's
+			--- facing rather than dying. The only mechanic of its kind here.
+			--- !! :setDir, not `proj.dir =` -- velocity is the storage and `dir` a
+			--- derived read, so a raw assignment is overwritten next step.
+			--- NOT :deflect() -- that clears `seen`, and a crescent that forgets
+			--- who it hit can re-hit the same blocker for the rest of its flight.
 			local eroot = attack.enemyEntity.HRootPart
 			if eroot then
 				proj:setDir(proj.dir + eroot.CFrame.LookVector / 3)

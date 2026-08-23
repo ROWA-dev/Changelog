@@ -1,44 +1,17 @@
 --!strict
---[[ Oblitar heavy - TWO BEATS ON ONE PRESS, the second of which executes.
-
-	rowa1 Main, `typ == 2`, gated on `tick() > lastHeavy + 5`:
-	    hshock fx, Heavy anim, Blade.Top.sharp:Emit(1), Hold.HeavySwing
-	    Attacking.Time = 0.6 * AtkRate
-	    clone Effects.OblitarFX, weld to root, Debris 4
-	    wait 0.4              [cancel check]
-	    Hold.BladeSwing
-	    wait 0.2              [cancel check]
-	    -> fx.BladeSwing + fx.Swing + emit slice1/line1, Damage(5) = oblH
-	    wait 0.2 * AtkRate    [cancel check]
-	    Hold.BladeSwing
-	    wait 0.2 * AtkRate    [cancel check]
-	    -> lastHeavy = tick(), fx.BladeSwing2 + fx.Swing + emit slice2/line2,
-	       Damage(9) = oblH2
-
-	NOT A CHARGE. See attack.luau for why there is no heavyEnd.
-
-	!! TIMING. Both calls mean exactly what they say now -- feintWait has no
-	hidden lead, so a chain does not drift.
-	  the FIRST call is the WINDUP (rowa1's Attacking.Time 0.6)
-	  the SECOND is a plain beat between hits (0.2 + 0.2 = 0.4)
-	Both sit 0.08 under rowa1's own figures: that is the old lead, preserved
-	deliberately by the migration rather than retuned in the same pass.
-
-	!! AND rowa1 IS INCONSISTENT ABOUT AtkRate INSIDE THIS ONE MOVE.
-	Beat one waits `0.4` then `0.2` -- UNSCALED. Beat two waits `0.2*AtkRate`
-	twice -- SCALED. rowa2's scaledTime applies atkRate to everything, so beat
-	one runs ~3% longer here than in rowa1 and beat two matches exactly. Left
-	as is: 0.018s is well under perception and matching it would mean dividing
-	the windup by atkRate, which reads as a typo to the next person.
-
-	!! THE ANIM IS SPEED 1.05, NOT 1. rowa1's heavy calls `AdjustSpeed(1)` --
-	unlike its m1/flourish/thrust, which all use `1/AtkRate`. PlayAnim divides
-	by atkRate, so 1.05/1.05 lands on rowa1's 1.0. Passing 1 here played the
-	whole swing at 0.952 and was half of why the heavy felt slow.
-
-	THE 5s GATE IS SET AFTER THE SECOND BEAT in rowa1, not on press, so the
-	real gap is 5s from the END. triggerCD is called at the same point here.
-	Wielding sets the cooldown length (Oblitar.wield). ]]
+--- Oblitar heavy - TWO BEATS ON ONE PRESS, the second of which executes.
+--- rowa1 Main `typ == 2`, gated on `tick() > lastHeavy + 5`. Not a charge; see
+--- attack.luau for why there is no heavyEnd.
+--- !! the first feintWait is the WINDUP (rowa1's 0.6), the second is a plain
+--- beat between hits (0.2 + 0.2). Both sit 0.08 under rowa1 -- that is the old
+--- feintWait lead, preserved by the migration rather than retuned here.
+--- !! rowa1 is inconsistent about AtkRate inside this one move (beat one
+--- unscaled, beat two scaled). rowa2 scales everything, so beat one runs ~3%
+--- longer. Left alone: 0.018s is under perception and matching it would mean
+--- dividing the windup by atkRate, which reads as a typo.
+--- !! the anim is speed 1.05, NOT 1 -- PlayAnim divides by atkRate, so 1.05
+--- lands on rowa1's 1.0. Passing 1 plays the swing at 0.952 and feels slow.
+--- The 5s gate is set AFTER the second beat, so the real gap is 5s from the END.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 

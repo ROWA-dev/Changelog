@@ -1,33 +1,17 @@
 --!strict
---[[ Bastar - rowa1 Items/Ability/Bastar. Notes: README.md/PORT_Bastar.
-
-	A greatsword move in two beats: SLAM someone into the ground and pin them
-	on the blade, hold, then hurl the sword down the lane.
-
-	Needs a weapon with a blade.
-
-	The slam's stun is 2.0 in rowa1 -- the longest in its whole table -- which
-	exists purely to guarantee the follow-up. Halved: rowa2's stun is a single
-	field (README S4.2), so 2.0 there is 2.0 of everything, and the weld
-	already guarantees the second beat.
-
-	!! THE ORDER IS THE MOVE. An earlier pass had the beats right and
-	everything hanging off them in the wrong place, which is a different bug
-	from a missing effect and reads as "it feels off" rather than "it is
-	broken". Against the source, the running order is:
-	    cast    P1 + hshock, the blade sings (heavySwung2 + hs3), trails Wind
-	            and glows red.        NO SHAKE -- nothing has hit anything yet.
-	    0.55    the overhead ARC (BigSlash), then a 0.1 beat. rowa1's declared
-	            windup is 0.65 and this is where the other 0.1 went.
-	    0.65    IMPACT: the ground carves, the camera shakes, the blade
-	            stomps, THEN the hitbox resolves and pins.
-	    +0.0    P2 starts IMMEDIATELY on the pin -- the throw wind-up is the
-	            hold. It was starting 0.8s late, in the same frame as its own
-	            damage, so the sword was never seen being thrown.
-	    +0.8    the second ARC, the release, the throw.
-	The carve belongs to the SLAM (rowa1 runs it before the slam hitbox, not
-	after the hold): it is the floor breaking under an overhead greatsword,
-	not a trench the throw ploughs. ]]
+--- Bastar - a greatsword move in two beats: SLAM someone into the ground and
+--- pin them on the blade, hold, then hurl the sword down the lane.
+--- Needs a weapon with a blade. rowa1 port: README.md/PORT_Bastar.
+--- Slam stun halved from rowa1's 2.0 (its longest): rowa2's stun is a single
+--- field, and the weld already guarantees the follow-up.
+--- !! THE ORDER IS THE MOVE:
+---   cast   P1 + hshock, blade sings and glows. NO SHAKE, nothing has hit yet.
+---   0.55   the overhead ARC, then a 0.1 beat
+---   0.65   IMPACT: carve, shake, stomp, THEN the hitbox resolves and pins
+---   +0.0   P2 starts IMMEDIATELY on the pin -- the throw wind-up IS the hold
+---   +0.8   the second ARC, the release, the throw
+--- The carve belongs to the SLAM, not the throw: it is the floor breaking under
+--- an overhead greatsword, not a trench the sword ploughs.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

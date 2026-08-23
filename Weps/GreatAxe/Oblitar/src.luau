@@ -1,44 +1,21 @@
 --!strict
---[[ Oblitar - rowa1 Items/Weps/Oblitar/Main (585 lines).
-	Notes: README.md/PORTW_Oblitar, and PORTW_00 for the checklist.
-
-	A large slashing weapon whose HEAVY IS TWO BEATS, the second of which
-	decapitates a victim at low health (rowa1's `oblH2`, one of the five ids
-	in AttackModule's `decapitation` set). That finisher is the whole reason
-	the second beat exists -- see Modules/execute.
-
-	FAMILY: Heavy/GreatAxe. PORTW_Oblitar argued Medium/Swords from the
-	numbers (oblM1/oblH/oblH2 are all Medium WEIGHT) and it shipped there
-	first, but weight class and family are different questions -- it plays as
-	an axe closer to Executer than to Claymore, so it moved. See GreatAxe for
-	what that inheritance actually changes (Heavy recovers faster from a parry
-	and stuns on block; Medium does neither).
-
-	THE dmgTbl WEIGHTS ARE STILL Medium, deliberately. That field is the
-	ATTACK weight -- it decides trades -- and rowa1 authored all three rows as
-	Medium. Executer's m1 is Heavy. Moving family did not change those rows on
-	its own; if the axe should win trades like Executer, that is a separate
-	one-word call in dmgConfig, not a consequence of this move.
-
-	!! TWO CORRECTIONS TO PORTW_Oblitar, both from reading Main rather than
-	the doc:
-
-	  1. THE HEAVY IS NOT A CHARGE. The doc's step 4 says
-	     "heavyStart -> heavy, heavyEnd -> heavy2", which describes Katana's
-	     hold-and-release. rowa1's Oblitar is nothing like that: ONE press
-	     (`typ == 2`) plays the whole two-beat sequence automatically, with
-	     cancel checks between beats and a 5s internal gate
-	     (`tick() > lastHeavy + 5`). So there is no heavyEnd binding here and
-	     adding one would require a release the player never makes.
-
-	  2. THE THRUST USES oblM1, NOT oblH2. `Damage(6)` -- the thrust's hit --
-	     resolves `oblM1`. oblH2 is `Damage(9)`, the heavy's second beat.
-	     The two sit near each other in a 9-branch if-chain and are easy to
-	     transpose; the doc's numbers table is right, its mapping was not.
-
-	onParried is NOT implemented here on purpose: PORTW_00 step 7 calls it
-	mandatory per weapon, but Medium already defines it and Katana/Claymore
-	both rely on that. Adding a local one would just shadow the family's. ]]
+--- Oblitar - rowa1 Items/Weps/Oblitar/Main. Notes: README.md/PORTW_Oblitar,
+--- PORTW_00 for the checklist.
+--- A large slashing weapon whose HEAVY IS TWO BEATS, the second decapitating a
+--- low-health victim (rowa1's `oblH2`, in AttackModule's `decapitation` set) --
+--- that finisher is the whole reason the second beat exists. See Modules/execute.
+--- FAMILY: Heavy/GreatAxe. It shipped as Medium/Swords first; weight class and
+--- family are different questions and it plays closer to Executer.
+--- The dmgTbl weights are STILL Medium, deliberately: that field is the ATTACK
+--- weight, it decides trades, and rowa1 authored all three rows Medium.
+--- !! TWO CORRECTIONS TO THE DOC, both from reading Main:
+---   1. the heavy is NOT a charge -- one press plays both beats automatically,
+---      so there is no heavyEnd binding and adding one needs a release the
+---      player never makes.
+---   2. the THRUST uses oblM1, not oblH2. The doc's numbers are right, its
+---      mapping was not.
+--- onParried is deliberately absent: Medium already defines it and a local one
+--- would just shadow the family's.
 local baseWep = require(script.Parent)
 
 export type myself = baseWep.myself & {

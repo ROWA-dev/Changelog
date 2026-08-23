@@ -1,29 +1,14 @@
 --!strict
---[[ Armor - rowa1 Items/Ability/Armor. Notes: README.md/PORT_Armor.
-
-	Rip the ground up, wear it, and shove everyone off you as it goes on.
-
-	THE ABILITY IS THE SMALL HALF. rowa1 put the shockwave here and the
-	actual armour -- the damage reduction, the erosion, the shedding plates,
-	the blood suppression -- in a ~70-line `if enemychr:HasTag("hasArmor")`
-	branch inside AttackModule. All of that is
-	Class/StatusEffects/EarthArmour now and the resolver is untouched.
-	PORT_Armor calls this the hardest test case of README S1.2; the shape it
-	lands in is the one Prediction already used.
-
-	HOW MUCH GROUND YOU RIP UP IS HOW MUCH ARMOUR YOU GET. rowa1 set the
-	pool inside the loop over broken pieces (`clamp(i*30, 1, 160)`), so
-	casting on open rock gave a full suit and casting on a thin floor gave
-	scraps. That reads like an accident and it is a good rule, so it is
-	explicit here instead of emergent. It also fixes the degenerate case:
-	with NOTHING breakable underfoot rowa1 never set the attribute at all,
-	and the resolver's `hp - dmg` then ran on nil.
-
-	THE PLATES ARE THE GROUND, which is the whole visual joke -- you are
-	wearing the floor. Nine real carved chunks are torn out, blown up and
-	outward, and dragged onto the rig; each one lands wearing its own colour
-	and material, so grass gives you a green shoulder and the stone under it
-	a grey one. Destruction.Grab exists for this; see below. ]]
+--- Armor - rip the ground up, wear it, and shove everyone off you as it goes on.
+--- rowa1 port: README.md/PORT_Armor.
+--- THE ABILITY IS THE SMALL HALF: rowa1 kept the damage reduction, erosion,
+--- shedding plates and blood suppression in a `hasArmor` branch inside
+--- AttackModule. All of that is Class/StatusEffects/EarthArmour now.
+--- HOW MUCH GROUND YOU RIP UP IS HOW MUCH ARMOUR YOU GET -- rowa1's emergent
+--- `clamp(i*30, 1, 160)` made explicit, which also fixes the nil-pool case
+--- when nothing underfoot is breakable.
+--- The plates ARE the ground: nine real carved chunks, each keeping its own
+--- colour and material. Destruction.Grab exists for this.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -84,16 +69,9 @@ local BOX_SIZE  = Vector3.new(20, 20, 20)
 local RADIUS    = 10
 local MAX_HITS  = 10
 
---[[ ArmorGrab is `res13Sphere[i] * (2.2, 1.4, 2.2)`, i.e. a FLATTENED
-	sphere -- Y is 64% of XZ. Sizing it off BigBreak4, which sculpts the same
-	table at (8,4,8) for a documented r30 (S10.4), puts the res13 extent at
-	~7.5, so ArmorGrab carves about 16.5 x 10.5 x 16.5.
-	That is an ELLIPSOID, not a Sphere: S10.4 flags the flat-disc case
-	(BigBreak3) as the one place Sphere is wrong, and this is the second.
-
-	!! FULL EXTENT, NOT RADII. Destruction halves this itself
-	(`radii = dimensions / 2`), and Bastar's lane is Vector3(4, 5, 12) for a
-	12-stud trench. Passing radii here digs a crater half the size. ]]
+--- an ELLIPSOID, not a Sphere: rowa1's ArmorGrab flattens Y to 64% of XZ.
+--- !! FULL EXTENT, NOT RADII -- Destruction halves this itself, so passing
+--- radii digs a crater half the size.
 local DIG_SIZE = Vector3.new(16.5, 10.5, 16.5)
 --[[ Scaled off the SHORT radius, not the long one. S10.4's "radius * 0.6"
 	is written for Spheres, where there is only one radius; this dig is
@@ -130,38 +108,28 @@ local function useFunc(this:myself)
 	--- the slam beat inside this lands exactly when the windup ends
 	fireVFX("armorShock", root, WINDUP)
 
+	local SLOW_KEY = "armor"
+	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
+	
 	if this:feintWait(WINDUP) then
 		if anim then anim:Stop(0.1) end
+		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		return
 	end
 
+	humObj.walkSpeed:RemoveMod(SLOW_KEY)
+	
 	this:useMana()
 	this:triggerCD(cooldownID, 40, true)
 
 	local origin = hurtbox.Position
 
-	--[[ Dig FIRST: the pieces decide how much armour there is, and the
-		colour of it. rowa1 dug after the hitbox, but nothing reads the
-		result in between and this way the suit and the shove land together.
-
-		ANSWERING PORT_Armor step 5 / PORT_BoulderKick step 2 -- "does it
-		return the pieces". It does NOW; it did not before, and the earlier
-		"no" was the reason this looked nothing like rowa1. Every Destruction
-		method ships `data.destroyed` -- the chunks that came OUT -- to the
-		dbri client fx, which draws them locally on each machine. They never
-		existed on the server, so nothing could pick one up.
-		Destruction.Grab (added for this) hands back a DESCRIPTION of `count`
-		of them -- size, where it was, colour, material -- and withholds
-		those same cuboids from dbri so they are not also drawn falling as
-		ordinary rubble. VFXQuiver/armorWear spawns them locally on each
-		client and flies them on. That is what makes the armour genuinely BE
-		the ground instead of a recolour of it.
-
-		DATA, NOT PARTS, and not animated from here. rowa1's armorM ran
-		entirely on the client for the same reason: anything the server owns
-		and moves replicates its CFrame at the network's rate with
-		interpolation on top, so nine pieces converging for up to three
-		seconds would stutter for everyone except the host. ]]
+	--- dig FIRST: the pieces decide how much armour there is and what colour it
+	--- is, and this way the suit and the shove land together.
+	--- Destruction.Grab (added for this) hands back a DESCRIPTION of `count`
+	--- chunks -- size, position, colour, material -- and withholds them from dbri
+	--- so they are not also drawn as ordinary rubble. DATA, NOT PARTS: server-owned
+	--- parts converging for three seconds would stutter for everyone but the host.
 	local _, chunks = Destruction.Grab(
 		nil,
 		CFrame.new(origin),

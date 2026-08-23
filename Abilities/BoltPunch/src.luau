@@ -61,17 +61,10 @@ local function useFunc(this:myself)
 
 	fireVFX("boltp", FX_CHARGE, humObj.Hum)
 
-	--[[ isRootRelative TRUE, so the vector is in the ROOT's local space and
-		the lunge follows you as you turn. Passing a world-space LookVector
-		locks the direction at frame 0 and the dash becomes unsteerable --
-		which is not what rowa1 did either: its "rmove" proxy took a LOCAL
-		vector and the client applied it relative to the root every frame.
-
-		KEEP THE HANDLE. bodyForce returns a mover with :destroy(); without
-		it the player keeps sliding for the full 0.3s after a cancel.
-
-		8 not 7: rowa1's MiniDash2 used power 40, and rowa2's bodyForce scales
-		by 5 internally, so 40/5 = 8. ]]
+	--- isRootRelative TRUE so the lunge follows you as you turn; a world-space
+	--- LookVector locks the direction at frame 0 and the dash is unsteerable.
+	--- KEEP THE HANDLE -- without :destroy() the player slides the full 0.3s
+	--- after a cancel. 8 = rowa1's power 40 over bodyForce's internal x5.
 	local dash = this:bodyForce(Vector3.new(0, 0, -8), 0.3, true)
 
 	if this:feintWait(0.42) then

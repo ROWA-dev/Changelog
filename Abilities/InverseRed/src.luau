@@ -1,45 +1,13 @@
 --!strict
---[[ InverseRed - rowa1 Items/Ability/InverseRed. Notes: README.md/PORT_InverseRed.
-
-	Charge a red orb on your arm, then fire it flat out. It sweeps for bodies
-	the whole way, and on contact -- or a wall, or expiry -- it detonates
-	down the line it travelled.
-
-	IT WAS NEVER UNFINISHED. Three port docs wrote this ability and its two
-	siblings off as "spectacle present, mechanics absent". They had only read
-	the aEvent, which is the CHARGE and nothing else; its last line is
-	`rocket.Active.Value = true`, handing off to a 157-line Script parented to
-	the orb Part itself. That Script is the ability. The tell was sitting in
-	the aEvent the whole time -- it requires AttackModule, Knockback and
-	RegModule and calls none of them. See PORT_InverseRed CORRECTION 2.
-
-	SUBSTEPPING IS THE WHOLE REASON THIS PORTS CLEANLY. At 800 studs/s a
-	single 30fps frame is 26 studs, and the hit volume is 6 -- so rowa1 could
-	only make it work by raycasting from `last` to the new position every
-	frame and running a swept box beside it, by hand, in a Script attached to
-	a moving Part. Class/Projectile already does exactly that, correctly, for
-	every projectile in the game. This ability is ~90 lines because of it.
-
-	THE ORB DOES NO CONTACT DAMAGE. rowa1's swept box only ever set
-	`triggerExplode`; every point of damage is in the blast. Identical shape
-	to RPG, and it carries a zeroed dmgTbl for the identical reason -- contact
-	still has to RESOLVE so it can be parried and so iframes are respected.
-
-	THE PURPLE COMBO IS CUT -- DECIDED, do not build it. rowa1's orb checks
-	every part it sweeps for a `MaxBlue` -- FullBlue's field -- carrying a
-	`PurpleReady` attribute, and triggers a 2.2s delayed 95-radius nuke on
-	the `purple` dmgID.
-
-	FullBlue (id 41) still SETS that attribute and that is fine: the field
-	owns the flag and setting it costs nothing. But the detonation half --
-	the `purple` dmgTbl, Destruction's PurpleNukeBreak equivalent, the
-	"purpNuke" fx and the corpse-vanish -- is NOT being ported.
-
-	So there is deliberately NO branch here looking for the flag. That is
-	the correct end state, not an unfinished one: a branch that finds a flag
-	and then does nothing is worse than no branch. If it is ever revived it
-	goes on the FIELD, not the orb -- FullBlue already owns the flag, already
-	runs a loop and already knows where it is. README S8 Tier D. ]]
+--- InverseRed - charge a red orb on your arm, then fire it flat out at 800
+--- studs/s. It sweeps for bodies the whole way and detonates on contact, a
+--- wall, or expiry. rowa1 port: README.md/PORT_InverseRed (which wrongly calls
+--- it unfinished -- the mechanic lived in a Script on the orb part).
+--- The orb does NO contact damage; all of it is in the blast. It still carries
+--- a zeroed dmgTbl so contact RESOLVES and can be parried.
+--- THE PURPLE COMBO IS CUT, decided. FullBlue still sets PurpleReady and that
+--- is fine, but there is deliberately no branch here reading it. If revived it
+--- goes on the FIELD, not the orb. README S8 Tier D.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -64,23 +32,19 @@ local aerialAim  = require(game.ServerStorage.ROWA.Modules.aerialAim)
 local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---[[ rowa1 `reverseRed` (DMGS:984): Heavy, magic, 40 dmg with its own comment
-	"nerfed from 50 to 40", truestun 0.2, stun 1, posMult 0.5, ragdtillground
-	and an EMPTY sounds{} -- the explosion is the sound. 40 -> 24 on the S4.3
-	ratio; the stun values carry over unchanged. ]]
+--- rowa1 `reverseRed` 40 dmg -> 20; stuns carry over unchanged. Empty sounds{}
+--- in rowa1 too -- the explosion is the sound.
 local BLAST = table.freeze({
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
 	dmg      = 20,
 	truestun = 0.2,
 	stun     = 1,
-	posMult  = 0.5,
+	posMult  = 1,
 })
 
---[[ Contact resolves and deals nothing; `pierce = 1` turns the first touch
-	into an expiry, which is how rowa1's `triggerExplode` behaved. A nil
-	dmgTbl would make the base skip entity queries and the orb would fly
-	straight through people. See RPG's PROXIMITY for the same reasoning. ]]
+--- contact resolves and deals nothing; pierce 1 turns the first touch into an
+--- expiry. A nil dmgTbl would skip entity queries entirely and fly through people.
 local PROXIMITY = table.freeze({
 	weight  = dmgUtils.weighEnum.Light,
 	type    = dmgFlag.magic,
@@ -91,9 +55,8 @@ local PROXIMITY = table.freeze({
 	parryH  = 0.2,
 })
 
---[[ rowa1's AoE is RegModule.Box(CFrame.new(hitPos, last), (16,16,25)) --
-	CENTRED on the impact and oriented back along the path, so it catches
-	people the orb passed as well as the one it hit. Cap 8. ]]
+--- centred on the impact and oriented back along the path, so it catches people
+--- the orb passed as well as the one it hit.
 local BLAST_SIZE = Vector3.new(16, 16, 25)
 local MAX_HITS   = 8
 
@@ -103,37 +66,18 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 
 	local dir = proj.dir
 
-	--[[ !! IT GOES OFF ON THE BODY, NOT WHERE THE ORB WAS.
-		rowa1 re-centres the ENTIRE explosion on whoever it swept, and this
-		port dropped it:
-		    local hitPos = endp
-		    for _,v in pairs(humsH) do
-		        if v:FindFirstChild("HumanoidRootPart") then
-		            hitPos = v.HumanoidRootPart.Position
-		        end
-		    end
-		-- and hitPos is then used for the fx, the camera shake, the crater
-		and the 16x16x25 box. Every one of them.
-
-		Centring on the ORB instead is centring on the point where a 6-stud
-		proximity volume first TOUCHED a hurtbox -- half the orb plus half
-		the box short of the person, and more at low server framerate, where
-		the substep clamp makes the contact point coarser still. The blast
-		then fires from behind their heels: the near edge of a 25-deep box
-		clips them or misses outright, and the explosion visibly happens
-		SHORT of the target rather than on it.
-
-		`victimRoot` is stamped by onHit below. It stays nil when the orb
-		died on a wall or ran out, which is when `pos` is already right. ]]
+	--- !! it goes off ON THE BODY, not where the orb was. The orb's position is
+	--- where a 6-stud volume first TOUCHED a hurtbox, so centring there fires
+	--- the blast from behind their heels and visibly short of the target.
+	--- victimRoot is stamped by onHit; nil means a wall or expiry, where `pos`
+	--- is already right.
 	local vr = proj.victimRoot
 	if vr ~= nil and vr.Parent ~= nil then pos = vr.Position end
 
 	fireVFX("inverseRedBoom", pos, dir)
 
-	--[[ rowa1 broke at `hitPos - norm`, i.e. just INSIDE the surface it hit,
-		so the crater bites the wall instead of the air in front of it. That
-		normal only exists on a world hit -- rowa1 would have thrown on a
-		body hit if it ever reached here with nil, which it could. ]]
+	--- bite just INSIDE the surface, or the crater eats the air in front of it.
+	--- The normal only exists on a world hit.
 	local origin = pos
 	local wh = proj.worldHit
 	if wh then origin = pos - wh.Normal end
@@ -150,10 +94,8 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 		if eroot == nil then continue end
 
 		local attack = action:makeAtk(BLAST, enemy, dir)
-		--[[ rowa1 `rDir*-30 + (0,2,0)`. `rDir` is the NEGATED facing it flew
-			with, so the double negative means the shove points the way the
-			orb was going -- away from the caster. Port the motion, not the
-			signs. x0.6 to rowa2 force units (README S7.9). ]]
+		--- the shove points the way the orb was going, away from the caster.
+		--- (rowa1's double negative; port the motion, not the signs.)
 		attack.knockback = action:knockback(
 			dir * 18 + Vector3.new(0, 1.2, 0), 0.2, false, -1)
 		action:executeAttack(attack)
@@ -168,9 +110,7 @@ end
 
 local ORB_CFG = table.freeze({
 	speed       = 800,
-	--[[ rowa1 set NO distance cap and a 10 second lifetime -- at 800 studs/s
-		that is an eight THOUSAND stud shot that is still live ten seconds
-		later. Capped the same way RPG's 30s was. ]]
+	--- rowa1 capped neither: 10s at 800 studs/s is an 8000-stud shot.
 	maxDistance = 900,
 	lifetime    = 2,
 	--- rowa1 swept a (6,6,dt*speed) box; the depth WAS the substep, which is
@@ -182,20 +122,10 @@ local ORB_CFG = table.freeze({
 	fxId        = "inverseRedProj",
 	onExpire    = detonate,
 
-	--[[ PARRYING IT SENDS IT BACK. It used to DETONATE ON THE PARRIER: the
-		orb carries a 0-damage proximity table whose only job is to be
-		parryable, and with no onHit a parried touch still spent its single
-		pierce, expired, and ran the 16x16x25 blast centred on the person who
-		had just read it correctly. The parry reward was a bomb in the face.
-
-		RPG's redirect formula, the same one IceSlash now uses: it leaves
-		along the PARRIER's facing, and `newOwner` hands the ignore over so
-		the thing can actually reach the person who fired it -- without that
-		it flies home and passes straight through them.
-
-		Deflecting does NOT consume pierce (resolveHits skips the decrement
-		when `deflected` is set), so the orb survives to detonate wherever it
-		ends up, which is the entire point. ]]
+	--- PARRYING IT SENDS IT BACK. Without this branch a parried touch spent the
+	--- single pierce, expired, and blasted the person who just read it correctly.
+	--- `newOwner` hands the ignore over so it can reach whoever fired it.
+	--- Deflecting does not consume pierce, so it survives to detonate.
 	onHit = function(proj: any, attack: any)
 		if attack:isParried() then
 			local eroot = attack.enemyEntity.HRootPart
@@ -209,11 +139,8 @@ local ORB_CFG = table.freeze({
 			return
 		end
 
-		--[[ rowa1's `humsH`, which is the list the explosion is re-centred
-			on -- see detonate. It stamps EVERY body the sweep touches, hit or
-			not, exactly as the original does (it inserts before it looks at
-			iframes at all), so a blocked or i-framed contact still puts the
-			blast on the person instead of in the air behind them. ]]
+		--- stamps EVERY body the sweep touches, hit or not, so a blocked or
+		--- i-framed contact still puts the blast on the person. See detonate.
 		local enemy = attack.enemyEntity
 		proj.victimRoot = enemy and enemy.HRootPart or nil
 	end,
@@ -235,23 +162,15 @@ local function useFunc(this:myself)
 	local rightArm = char:FindFirstChild("Right Arm")
 	fireVFX("inverseRedCharge", 1, rightArm, WINDUP)
 
-	--[[ the charge whine. rowa1 clones particle_style_charge onto the root in
-		the same breath as the orb and kills it (Debris 0) the moment the
-		cast is interrupted -- the orb spinning up silently was the tell that
-		this had been dropped. Server-side and not in inverseRedCharge
-		because that is how every other charge in rowa2 does it: StrongLeft,
-		StrongerLeft and LionFall all keep the sound on the ability and the
-		visuals in the quiver. ]]
+	--- the charge whine. Sound on the ability, visuals in the quiver -- the same
+	--- split StrongLeft, StrongerLeft and LionFall use.
 	local chargeSnd = script.particle_style_charge:Clone()
 	chargeSnd.Parent = humObj.HRootPart
 	chargeSnd:Play()
 	game.Debris:AddItem(chargeSnd, 4)
 
-	--[[ AERIAL AIM (Modules/aerialAim). rowa1 hovers the caster for the
-		charge when they are already airborne, and it matters more here than
-		anywhere: the orb leaves at 800 studs/s along the root's facing, so
-		without it an air cast fires along whatever heading the jump had.
-		No-ops on the ground. ]]
+	--- the orb leaves at 800 studs/s along the root's facing, so without this an
+	--- air cast fires along whatever heading the jump had. No-ops grounded.
 	local releaseAir = aerialAim(humObj, WINDUP + 0.5)
 
 	if this:feintWait(WINDUP) then
@@ -274,11 +193,8 @@ local function useFunc(this:myself)
 
 	this:projectile(ORB_CFG, originCF)
 
-	--[[ rowa1 releases at the end of the charge loop, one line BEFORE it
-		builds the shot. Released after instead, which is the same moment to
-		the player and removes a frame race: the aim is read off the root
-		here, and rowa1 only got away with reading it post-release because
-		the client takes a frame to drop the gyro. ]]
+	--- after the shot, not before: the aim is read off the root and the client
+	--- takes a frame to drop the gyro.
 	releaseAir()
 
 	this:endLag(0.2)

@@ -50,7 +50,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 		victimHumObj:TrueStun(1.7)
 		local grabClass = victimHumObj.grab
 		local grab = grabClass:grab(humObj)
-		grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0.5,3)
+		grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0.5,1)
 		victimAnim:Play()
 		if this:feintWait(0.47) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
 		

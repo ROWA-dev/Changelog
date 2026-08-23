@@ -1,21 +1,9 @@
 --!strict
---[[ RPG - rowa1 Items/Ability/RPG. Notes: README.md/PORT_RPG.
-
-	Shoulder a launcher, fire one homing rocket. Joke ultimate, and the
-	cleanest possible demonstration of why Class/Projectile exists.
-
-	!! THE ABILITY FILE IS NOT WHERE THE MOVE LIVED.
-	rowa1's aEvent is a SPAWNER: it clones ServerStorage.Effects.Rocket into
-	workspace.Effects and sets two ObjectValues on it. The rocket's homing,
-	collision, damage and explosion are a 130-line Script PARENTED TO THE
-	PART -- one running script per rocket, all its state in upvalues, no
-	shared fix path. That pattern is exactly what rowa2 exists to delete, so
-	the whole thing is a config here.
-
-	The PARRY REDIRECT survived and is the best thing in the original: a
-	rocket parried at the right moment is knocked off course and re-acquires
-	someone else instead of exploding. That is now BaseProjectile:deflect,
-	shared with IceSlash. ]]
+--- RPG - shoulder a launcher, fire one homing rocket. Joke ultimate.
+--- rowa1 port: README.md/PORT_RPG. The move lived in a 130-line Script parented
+--- to the rocket part; it is all config here.
+--- The parry REDIRECT survived and is the best thing in the original: a rocket
+--- parried on time re-acquires someone else instead of exploding.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -59,10 +47,13 @@ local ROCKET = {
 }
 
 local BLAST_RADIUS = 12
-local TARGET_RANGE = 200
---[[ rowa1 used GetNearestInDirection2 with its DEFAULT maxstAngle of 0.4 rad
-	(~23 degrees) -- a rocket only locks onto something you are genuinely
-	pointing at, which is much tighter than the soft cone. ]]
+--- !! was 200, which WAS the "RPG only locks onto nearby people" bug: rowa1's
+--- acquire was unbounded, and 200 is a sixth of the distance this same config
+--- flies. Tied to maxDistance so the two cannot drift again.
+local TARGET_RANGE = 1200
+--- rowa1's default 0.4 rad (~23 deg) -- much tighter than the soft cone, and
+--- what keeps the range above sane: score = angle * (dist/10), so a far target
+--- must be almost perfectly centred to beat a near one.
 local ROCKET_CONE = table.freeze({ distWeight = 10, maxAngle = 0.4 })
 
 --- the AoE the rocket leaves behind. Runs on the projectile's owner.
@@ -78,35 +69,13 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
 
-	--[[ !! AND THE OWNER, ADDED BY HAND, BECAUSE ROWA1'S BLAST HAS NO OWNER
-		CHECK AT ALL:
-		    local Stuff2 = RegModule.Box(CFrame.new(endp, last), (12,12,12))
-		    for i,v in pairs(Stuff2) do
-		        if v.Parent and v.Parent:FindFirstChild("Humanoid")
-		            and not table.find(humsH2, v.Parent) then
-		Compare InverseRed and PaperBomb, which BOTH carry an explicit
-		`v.Parent ~= owner` on the same loop. The rocket does not, and it is
-		not an oversight there either: the flight sweep has no owner check
-		either, only a 0.05s arming delay (`st = tick() + 0.05`), i.e. the
-		rocket is armed against EVERYONE including you the moment it clears
-		the launcher. Blowing yourself up with the joke ultimate is the joke.
-
-		It has to be added by hand because HitboxQuery ignores the caster's
-		Humanoid on every query in the game (`toIgnore = humObj.Hum`), which
-		is correct for every attack except a bomb. Doing it here rather than
-		with a new query flag keeps that guarantee intact for everything
-		else -- this is the only projectile in the game that wants it.
-
-		The radius reject below still applies, so this is only ever an owner
-		genuinely INSIDE their own explosion.
-
-		!! WATCH THE RADIUS. rowa1's box is a TWELVE STUD CUBE -- (12,12,12)
-		into GetPartBoundsInBox is a full size, so its blast reaches 6 studs,
-		not 12. BLAST_RADIUS here is 12, which is double the original in
-		every direction, and it now applies to YOU as well. If the RPG starts
-		killing its own user from across the room that number is why, and
-		6 is what the original actually was. Left alone because it is a
-		balance call, not a port bug to fix silently. ]]
+	--- !! and the OWNER by hand: rowa1's blast has no owner check and neither
+	--- does its flight sweep -- blowing yourself up with the joke ultimate is
+	--- the joke. Added here rather than as a query flag because HitboxQuery
+	--- ignoring the caster is correct for every attack except a bomb.
+	--- WATCH THE RADIUS: rowa1's (12,12,12) box is a FULL size, so it reached 6
+	--- studs, not 12. BLAST_RADIUS 12 is double the original and now applies to
+	--- you too. Left alone as a balance call, not fixed silently.
 	local me = action._humObj
 	if me ~= nil then table.insert(hits, me) end
 
@@ -152,21 +121,15 @@ local PROXIMITY = table.freeze({
 local ROCKET_CFG = table.freeze({
 	class       = Projectile.Homing,
 	speed       = 200,
-	maxDistance = 1200,
+	--- == TARGET_RANGE on purpose: never acquire what it cannot reach, and
+	--- never fly past what it was allowed to acquire.
+	maxDistance = TARGET_RANGE,
 	--- rowa1 gave it 30 seconds. Cut hard: a rocket still circling half a
 	--- minute later is a bug report waiting to happen.
 	lifetime    = 6,
 	size        = Vector3.new(4, 4, 12),
-	--[[ rowa1 steered by adding lookToTarget/16 to the facing every frame --
-		a framerate-DEPENDENT nudge. Expressed as a rate it flies the same at
-		30fps and at 144.
-
-		3.75, NOT 2.5. Measure the original instead of calling it "lazy":
-		adding a unit vector scaled 1/16 to a unit facing and renormalising
-		turns you by atan(1/16) = 3.58 degrees per FRAME, and rowa1 ran that
-		off RenderStepped, so at the 60fps it was played at the rocket turned
-		~215 deg/s = 3.75 rad/s. 2.5 is a third slower than the move has ever
-		been, which is why the homing "felt different" -- it was. ]]
+	--- rowa1's per-FRAME nudge expressed as a rate, so it flies the same at 30
+	--- and 144fps. 3.75, not 2.5: atan(1/16) per frame at 60fps is ~215 deg/s.
 	steer       = 3.75,
 	dmgTbl      = PROXIMITY,
 	pierce      = 1,

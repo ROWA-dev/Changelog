@@ -1,27 +1,11 @@
 --!strict
---[[ Streak - rowa1 Items/Ability/Streak. Notes: README.md/PORT_Streak.
-
-	A blink-slash. Cut a 40-stud lane, DRAG everyone you caught to the far
-	end of it, and arrive there yourself.
-
-	THE BEST PART, and it is easy to miss: BLOCKING OR PARRYING A STREAK
-	STOPS THE BLINK. rowa1 records the distance to whoever blocked and
-	teleports the caster only that far, so a good block plants them in front
-	of you instead of behind you. That is the counterplay and it is ported
-	intact.
-
-	!! THE EXECUTE IS DEAD IN ROWA1. The doc listed this ability as needing
-	the shared `execute` helper because "shock" sits in dieNow and
-	decapitation -- but rowa1's own finisher branch is COMMENTED OUT:
-	    if finsiherChar then
-	        --game.ReplicatedStorage.Fx:FireAllClients("pauseF", ...)
-	    end
-	It collects the low-health victim and then does nothing with them. So
-	Streak does NOT need the execute helper; it never used one.
-
-	The `canStreak` tag gate is not ported. It is a per-character unlock and
-	rowa2's equivalent would be a card, not a tag -- if the unlock is not
-	being ported there is nothing to gate on. ]]
+--- Streak - a blink-slash. Cut a 40-stud lane, DRAG everyone caught to the far
+--- end, arrive there yourself. rowa1 port: README.md/PORT_Streak.
+--- BLOCKING OR PARRYING STOPS THE BLINK -- the caster only travels as far as
+--- whoever blocked, so a good block plants them in front of you. The counterplay.
+--- No execute helper: rowa1's own finisher branch is commented out, so it never
+--- had one, whatever the doc says. The `canStreak` tag gate is not ported
+--- either -- it is a per-character unlock, which would be a card here.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

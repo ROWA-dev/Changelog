@@ -1,24 +1,13 @@
 --!strict
---[[ Slayer arial - rowa1's DOWNSLAM (Main `typ == 4 or 5`, Anims.Arial).
-
-	rowa1: 3s gate (`lastArial + 3`), an upward impulse of (0,20,0)*mass,
-	then MiniDash forward -- 38 for typ 4, 30 for typ 5 -- Hold.heavySwung
-	up front, Hold.Swing1 at pitch 1.2 partway, then Damage(6) = `gsM2` with
-	Knockback (0,-20,0) + look*2.
-
-	!! THE DECLARED WINDUP IS A LIE AGAIN. `Attacking.Time` says 0.5*AtkRate;
-	the real waits are 0.3 + 0.3 = 0.6 base. S5 note 7g -- ported the waits.
-	Slayer lies about its windup in TWO of its four attacks (this and the
-	heavy's 1.4-vs-1.0), so do not trust that field anywhere in this weapon.
-
-	THE KNOCKBACK IS THE MOVE. `(0,-20,0)` drives the victim into the floor;
-	that is what makes this a slam rather than a jumping swing. It needs the
-	atkCB hook, which `arial` did not have -- it was added (matching the one
-	`sprint` already had) rather than dropping the knockback.
-
-	NOT PORTED: rowa1 dashes further on typ 4 than typ 5 (38 vs 30). rowa2
-	routes both through arialAtk and there is no second variant to branch on,
-	so this takes the typ 5 number. ]]
+--- Slayer arial - rowa1's DOWNSLAM (Main `typ == 4 or 5`, Anims.Arial).
+--- !! the declared windup lies again: Attacking.Time says 0.5, the real waits
+--- are 0.3 + 0.3. Slayer lies in TWO of its four attacks (this and the heavy's
+--- 1.4-vs-1.0), so do not trust that field anywhere in this weapon.
+--- THE KNOCKBACK IS THE MOVE: (0,-20,0) drives the victim into the floor, which
+--- is what makes it a slam rather than a jumping swing. It needs the atkCB hook,
+--- which `arial` did not have -- added rather than dropping the knockback.
+--- NOT PORTED: rowa1 dashes further on typ 4 than 5; rowa2 has one variant, so
+--- this takes the typ 5 number.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 

@@ -1,13 +1,9 @@
 --!strict
---[[ Tendrils - rowa1 Items/Ability/Tendrils. Notes: README.md/PORT_Tendrils.
-
-	Blood tendrils reach out at range, GRAB a target, hoist them 10 studs and
-	then break them. A ranged grab, not a projectile (PLAN_PROJECTILE 2F).
-
-	THE PORT DOC'S OPEN QUESTION IS RESOLVED: `blodbreak` DOES exist in DMGS
-	(Heavy, magic+blood, 50 dmg, stun 0.7, posMult 4). So this is genuinely a
-	two-hit move -- a 2-second-stun catch followed by a 50-damage finisher --
-	not grab-plus-visual as the doc guessed. ]]
+--- Tendrils - blood tendrils reach out at range, GRAB a target, hoist them 10
+--- studs and break them. A ranged grab, not a projectile.
+--- rowa1 port: README.md/PORT_Tendrils. `blodbreak` DOES exist in DMGS, so this
+--- is genuinely two hits -- a 2s-stun catch then a 50-damage finisher -- not
+--- grab-plus-visual as the doc guessed.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

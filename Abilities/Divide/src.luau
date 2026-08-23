@@ -1,20 +1,10 @@
 --!strict
---[[ Divide - rowa1 Items/Ability/Divide. Notes: README.md/PORT_Divide.
-
-	Uppercut, drag them in, then two committed strikes. Three beats, each
-	gated on the last connecting.
-
-	KEPT SIMPLE ON PURPOSE. rowa1's version ends with a CharAtkWeld cinematic
-	hold before the finisher, and the port doc proposed rebuilding it on the
-	floating air-combo system. Neither is here: the AlignPosition drag does
-	the same job -- it is what actually keeps the victim in front of you --
-	and it is one object instead of a whole air-combo decision. If the
-	cinematic hold is wanted later it is additive, not a rewrite.
-
-	The uppercut has a SPEED GATE that is easy to miss and is the whole
-	reason the move is not a free launcher: rowa1 only lands it if you are
-	moving faster than the target, OR the target is not attacking. You
-	cannot uppercut someone who is already committed and outrunning you. ]]
+--- Divide - uppercut, drag them in, then two committed strikes. Three beats,
+--- each gated on the last connecting. rowa1 port: README.md/PORT_Divide.
+--- No CharAtkWeld cinematic and no `floating` air-combo: the AlignPosition drag
+--- does the same job in one object. Adding the hold later is additive.
+--- !! the uppercut has a SPEED GATE -- it only lands if you are moving faster
+--- than the target OR they are not attacking. Not a free launcher.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -47,17 +37,9 @@ local UCUT = {
 	stun     = 1,
 	posMult  = 3,
 	parryH   = -0.04,
-	--[[ rowa1's "ucut" row carries its OWN OnHitFunc (OnHitFuncs/ucut), and
-		it is a 0.8s FLAT ragdoll -- ragdollWait semantics, no ground check.
-		THE UPPERCUT IS SUPPOSED TO RAGDOLL THEM IN THE AIR. An earlier pass
-		read the row's `sounds` and missed the `onHit` sitting next to it, so
-		the first beat launched a victim who stayed on their feet.
-
-		FLAT, not stopOnGround: they are airborne, so a ground check would
-		release them the moment they came down -- which is exactly the
-		"they stand back up mid-air" symptom.
-
-		Smash uses the SAME rowa1 row; its copy must stay in step. ]]
+	--- 0.8s FLAT ragdoll: the uppercut is supposed to ragdoll them IN THE AIR,
+	--- and a ground check would release them the moment they came down.
+	--- Smash shares this rowa1 row; keep the two in step.
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "kick1")
 		attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 8)
@@ -231,17 +213,10 @@ local function useFunc(this:myself)
 	fireVFX("divideFlash", humObj.HRootPart, char:FindFirstChild("Right Arm"))
 	fireVFX("bflashScreen", char, caught.HRootPart and caught.HRootPart.Parent)
 
-	--[[ !! THE THIRD BEAT: GRAB, HOLD, THEN RELEASE INTO THE FINISHER.
-		An earlier pass skipped this and went straight from bflash to
-		bflash2, which is why the move read as two hits instead of three.
-
-		rowa1 PriorityWelds the victim to the caster's right arm with
-		C0 = Angles(90, 0, 230), plays a `Victim` animation on THEM, waits
-		0.7s, releases, and only then throws the finisher. The hold is the
-		whole payoff -- it is the moment the camera reads.
-
-		The horizontal drag comes off first: two things owning the victim's
-		position at once fight each other. ]]
+	--- !! THE THIRD BEAT: grab, hold, then release into the finisher. Skipping
+	--- it is what made the move read as two hits instead of three -- the hold is
+	--- the moment the camera reads. The drag comes off first: two things owning
+	--- the victim's position at once fight each other.
 	release()
 
 	local held = false
@@ -312,21 +287,11 @@ local function useFunc(this:myself)
 		end
 	end
 
-	--[[ !! THE BLACK FLASH. This is the payoff and it was missing entirely.
-		rowa1's last two lines before its tail are, together, gated on the
-		bflash beat having landed:
-		    FxRemote:FireAllClients("bflash2", Root)
-		    CamShake:FireAllClients(Root.Position, 400, 1, 0.3)
-		Only the second one got ported, so the finisher ended on a ring, a
-		hit sound and a camera shake with nothing between them. `bflash2` is
-		the black flash itself AND the only place LightningClash + bflash2 +
-		bflash play -- which is why the move's audio read as thin and
-		unresolved even though every dmgTbl sound was correct.
-		Ported as VFXQuiver/blackFlash (cold). Fired HERE, in rowa1's order:
-		after the finisher resolves, immediately before the shake.
-
-		The `landed` gate above is rowa1's `therehit2` -- the flash only ever
-		goes off on a connected finisher, never on a whiffed one. ]]
+	--- !! THE BLACK FLASH -- the payoff, and it was missing entirely. Fired in
+	--- rowa1's order: after the finisher resolves, immediately before the shake.
+	--- It is also the only place LightningClash + bflash2 + bflash play, which is
+	--- why the move's audio read thin without it. The `landed` gate is rowa1's
+	--- `therehit2`: never on a whiffed finisher.
 	fireVFX("blackFlash", humObj.HRootPart)
 	--- rowa1's second RedFlash pulse. rowa2 has no such Lighting effect, so
 	--- the participants' screen flash is what carries it (see bflashScreen).

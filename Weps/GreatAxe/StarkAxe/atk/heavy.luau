@@ -13,61 +13,55 @@ return function(this:wepBase.myself): wepBase.atkResult
 	local fxModel = this._model.Union
 	local root = humObj.HRootPart
 
-	fxModel.Bottom.WorldCFrame = humObj.HRootPart.CFrame * CFrame.new(0, -3, 0)
-	fxModel.Top.WorldCFrame = fxModel.CFrame	
-	fxModel.flame.WorldCFrame = fxModel.CFrame  * CFrame.new(0, -3.5, 0)
-	fxModel.strike.WorldCFrame = fxModel.CFrame * CFrame.new(0, -5, 0)
+
+	
+	local rootCF = root.CFrame
+
+	local strike = fxModel.strike:Clone()
+	strike.Parent = root
+	strike.WorldCFrame = fxModel.CFrame * CFrame.new(0, -4, 0) * CFrame.Angles(0,0,0)
+	
 	
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	
-	--fxModel.flame.star:Emit(1)
-	
-	local leftLeg = char:FindFirstChild("Left Leg")
-	for i,v in pairs(fxModel.start:GetChildren()) do
-		v.Parent = leftLeg
-		if v:IsA("ParticleEmitter") then
-			v:Emit(v:GetAttribute("EmitCount") or 10)
-		
-		end
-	end
-	
-
-	
-	
-	
-
-	for i,v in pairs(fxModel.Bottom:GetChildren()) do
-		if v:IsA("ParticleEmitter") then
-			v.Enabled = true
-			
-		end
-	end
+	--flame.star:Emit(10)
 
 
-	
 	
 	local anim = this:PlayAnim(script.Heavy, 0.1, 1, 0.8)
 	task.wait(0.1)
-	
-	for i,v in pairs(fxModel.Bottom:GetChildren()) do
-		if v:IsA("ParticleEmitter") then
-			v.Enabled = false
 
-		end
-	end
-	
 	task.wait(0.6)
+
 	local force = this:bodyForce(Vector3.new(0,10,-15), 1.5, true, 0.8, 1)
-	--root.CFrame = root.CFrame + root.CFrame.LookVector * 0.5 + Vector3.new(0, 0.3, 0)
-	--local force = this:bodyForce(Vector3.new(0,2,-15), 1.5, true, 0.8, 1)
-	
+
 	local Hold = this._model.Hold
 	
 	Hold.Parent.heavy.Enabled = false
 	--Hold.Parent.Trail1.Enabled = true
 	if this:feintWait(0.67) then this:triggerCD("heavy", 3) this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") force:destroy()  Hold.slideSfx:Stop() Hold.HSWING1:Stop() return end
 	
+	local highlight = Instance.new("Highlight")
+	highlight.Adornee = char
+	highlight.FillColor = Color3.fromRGB(255, 255, 150)
+	highlight.OutlineColor = Color3.fromRGB(255, 255, 40)
+
+	highlight.FillTransparency = 1
+	highlight.OutlineTransparency = 1
+
+	highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+	highlight.Parent = char
+
+
+	humObj:FireVFXClient("tween", 
+		highlight,
+		{1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out},
+		{
+			FillTransparency = 0,
+			OutlineTransparency = 0,
+		})
+
 	
 	if not humObj or not humObj.isActive or humObj:inStun() then
 
@@ -80,39 +74,25 @@ return function(this:wepBase.myself): wepBase.atkResult
 
 		return
 	end	
-	for i,v in pairs(fxModel.strike:GetChildren()) do
-		if v:IsA("ParticleEmitter") then
-			v.Enabled = true
-		end
-	end
-
-
 	
 
 
 	
-
-	local rootCF = root.CFrame
-
-	local forward = rootCF.LookVector
-
-
 
 	Hold.Parent.Trail1.Enabled = false
 	Hold.Parent.heavy.Enabled = true
 
-	for i,v in pairs(fxModel.strike:GetChildren()) do
-		if v:IsA("ParticleEmitter") then
-			v.Enabled = false
-		end
-	end
+
 
 
 	if force then
 		force:destroy()
 	end
 	
-	task.wait(0.7)
+	task.wait(0.5)
+	highlight:Destroy()
+	--humObj:FireVFXClient("smashLand", humObj.HRootPart.Position )
+	
 	local hitboxOffset = CFrame.new(0, -1, 0)
 	local hitboxSize   = Vector3.new(20,7,20)
 	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
@@ -136,115 +116,26 @@ return function(this:wepBase.myself): wepBase.atkResult
 		attack.knockback = newkb
 
 		this:executeAttack(attack)
+		
+
+		
 		if attack:isHit() then
 			landed = true
 		end
 	end
 	
 	
-	for i,v in pairs(fxModel.Top:GetChildren()) do
-		if v:IsA("ParticleEmitter") then
-			v.Enabled = true
-		end
-	end
-	task.wait(0.1)
-	
-	
-	
+
+	task.wait(0.5)
+
 	if landed == false then
 		this:endLag(0.4)
 	end
 	this:endLag(0.1)
-
-
+	
+	
 	task.wait(0.1)
 	humObj.walkSpeed:RemoveMod("stopMoving")
-	for i,v in pairs(fxModel.Top:GetChildren()) do
-		if v:IsA("ParticleEmitter") then
-			v.Enabled = false
-		end
-	end
-	--[[for i = 1,5 do
-		if not humObj or not humObj.isActive or humObj:inStun() then
-			
-			Hold.Parent.heavy.Enabled = false
-			
 
-			if force then
-				force:destroy()
-			end
-
-			return
-		end	
-		
-		
-
-		for i,v in pairs(fxModel.strike:GetChildren()) do
-			if v:IsA("ParticleEmitter") then
-				--v.Enabled = true
-			end
-		end
-
-
-		local rootCF = root.CFrame
-
-		local forward = rootCF.LookVector
-
-		
-
-		Hold.Parent.Trail1.Enabled = false
-		Hold.Parent.heavy.Enabled = true
-
-
-		
-		for i,v in pairs(fxModel.Top:GetChildren()) do
-			if v:IsA("ParticleEmitter") then
-				v.Enabled = true
-			end
-		end
-		
-		if force then
-			force:destroy()
-		end
-		local hitboxOffset = CFrame.new(0, -1, -3)
-		local hitboxSize   = Vector3.new(9,7,9)
-		local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-
-		local landed = false
-		for _,enemy in pairs(hits) do
-			local attack = this:makeAtk(
-				dmgConfig.heavy,
-				enemy,
-				hurtbox.CFrame.LookVector
-			)
-
-			local newkb = this:knockback(
-				attack.atkDir*1.2,
-				0.05
-			)
-
-			attack.hitbox = hitbox
-			attack.knockback = newkb
-
-			this:executeAttack(attack)
-			if attack:isHit() then
-				landed = true
-			end
-		end
-		task.wait(0.1)
-		--destruction.Sphere(humObj.plrObj.Plr)
-		if landed == false then
-			this:endLag(0.4)
-		end
-		this:endLag(0.1)
-		
-		for i,v in pairs(fxModel.Top:GetChildren()) do
-			if v:IsA("ParticleEmitter") then
-				v.Enabled = false
-			end
-		end
-		
-	end
-	humObj.walkSpeed:RemoveMod("stopMoving")]]--
 	return
 end

@@ -1,22 +1,10 @@
 --!strict
---[[ LionFall - rowa1 Items/Ability/LionFall. Notes: README.md/PORT_LionFall.
-
-	!! THE PORT DOC HAD THIS MOVE WRONG. It described "a long-telegraph
-	leaping slam with a cinematic freeze on connect", built around a 2.5s
-	uncancellable windup.
-
-	IT IS A COUNTER. rowa1 hooks `HumObj.beforeDamage` and sets
-	`extras["nodmg"] = true` -- it stands there for 0.6s, and if someone
-	attacks you in that window the incoming damage is CANCELLED and you
-	answer with one enormous punch. The 2.5s `Attacking.Time` is the stance,
-	not a windup.
-
-	Built on ToshiCounter's shape, which is rowa2's established counter:
-	subscribe to `beforeAttacked`, abort the attack, remember who threw it.
-	Same hook, one field instead of an `extras` table.
-
-	rowa1 REFUNDED HALF the cooldown on a whiff, which is what makes a
-	counter worth attempting. Kept. ]]
+--- LionFall - a COUNTER, not the leaping slam the doc describes. Stand for
+--- 0.6s; if someone attacks you in that window their damage is CANCELLED and
+--- you answer with one enormous punch. rowa1's 2.5s Attacking.Time is the
+--- STANCE, not a windup. rowa1 port: README.md/PORT_LionFall.
+--- Built on ToshiCounter's shape (subscribe to beforeAttacked, abort, remember
+--- who threw it). Half the cooldown is refunded on a whiff, as in rowa1.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

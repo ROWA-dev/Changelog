@@ -1,21 +1,11 @@
 --!strict
---[[ Oblitar m1 - a 4 hit cycle, the last of which is the flourish.
-
-	rowa1 combo -> rowa2 m1cycle:
-	    combo 0  Atk1     -> swing1
-	    combo 1  Atk2     -> swing2
-	    combo 2  Atk3     -> swing3
-	    combo 3  Flourish -> swing4, and it is `fsM2`, the shared punch, not
-	             oblM1. It also carries the only knockback in the m1 chain.
-
-	!! WINDUPS ARE THE REAL WAITS, NOT `Attacking.Time` (README S5 note 7g:
-	the declared value is a CLAIM and rowa1 lies in both directions).
-	    m1        claim 0.5,  waits 0.3 + 0.2 = 0.5   -> they agree, use 0.5
-	    flourish  claim 0.45, waits 0.2 + 0.3 = 0.5   -> THEY DO NOT AGREE.
-	              Shipped 0.47 first, off the claim; corrected to 0.5.
-	Both are BASE numbers: the weapon carries atkRate 1.05 (rowa1's AtkRate),
-	and scaledTime multiplies every wait by it, so 0.5 lands on rowa1's real
-	0.525. Do not pre-multiply here or it gets applied twice. ]]
+--- Oblitar m1 - a 4 hit cycle, the last of which is the flourish. The flourish
+--- uses `fsM2`, the shared punch, not oblM1, and carries the chain's only knockback.
+--- !! WINDUPS ARE THE REAL WAITS, not `Attacking.Time` -- rowa1 lies in both
+--- directions (S5 7g). m1's claim agrees at 0.5; the flourish's 0.45 does NOT,
+--- and its real waits are also 0.5.
+--- Both are BASE numbers: atkRate 1.05 is applied by scaledTime, so 0.5 lands on
+--- rowa1's real 0.525. Do not pre-multiply or it is applied twice.
 local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 

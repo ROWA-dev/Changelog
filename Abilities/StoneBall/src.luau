@@ -1,20 +1,10 @@
 --!strict
---[[ StoneBall - rowa1 Items/Ability/StoneBall.
-	Notes: README.md/PORT_StoneBall.
-
-	!! THE PORT DOC HAD THIS MOVE WRONG.
-	  It said "rip a boulder out of the ground, hold it overhead, then hurl
-	  it forward". That is not what happens -- that is closer to BoulderKick.
-	  StoneBall is a CHARGE: the caster VANISHES inside a giant stone ball
-	  welded to their own root and rolls forward at 90 studs/s for a second,
-	  flattening whatever is in front of them.
-
-	  So it is not a projectile either. There is nothing to fire; the caster
-	  IS the projectile, which is a dash plus a repeating hitbox, and
-	  Class/Projectile is not involved.
-
-	The roll ENDS EARLY on the first thing it hits (rowa1's `breakOut`),
-	which is what stops it ploughing through a whole team. ]]
+--- StoneBall - a CHARGE, not a throw: the caster vanishes inside a giant stone
+--- ball welded to their own root and rolls forward at 90 studs/s for a second.
+--- rowa1 port: README.md/PORT_StoneBall (which describes BoulderKick instead).
+--- Not a projectile either -- the caster IS the projectile, so it is a dash
+--- plus a repeating hitbox and Class/Projectile is not involved.
+--- The roll ENDS EARLY on the first thing it hits, so it cannot plough a team.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

@@ -1,17 +1,10 @@
 --!strict
---[[ DropKick - rowa1 Items/Ability/DropKick. Notes: README.md/PORT_DropKick.
-
-	Hop up, then dive at the ground on a diagonal, riding the kick until you
-	hit something or the floor. Whatever you land on takes it.
-
-	!! NO GRAB. The port doc said "catch someone in the air, ride them into
-	the ground" and listed grab semantics as a blocker. rowa1 REQUIRES
-	CharAtkWeld at the top of the file and then NEVER CALLS IT -- the require
-	is dead. There is nothing to weld; the dive simply sweeps a box.
-
-	The dive ends on the FIRST of: a collidable surface ahead, entering stun,
-	or an entity in the swept volume. Whichever it was decides whether the
-	landing carves terrain. ]]
+--- DropKick - hop up, then dive at the ground on a diagonal, riding the kick
+--- until you hit something or the floor. rowa1 port: README.md/PORT_DropKick.
+--- NO GRAB, whatever the doc says: rowa1 requires CharAtkWeld and never calls
+--- it. The dive just sweeps a box.
+--- It ends on the FIRST of: a collidable surface ahead, entering stun, or an
+--- entity in the swept volume -- and which one decides if the landing carves.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -109,18 +102,11 @@ local function useFunc(this:myself)
 	--- down and forward: rowa1's dir was UpVector*-10 + LookVector*8
 	local dive = this:bodyForce(Vector3.new(0, -1.2, -1).Unit * DIVE_FORCE, MAX_DIVE, true)
 
-	--[[ !! A BODY IS NOT THE FLOOR, AND THIS IS WHY THE KICK MISSED.
-		This ray answers "have I landed", and it used to exclude only the
-		caster and workspace.Effects. A live entity's HumanoidRootPart is
-		CanCollide, CanQuery AND in the Default collision group, so diving AT
-		someone made THEM the landing surface: the loop broke with `landing`
-		set and `hits` still nil, and the kick then carved the ground, played
-		every effect and dealt nothing. That is the "drop kick just lands but
-		doesn't actually hit them" report, and it is why it was intermittent --
-		it depended on whether the ray happened to clip a body or open floor.
-		workspace.Entities is excluded so ONLY world geometry can end the ride.
-		People are answered by the hitbox, which is the thing that can
-		actually damage them. ]]
+	--- !! A BODY IS NOT THE FLOOR, and this is why the kick missed. A root is
+	--- CanCollide + CanQuery in the Default group, so diving AT someone made
+	--- THEM the landing surface: the loop broke with `hits` still nil and the
+	--- kick carved, played everything and dealt nothing. Entities is excluded so
+	--- only world geometry ends the ride; people are answered by the hitbox.
 	diveParams.FilterDescendantsInstances = { char, workspace.Effects, workspace.Entities }
 
 	local hits = nil

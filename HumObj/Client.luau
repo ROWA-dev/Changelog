@@ -6,7 +6,6 @@ local Classes    = repliStore:WaitForChild("Class")
 local Packages   = repliStore:WaitForChild("Packages")
 
 local Signal        = require(Packages.Signal)
-local Debug         = require(repliStore.Modules.Debug)
 local AdditiveValue = require(Packages.AdditiveValue)
 
 local valueBase = Packages.valueBase
@@ -71,6 +70,9 @@ export type myself = baseClass.entity & {
 	setupController: (self:myself) -> (),
 	stopDash: (self: myself, onlyStopAnims:boolean?) -> (),
 
+	manaNow: (self: myself) -> number,
+	setMana: (self: myself, v: number) -> (),
+
 	Stun:       (self: myself, stunTime: number, bypassArmour: boolean?) -> (),
 	inStun:     (self: myself, timeOffset:number?) -> boolean,
 	TrueStun:   (self: myself, trueStunTime: number) -> (),
@@ -91,6 +93,27 @@ export type myself = baseClass.entity & {
 
 	onDash: Signal.Signal<Vector3>,
 	onDashCancel: Signal.Signal<Vector3>,
+
+	--[[ WHO this client is currently fighting. Identity only -- read health,
+		posture, name and position straight off the Model, which is already
+		replicated. Nothing about the enemy comes down id 24 except the Model.
+
+		Maps Model -> the Destroying connection that evicts it, so a killed or
+		despawned enemy leaves the set immediately instead of lingering until
+		the server's TTL.
+
+		`combatDeadline` is ONE tick() stamp, not a per-enemy table: combat ends
+		when the LAST entry expires, so only the maximum ever matters and leaves
+		always happen in deadline order. 0 when out of combat.
+
+		Built in new(), NOT initReplicateClient: onCharAdd fires onHumObjSetup
+		(inside setupHumObj) BEFORE it calls initReplicateClient, so anything
+		binding off that signal would have found them nil. Costs nothing extra
+		-- setupHumObj is the only caller of new(), and it is LocalPlayer-only.
+		Still optional: the inert/Combatant-defaults path can skip new(). ]]
+	combatants: { [Instance]: RBXScriptConnection }?,
+	combatDeadline: number,
+	onCombatChanged: Signal.Signal<Instance, boolean>?,
 }
 
 local module = {
@@ -104,6 +127,12 @@ local module = {
 		Class-level default so `stopSlideState` can never read nil on an entity
 		that skipped `module.new`'s init (inert/Combatant defaults path). ]]
 	_slideHipDrop = 0,
+
+	--[[ Same reason, plus one more: EntityBase.destroy ends in table.clear but
+		deliberately leaves the metatable, so a dead humObj falls through to
+		these class defaults. Anything still holding a reference (the combat HUD
+		does, until it notices isActive) reads 0 here instead of nil. ]]
+	combatDeadline = 0,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -133,6 +162,8 @@ function module.new(hum: Humanoid):myself
 	self.floating    = numVal.new(0)
 	self.targetFloatY = objValue.new()
 	self.posture     = numVal.new(80)
+	-- ANCHOR, not a running total. .Value is mana as of the last write; read
+	-- it with :manaNow(). Seeded below, once maxMana exists.
 	self.mana        = numVal.new(0)
 
 	self.slideSpeed  = AdditiveValue.new(28)
@@ -144,11 +175,17 @@ function module.new(hum: Humanoid):myself
 	self.postureHeal = AdditiveValue.new(2)
 	self.charSize    = AdditiveValue.new(1)
 
+	self:setMana(0) -- seeds a/t/m. Value is already 0, so Changed does not fire.
+
 	self.timeStunned = 0
 	self.cooldowns   = cooldownsClass.new()
 
 	self.onDash       = Signal.new()
 	self.onDashCancel = Signal.new()
+
+	self.combatants      = {}
+	self.combatDeadline  = 0
+	self.onCombatChanged = Signal.new()
 
 	self._lastAttack = 0
 	self._numClimb = 0
@@ -199,6 +236,20 @@ end
 
 function module.destroy(self:myself)
 	self.isActive = false
+	-- Dynamic, so not janitorable: these live on ENEMY Models and would outlive
+	-- this humObj across a respawn if we did not drop them by hand.
+	if self.combatants then
+		for _, con in self.combatants do
+			con:Disconnect()
+		end
+		table.clear(self.combatants)
+		self.combatants = nil
+	end
+	self.combatDeadline = 0
+	if self.onCombatChanged then
+		self.onCombatChanged:Destroy()
+		self.onCombatChanged = nil
+	end
 	self.cooldowns:Destroy()
 	self.parryWindow:destroy()
 	self.walkSpeed:destroy()
@@ -221,6 +272,44 @@ end
 
 
 ----
+
+--[[ MANA. Anchor (a,t,m) + closed form, nothing ticks. DOC_GOTCHAS "MANA".
+	dv/dt = K*(1-v/M)^3 solved exactly, so the 2K/M term is derived from the
+	CUBE -- change the exponent and this has to be re-derived. ]]
+local MANA_K = 4
+
+--- Pure, module-level: one closure total, not one per entity.
+local function manaCurve(a: number, t: number, m: number, now: number): number
+	local u = 1 - a / m
+	if u <= 0 then return m end -- at/over ceiling; u<=0 also breaks the sqrt
+	return m * (1 - u / math.sqrt(1 + (2 * MANA_K / m) * u * u * (now - t)))
+end
+
+function module.manaNow(self:myself): number
+	local mana:any = self.mana
+	local now = tick()
+	local liveMax = self.maxMana.Value
+
+	-- maxMana moved: settle under the OLD ceiling, then re-anchor on the new.
+	-- Lazy here rather than a maxMana.onSet/onRemove hook -- that is 2 Signal
+	-- connections per HumObj forever, on every NPC that never casts. R12.
+	if mana.m ~= liveMax then
+		self:setMana(manaCurve(mana.a, mana.t, mana.m, now))
+	end
+
+	return manaCurve(mana.a, mana.t, mana.m, now)
+end
+
+--- The ONLY way mana is written. Re-anchors, then fires Changed (= replicate).
+function module.setMana(self:myself, v: number)
+	local mana:any = self.mana
+	local m = self.maxMana.Value
+	local newV = math.clamp(v, 0, m)
+	rawset(mana, "a", newV)
+	rawset(mana, "t", tick())
+	rawset(mana, "m", m)
+	mana.Value = newV
+end
 
 
 local controller = require(script:WaitForChild("CharController"))
@@ -305,7 +394,6 @@ local function stopSlideState(self:myself&any, allowSlideJump:boolean)
 			local dir = (root.CFrame.LookVector*Vector3.new(1,0,1)).Unit
 			local rDir = root.CFrame:VectorToObjectSpace(dir)
 			task.spawn(slidefx, root, rDir)
-			Debug.dprint("slide jump")
 			self._slideForce = bodyMover(
 				dir*slideJumpPower*1*timeScale,
 				root,
@@ -502,7 +590,6 @@ end
 local dashfx = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("dashFx"))
 function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 	if self:canDash() == false then return false end
-	Debug.dprint((tick() - self._lastAttack))
 	
 	local hum = self.Hum
 	local rootpart = self.HRootPart
@@ -680,6 +767,34 @@ end
 
 local getDashDir = require(repliStore:WaitForChild("Utils"):WaitForChild("getDashDir"))
 function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
+	local combatants = self.combatants :: { [Instance]: RBXScriptConnection }
+	local onCombatChanged = self.onCombatChanged :: Signal.Signal<Instance, boolean>
+
+	local function setCombatant(model: Instance, joined: boolean, remaining: number?)
+		--[[ Clock first: a CORRECTION is a join for an enemy we already have, so
+			it would be swallowed by the dedupe below. Only ever extends -- a
+			second enemy joining must not shorten the first one's deadline. ]]
+		if joined and remaining then
+			self.combatDeadline = math.max(self.combatDeadline, tick() + remaining)
+		end
+
+		local existing = combatants[model]
+		if joined == (existing ~= nil) then return end -- already in the wanted state
+
+		if joined then
+			combatants[model] = model.Destroying:Connect(function()
+				setCombatant(model, false)
+			end)
+		else
+			existing:Disconnect()
+			combatants[model] = nil
+			if next(combatants) == nil then
+				self.combatDeadline = 0
+			end
+		end
+		onCombatChanged:Fire(model, joined)
+	end
+
 	self.maxPosture:initReplicateClient(5, remoteEvent)
 	self.walkSpeed:initReplicateClient(6, remoteEvent)
 	self.sprintSpeed:initReplicateClient(15, remoteEvent)
@@ -747,7 +862,12 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 			self.targetFloatY.Value = value
 			-- 21 is taken by timescale
 		elseif id == 23 then
-			self.mana.Value = value
+			-- anchor on the wire, stamped locally on receipt. same as id 14.
+			self:setMana(value)
+		elseif id == 24 then
+			-- (enemyModel, joined, remaining?). Edge, not a snapshot.
+			local joined, remaining = ...
+			setCombatant(value, joined, remaining)
 		end
 	end)
 	self:AddConnection(rcon, "repliClient")

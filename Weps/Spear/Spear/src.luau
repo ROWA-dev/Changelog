@@ -1,21 +1,13 @@
 --!strict
---[[ Spear - rowa2 id 9. Family Medium/Spear.
-
-	THE HEAVY IS A THROW. It leaves your hand, flies, and sticks in whatever
-	it reaches; while it is gone you fight with your FISTS (attack.luau
-	routes m1 to Fists.Fist, and heavyStart falls through to WepBase's
-	default fist heavy). It comes back on its own after at most 4.6s, sooner
-	if you walk to it.
-
-	That is rowa1's Spear/Main throw joined to rowa2's stance switch --
-	rowa1 had the throw but no fist mode, rowa2 had the fist mode but merely
-	DROPPED the spear. Full notes, numbers and the branch table:
-	    ServerStorage/rowa1OldPlanToPort/README.md/PORTW_SpearThrow.md
-
-	spearState  1 = in hand, 2 = thrown. Every exit path goes through
-	:resetSpear, which is the only thing allowed to touch the weld/anchor
-	pair -- see its header for the order that must not be swapped.
-]]
+--- Spear - rowa2 id 9. Family Medium/Spear.
+--- THE HEAVY IS A THROW: it leaves your hand, flies, sticks in what it reaches,
+--- and while it is gone you fight with your FISTS. It returns on its own after
+--- at most 4.6s, sooner if you walk to it.
+--- rowa1's Spear/Main throw joined to rowa2's stance switch -- rowa1 had the
+--- throw but no fist mode, rowa2 had the fist mode but merely DROPPED the spear.
+--- Full notes: rowa1OldPlanToPort/README.md/PORTW_SpearThrow.md
+--- spearState 1 = in hand, 2 = thrown. Every exit goes through :resetSpear,
+--- the only thing allowed to touch the weld/anchor pair -- see its header.
 local baseWep = require(script.Parent)
 
 export type myself = baseWep.myself & {
@@ -62,19 +54,14 @@ end
 
 --methods
 
---[[ The streak behind a thrown spear.
-
-	THE TRAIL ONLY. The blade's `wind` / `windlines` / `sharp` emitters are
-	PULSED from thrownSpear's flight loop, never switched on -- continuous VFX
-	is not driven by `.Enabled` in this codebase, and these three could not be
-	anyway: they ship Enabled = false with a junk Rate (`wind` is literally
-	`inf`) because they have only ever been :Emit assets. Turning one on as
-	authored spews forever, and picking a Rate would be inventing art.
-	So the flight emits, and stopping the flight stops the effect -- there is
-	no state left switched on to forget about.
-
-	A Trail is the exception and has to be: `Enabled` is its only control, and
-	WepBase drives `_trail` exactly this way for every weapon swing. ]]
+--- The streak behind a thrown spear. THE TRAIL ONLY: the blade's wind /
+--- windlines / sharp emitters are PULSED from the flight loop, never switched
+--- on. They ship Enabled = false with junk Rates (`wind` is literally inf)
+--- because they have only ever been :Emit assets -- enabling one spews forever
+--- and picking a Rate would be inventing art. Stopping the flight stops the
+--- effect, so nothing is left switched on to forget.
+--- A Trail is the exception: Enabled is its only control, and WepBase drives
+--- `_trail` this way for every weapon.
 function module.setFlightFx(self:myself&any, on:boolean)
 	local model = self._model
 	local spear = model and model:FindFirstChild("Model")
@@ -82,19 +69,15 @@ function module.setFlightFx(self:myself&any, on:boolean)
 	if trail and trail:IsA("Trail") then trail.Enabled = on end
 end
 
---[[ Put the spear back in the hand and the weapon back in spear stance.
-	Idempotent, and safe to call when nothing was thrown.
-
-	!! THE ORDER OF THE LAST TWO WRITES IS LOAD-BEARING.
-	A thrown spear is ANCHORED, and `modelWeld` joins it to `Hold`, which is
-	Motor6D'd to the Right Arm. Re-enable the weld while the Handle is still
-	anchored and the anchor propagates through the joint into the CHARACTER'S
-	OWN ASSEMBLY -- the player freezes in place with no error anywhere.
-	Unanchor FIRST, then weld. rowa1 has the same order for the same reason.
-
-	spearState is cleared BEFORE the projectile is killed on purpose: the
-	flight's onExpire refuses to touch the model unless the weapon is still
-	in state 2, so killing it here cannot fight this function for the model. ]]
+--- Put the spear back in the hand and the weapon back in spear stance.
+--- Idempotent, safe to call when nothing was thrown.
+--- !! THE ORDER OF THE LAST TWO WRITES IS LOAD-BEARING. A thrown spear is
+--- ANCHORED and modelWeld joins it to Hold, which is Motor6D'd to the Right
+--- Arm -- re-enable the weld while it is still anchored and the anchor
+--- propagates into the CHARACTER'S OWN ASSEMBLY: the player freezes with no
+--- error anywhere. Unanchor FIRST, then weld. rowa1 has the same order.
+--- spearState is cleared BEFORE the projectile is killed on purpose: the
+--- flight's onExpire will not touch the model unless still in state 2.
 function module.resetSpear(self:myself&any)
 	self.spearState = 1
 

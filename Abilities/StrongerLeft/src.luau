@@ -1,15 +1,8 @@
 --!strict
---[[ StrongerLeft - rowa1 Items/Ability/StrongerLeft.
-	Notes: README.md/PORT_StrongerLeft.
-
-	StrongLeft's big brother: longer charge, three expanding shockwave rings,
-	a screen shake, terrain destruction, and the heaviest single hit in the
-	non-ultimate set.
-
-	STRUCTURALLY THIS IS StrongLeft.luau WITH DIFFERENT NUMBERS, on purpose --
-	the Folder-of-numbered-emitters trick, the LeftGripAttachment lookup, the
-	feintWait charge loop and the -1 decayT knockback are all decisions that
-	were already made there and should not be re-litigated per ability. ]]
+--- StrongerLeft - StrongLeft's big brother: longer charge, three shockwave
+--- rings, screen shake, terrain destruction, heaviest non-ultimate hit.
+--- rowa1 port: README.md/PORT_StrongerLeft.
+--- Structurally StrongLeft.luau with different numbers, on purpose.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -33,18 +26,11 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---[[ rowa1 "strP2": Heavy, blunt, 50 dmg, truestun 1.4 / stun 1.6, posMult 6.
-	Scaled by the same ~0.65 the shipped ports used, so it keeps its ratio to
-	StrongLeft (20).
-
-	!! posMult 6 is joint-highest in rowa1's whole table and was tuned against
-	a 100 posture pool; rowa2's maxPosture is 80, so 6 would guard-break in
-	two connects from full. Pulled to 4 -- still the hardest guard pressure of
-	any non-ultimate, but not a two-hit break.
-
-	!! rowa1 set NO parryH here, making the 50-damage version EASIER to parry
-	than StrongLeft's -0.04. That is an omission, not a design: matched to
-	StrongLeft. ]]
+--- rowa1 "strP2" 50 dmg, scaled ~0.65 to keep its ratio to StrongLeft.
+--- posMult 6 -> 4: 6 was tuned against a 100 posture pool and rowa2's max is
+--- 80, so it would guard-break in two connects from full.
+--- parryH matched to StrongLeft; rowa1 set none here, which made the HARDER
+--- version easier to parry. An omission, not a design.
 local STR_P2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,

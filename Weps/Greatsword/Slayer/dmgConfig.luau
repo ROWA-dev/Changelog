@@ -1,50 +1,16 @@
 --!strict
---[[ Slayer damage. rowa1 rows translated per README S4 (truestun + stun
-	collapse to ONE stun; flags by NAME, never by number).
-
-	rowa1                                                    -> rowa2
-	  slM1  Heavy slash+weaponM1     24 ts0.3 st0.75 pm1.8      m1
-	  slM2  Heavy slash+weaponM1     20 ts1.4 st2.0  pm6        heavyCatch
-	  slM3  Heavy slash+weaponM1      8 ts0   st0.7  pm8        heavyBreak
-	  slM5  Heavy slash+weaponM1      2 ts0   st0    pm1        heavyGrind
-	  slM4  Heavy slash+weaponM1     20 ts0.3 st0.7  pm2        heavyLaunch
-	  gsM2  Heavy slash+weaponHeavy  20 ts0.4 st0.8  pm4        downSlam
-	  fsM2  the shared unarmed punch                      -> WepBase/dmgConfig
-
-	SOUNDS, per row, read off DMGS rather than guessed (they were guessed on
-	first ship and every one of them was wrong):
-	  slM1  BladeStab2, HitSound          -> slash
-	  slM2  Slayer, BladeStab3, HitSound  -> catch   (`Slayer` is unique to
-	                                         this row: the blade going in)
-	  slM3  BladeStab3, HitSound          -> breakHit
-	  slM4  BladeStab2, HitSound          -> launch. AND `ragdtillground`,
-	                                         the ONLY onHit on any Slayer row
-	                                         -- see launch.luau
-	  slM5  {} -- genuinely EMPTY         -> grind, plays nothing
-	  gsM2  BladeStab, HitSound           -> downSlamHit
-
-	!! THE FIVE slM ROWS ARE NOT AN m1 CHAIN. slM2/3/5/4 are the four beats
-	of the grab-and-drag heavy, in that order. All three m1 links share slM1.
-	PORTW_Slayer says otherwise; see the header of Slayer.luau.
-
-	RETUNED AGAINST EXECUTER, the shipped weapon in this family, per PORTW_00
-	("compare against the nearest SHIPPED rowa2 weapon, not against rowa1").
-	Executer is m1 14 / heavy 18 / kick 10.
-	  m1        24 -> 15. Just above Executer's 14: same family, three-link
-	            chain, Heavy weight.
-	  downSlam  20 -> 18, i.e. Executer's heavy exactly. Both are gsM2-class
-	            overhead finishers and there is no reason for them to differ.
-	  the heavy  74 -> 49 across four beats (14 + 6 + 13x1 + 16). rowa1's
-	            total is enormous, but it IS a committed 1s windup on an 8s
-	            gate that has to CATCH first, so it is meant to be a lot.
-	            Cut by a third rather than to Executer's per-hit rate.
-
-	POSTURE IS THE PART TO WATCH. rowa1 runs pm6 then pm8 back to back --
-	14x against maxPosture 80 -- which guard-breaks almost anything. That
-	made sense in rowa1 where posture was 100 and the grab could still be
-	blocked out of. Here the victim is ALREADY WELDED TO THE BLADE by then,
-	so posture pressure is redundant: they are not blocking, they are being
-	carried. Dropped to 3 and 4. README Q3, treat as a starting point. ]]
+--- Slayer damage. rowa1 rows per README S4 (truestun + stun collapse to one).
+---   slM1 -> m1 (all three links share it)   gsM2 -> downSlam
+---   slM2/slM3/slM5/slM4 -> heavyCatch / heavyBreak / heavyGrind / heavyLaunch,
+---   the four beats of the grab-and-drag heavy IN THAT ORDER -- not an m1
+---   chain, whatever PORTW_Slayer says. See Slayer.luau's header.
+--- Sounds are read off DMGS per row, not guessed. slM4 carries `ragdtillground`,
+--- the only onHit on any Slayer row -- see launch.luau.
+--- Retuned against EXECUTER, not rowa1 (PORTW_00): m1 24 -> 15, downSlam 20 -> 18
+--- (Executer's heavy exactly), the heavy 74 -> 49 across its four beats.
+--- !! POSTURE IS THE PART TO WATCH: rowa1's pm6 then pm8 is 14x against a
+--- maxPosture of 80. Redundant here -- the victim is already WELDED to the
+--- blade and is not blocking. Dropped to 3 and 4, README Q3, a starting point.
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
 local sharedCfg = require(game.ServerStorage.ROWA.Weps.WepBase.dmgConfig)

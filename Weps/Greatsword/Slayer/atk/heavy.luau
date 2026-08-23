@@ -1,38 +1,14 @@
 --!strict
---[[ Slayer heavy - a GRAB AND DRAG, not a swing.
-
-	PORTW_Slayer never describes this move; it files slM2/3/4/5 as links of
-	an m1 chain that does not exist. Read Slayer.luau's header first.
-
-	rowa1 Main, `typ == 2`, gated on `tick() > lastHeavy + 8`:
-	    Heavy anim, AdjustSpeed(1), Hold.heavier (from 0.2s in)
-	    Attacking.Time 1.4  -- A LIE, the real windup is a 1.0s loop
-	    -> shockRing + cyldrshock + CamShake(200, 0.3, 0.2) + Spike:Emit
-	    -> Damage(4):
-	         hitbox 4x11x8 at look*4.5, `slM2` = THE CATCH
-	         on anything but parry/dodge: WELD THE VICTIM TO THE BLADE
-	         Blade.Bottom 47/48/53 emit
-	         wait 0.2, swap to the Heavy2 anim, wait 0.2
-	         CamShake(200, 0.5, 1) + a second shockRing, downward
-	         raycast the ground and TINT the debris to whatever you are
-	           standing on, emit debris/smoke, Rock Impact sfx
-	         wait 0.1, pull the weld in to -2, `slM3` = the guard break
-	         MiniDash2 forward 50 for 0.6 = THE DRAG
-	         13 x 0.05s: emit, `slM5` = the grind
-	         impulse down/back, big emit
-	         if not cancelled: `slM4` + knockback = THE LAUNCH
-	         release the welds
-
-	!! THE WELD OFFSET IS ROTATION *AND* TRANSLATION, which contradicts
-	PORT_00_INDEX's shared prelude ("every rowa1 part-weld sets C0 to
-	rotation only... the anchor part IS the position"). Slayer's is
-	`Angles(-90,0,90) * CFrame.new(0,0,-3)` and then moves to -2 mid-move:
-	the victim slides UP the blade as it is driven through them. Porting it
-	as a pure rotation loses the whole gesture.
-
-	!! Attacking.Time IS 1.4 AND THE REAL WINDUP IS 1.0 (S5 note 7g). Ported
-	the waits, not the claim -- 1.4 would make an already slow weapon
-	unusable. ]]
+--- Slayer heavy - a GRAB AND DRAG, not a swing. rowa1 Main `typ == 2`, gated on
+--- `tick() > lastHeavy + 8`. PORTW_Slayer never describes this move; read
+--- Slayer.luau's header first.
+--- The beats: catch (slM2, welds them to the blade) -> guard break (slM3) ->
+--- drag + 13x grind (slM5) -> launch (slM4) -> release.
+--- !! THE WELD OFFSET IS ROTATION *AND* TRANSLATION, against PORT_00_INDEX's
+--- shared prelude: it starts at -3 and moves to -2 mid-move, so the victim
+--- slides UP the blade. Porting it as pure rotation loses the whole gesture.
+--- !! Attacking.Time claims 1.4; the real windup is a 1.0s loop (S5 7g). Ported
+--- the waits, not the claim -- 1.4 makes an already slow weapon unusable.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 
@@ -211,45 +187,15 @@ return function(this:wepTyp&any): wepType.atkResult
 	end
 	beat(this, held, dmgConfig.heavyBreak)
 
-	--[[ THE DRAG. rowa1 `MiniDash2(look*(1,0,1), 50, 0.6)`.
-
-		!! IT IS MiniDash2, NOT MiniDash, AND THE DIFFERENCE IS THE WHOLE
-		CHARACTER OF THE SLIDE. Slayer's Main defines both, four lines apart,
-		and they differ in exactly one expression -- MaxForce.Y:
-		    MiniDash   MaxForce = abs(Dir)          * mass * 10000
-		    MiniDash2  MaxForce = (abs.X, 1, abs.Z) * mass * 10000
-		Dir is horizontal here, so MiniDash gets ZERO vertical authority and
-		gravity plays normally. MiniDash2 asks for FULL vertical authority
-		while its Velocity.Y is 0 -- it PINS the caster's vertical motion to
-		nothing. That is what makes it a skate along the floor instead of a
-		shove: no settling, no bobbing over bumps, no re-landing.
-
-		rowa2's bodymover cannot express that on its own. It derives
-		    maxforce = absVector3(dir) * rootMass
-		from the VELOCITY's own direction, so a purely horizontal velocity
-		necessarily gets maxforce.Y = 0. Every bodyForce written as
-		(0, 0, -n) is therefore a MiniDash and can never be a MiniDash2.
-		Ported that way, the caster stayed gravity-bound for the whole slide
-		and bled speed on every ground contact -- which is read as the slide
-		DECAYING even though nothing decays: with decayT nil, bodymover holds
-		VectorVelocity flat (see its `if decayT then ... else` branch).
-
-		THE FIX is the small -2 on Y. A non-zero Y does two things at once:
-		it skips bodymover's `if forceVector.Y == 0` flattening branch, and
-		it puts a real number in maxforce.Y -- which is the vertical
-		authority MiniDash2 wanted. Holding a slight downward velocity rather
-		than exactly zero also presses the caster into the floor, which is
-		the closest this mover gets to the pin.
-
-		FORCE 10 on Z: rowa1's 50 studs/s over 5 (Knockback:52 scales by 5).
-
-		decayT IS DELIBERATELY OMITTED. bodymover multiplies VectorVelocity
-		by a falling scaler ONLY when decayT is non-nil, even for
-		isRootRelative. Passing one -- as attackHelpers/sprint does -- is
-		what makes a sprint lunge ease off, and is wrong for a drag.
-
-		0.7 rather than rowa1's 0.6 so the slide covers the WHOLE grind:
-		13 ticks x 0.05 is 0.65s before the per-beat work. ]]
+	--- THE DRAG. rowa1 MiniDash2, which differs from MiniDash in one expression:
+	--- it claims FULL vertical authority at Velocity.Y 0, pinning the caster's
+	--- vertical motion. That is what makes it a skate rather than a shove.
+	--- !! bodymover derives maxforce from the velocity's own direction, so a
+	--- purely horizontal (0,0,-n) can only ever be a MiniDash. The small -2 on Y
+	--- is the fix: it skips the Y-flattening branch AND puts a real number in
+	--- maxforce.Y, and pressing slightly down is the closest this gets to the pin.
+	--- decayT IS DELIBERATELY OMITTED -- a falling scaler is right for a sprint
+	--- lunge and wrong for a drag. 0.7 not 0.6 so the slide covers the whole grind.
 	local drag = this:bodyForce(Vector3.new(0, -2, -10), 0.7, true)
 
 	-- THE GRIND
@@ -272,24 +218,11 @@ return function(this:wepTyp&any): wepType.atkResult
 	emit(att, "Debris", 12)
 	emit(att, "smoke", 12)
 
-	--[[ !! RELEASE THE WELD *BEFORE* THE LAUNCH. This is the whole reason the
-		throw was ragdolling people without sending them anywhere.
-
-		rowa1 releases AFTER, and porting that order literally does not work,
-		because the two engines apply knockback at different moments:
-		  rowa1  Main calls AttackModule.attack(...) -- which runs the row's
-		         ragdtillground -- and THEN calls Knockback() itself. The
-		         knockback is the last thing to happen.
-		  rowa2  ApplyKnockback runs INSIDE HandleAttack (README S3.3), so it
-		         fires BEFORE the row's onHit. The order is inverted.
-		So in rowa2 the knockback was being applied to a root still rigidly
-		welded to the blade -- it had nothing to push -- and only then did the
-		onHit ragdoll them and hand network ownership to their client. By the
-		time release() ran there was no force left to act on a free body.
-		They ragdolled exactly as asked, in place.
-
-		Unwelding first gives knockback -> ragdoll on a free body, which is
-		the order StrongLeft already uses and the only one that works here. ]]
+	--- !! RELEASE THE WELD *BEFORE* THE LAUNCH -- the whole reason the throw was
+	--- ragdolling people without sending them anywhere. rowa1 releases after, but
+	--- the engines invert: rowa2 applies knockback INSIDE HandleAttack, i.e.
+	--- BEFORE the row's onHit, so the force hit a root still welded to the blade
+	--- and had nothing to push. Unweld first for knockback -> ragdoll on a free body.
 	release()
 
 	-- THE LAUNCH

@@ -1,17 +1,10 @@
 --!strict
---[[ PowerStrike - rowa1 Items/Ability/PowerStrike.
-	Notes: README.md/PORT_PowerStrike.
-
-	A two-stage weapon flourish: blade shine, one committed slash, then a
-	bigger launching slash a beat later. Needs a weapon.
-
-	THE HALF-COOLDOWN IS THE POINT. Stage 1 takes half the cooldown, stage 2
-	overwrites it with the full one -- so landing only the opener costs you
-	much less than committing to both. That is `dontOverwrite` true then
-	absent, which is exactly the pair of flags cooldowns:trigger takes.
-
-	(This file started as an unregistered single-stage scratch. Reconciled
-	rather than replaced.) ]]
+--- PowerStrike - a two-stage weapon flourish: blade shine, one committed slash,
+--- then a bigger launching slash a beat later. Needs a weapon.
+--- rowa1 port: README.md/PORT_PowerStrike.
+--- THE HALF-COOLDOWN IS THE POINT: stage 1 takes half, stage 2 overwrites with
+--- the full one, so landing only the opener costs much less. That is
+--- `dontOverwrite` true then absent.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

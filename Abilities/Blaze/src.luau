@@ -66,21 +66,8 @@ local function useFunc(this:myself)
 			enemy,
 			hurtbox.CFrame.LookVector
 		)
-		
-		--[[
-		local newkb = this:knockback(
-			attack.atkDir*8 + Vector3.new(0,4,0),
-			0.1,
-			false,
-			-1
-		)
-		
-		attack.knockback = newkb]]
 
 		this:executeAttack(attack)
-		--[[if attack:isHit() then
-			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir*10)
-		end]]
 	end
 	
 	local function spinHit()

@@ -1,17 +1,11 @@
 --!strict
---[[ Lightning - rowa1 Items/Ability/Lightning.
-	Notes: README.md/PORT_Lightning.
-
-	Call a bolt down on a target's position. Four staged client effects
-	(charge / hold / strike-up / strike-down), a flash-step, and a finisher
-	flash on connect.
-
-	NOT A PROJECTILE (PLAN_PROJECTILE 2E): the strike is a delayed
-	world-space AoE at a raycast endpoint, nothing travels.
-
-	NOTE the earlier port doc said the hitbox was queried four times. It is
-	not -- rowa1's `for i = 1,4` is the WINDUP, 4 x 0.1s, and the hitbox runs
-	once. Corrected by reading the source. ]]
+--- Lightning - call a bolt down on a target's position. Four staged client
+--- effects, a flash-step, and a finisher flash on connect.
+--- rowa1 port: README.md/PORT_Lightning.
+--- NOT a projectile (PLAN_PROJECTILE 2E): a delayed world-space AoE at a
+--- raycast endpoint, nothing travels.
+--- The hitbox runs ONCE -- rowa1's `for i = 1,4` is the WINDUP, 4 x 0.1s,
+--- whatever the earlier port doc said.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -44,16 +38,10 @@ local LNING = {
 	type     = dmgFlag.lightning,
 	dmg      = 18,
 	stun     = 1.2,
-	--[[ !! DO NOT COMMENT THIS OUT AGAIN. It was, and it did not make the
-		bolt weightless -- it made the bolt MISS, always.
-		AttackClass:CalculatePostureDmg is the FIRST line of HandleAttack and
-		it reads `dmg * posMult` with no guard, so a nil posMult throws.
-		The throw unwinds through executeAttack into the pcall in
-		AbilityBase.use, which only warns -- so the anim, the flash-step and
-		all four lstrike stages play perfectly and NOBODY IS EVER DAMAGED.
-		"the move happens, the enemy just doesn't get hit" is the signature
-		of a dmgTbl field that HandleAttack reads unconditionally.
-		2 is rowa1's own value on the "lning" row. ]]
+	--- !! DO NOT remove this again. CalculatePostureDmg is the first line of
+	--- HandleAttack and reads `dmg * posMult` unguarded, so a nil posMult throws
+	--- into use()'s pcall -- every effect plays and NOBODY IS EVER DAMAGED.
+	--- That signature means a dmgTbl field HandleAttack reads unconditionally.
 	posMult  = 2,
 	--[[ a targeted, no-travel AoE is unavoidable by construction, so this is
 		the ability that most needs rowa2's dodge knob -- rowa1 had no such

@@ -1,14 +1,10 @@
 --!strict
---[[ Cero - rowa1 Items/Ability/Cero. Notes: README.md/PORT_Cero.
-
-	A wide beam cannon. 1.2s charge, then a 15x15x40 lane re-queried four
-	times, carving a tunnel through the terrain. The biggest single hit in
-	rowa1's table. 				blaze was here
-
-	NOT A PROJECTILE (PLAN_PROJECTILE section 2D). The hitbox never moves:
-	rowa1 computes ONE CFrame in front of the caster and re-queries it four
-	times at 0.1s, sharing one dedupe list. The four ticks exist to catch
-	someone walking into the beam, not to sweep it forward. ]]
+--- Cero - a wide beam cannon. 1.2s charge, then a 15x15x40 lane re-queried
+--- four times, carving a tunnel through the terrain. rowa1's biggest hit.
+--- rowa1 port: README.md/PORT_Cero.
+--- NOT a projectile: the hitbox never moves. One CFrame in front of the caster,
+--- re-queried four times at 0.1s on one dedupe list -- the ticks catch someone
+--- walking into the beam, they do not sweep it forward.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -32,16 +28,10 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local aerialAim = require(game.ServerStorage.ROWA.Modules.aerialAim)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---[[ rowa1 "cero": Heavy, magic, 60 dmg, truestun 0.3 / stun 0.5, posMult 6.
-	60 is the highest single hit in the whole table.
-
-	posMult pulled 6 -> 4 for the same reason as StrongerLeft: 6 was tuned
-	against a 100 posture pool and rowa2's maxPosture is 80, so 6 x 38 damage
-	guard-breaks anything instantly through a block.
-
-	rowa1's row has no sounds and no onHit -- all of Cero's feel is in the
-	fx module, which is why this is the one ported ability with a bare
-	table. ]]
+--- rowa1 "cero" was 60 dmg, the highest single hit in its table.
+--- posMult 6 -> 4 like StrongerLeft: 6 was tuned against a 100 posture pool and
+--- rowa2's max is 80, so it would guard-break instantly through a block.
+--- Bare table on purpose -- all of Cero's feel is in the fx module.
 local CERO = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
