@@ -2,6 +2,23 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.12.2 - Combatant Combat
+
+### Added ✅
+- Added a UI that shows when player is in combat and how long left until they escape combat
+- Attempting to use an ability with insufficient mana now plays a sound and shows how much mana is needed to cast the ability
+
+### Changes 🛠️
+- Fixed mana system desyncing and lazy state
+- Killing a player now gives different amounts of exp depending on their level
+- Debloated code
+- Added Armor slowness
+- Smash uppercut now counts as a heavy attack rather than a light attack
+- Adjusted Smash knockback
+- Vise heavy attack hitbox reduced (-2 studs Z)
+
+<br><sub>2026-08-22</sub>
+
 ## 1.12.1 - The Great Balancing's Lesser Known Younger Brother
 
 ### Changes 🛠️
@@ -87,7 +104,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - New weapon: Slayer
 
 ### Changes 🛠️
-- Axe heavy attack is still being worked on
 - Fixed moves that had issues after the port again
 - Players spawn with a set of randomized moves per slot
   - This is temporary until base progression is added
@@ -102,7 +118,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 ### Changes 🛠️
 - Cooldown now only shows seconds rather than decimals
 - Changed sound on Fire Stab
-- Axe heavy attack is still being worked on
 - Fixed moves that had issues after the port again
 
 <br><sub>2026-08-20</sub>
@@ -119,7 +134,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 ### Changes 🛠️
 - Fixed moves that had issues after the port again
 - Improved projectile system
-- Axe heavy attack is still being worked on
 
 <br><sub>2026-08-19</sub>
 
@@ -130,7 +144,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 ### Changes 🛠️
 - The X button in the settings works now
-- Axe heavy attack is still being worked on
 - Inventory patch thing
 
 <br><sub>2026-08-18</sub>
@@ -151,7 +164,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 ### Changes 🛠️
 - Fixed moves that had issues after the port
 - True stun stuff
-- Axe heavy attack is being worked on
 
 <br><sub>2026-08-18</sub>
 
