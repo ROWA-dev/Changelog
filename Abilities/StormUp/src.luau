@@ -35,10 +35,9 @@ local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local STORM = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,
-	dmg      = 19,
+	dmg      = 18,
 	stun     = 1.2,
 	posMult  = 1,
-	parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit", "LightningRelease")
 	end,

@@ -66,13 +66,10 @@ local function useFunc(this:myself)
 	this:triggerCD(cooldownID, 14, true)
 
 	--[[ !! END THE AURA ON THE REAL END, not on the duration it was started
-		with. This channel drops out early on stun and on FEINT, and a client
-		told "two seconds" up front kept the fire pouring off someone who had
-		already stopped dancing -- so a feinted FlameDance cancelled the
-		damage and changed nothing on screen. Same shape, same reason, as
-		IceBeam's stopBeam and StoneBall's ststep/bground teardown.
-		LIFETIME is passed rather than left to the fx module's default so the
-		two cannot drift apart. ]]
+		with. This channel drops out early on stun and on FEINT, so a client
+		told "two seconds" up front keeps fire pouring off someone who already
+		stopped. Same shape as IceBeam's stopBeam. LIFETIME is passed rather
+		than left to the fx module's default so the two cannot drift. ]]
 	fireVFX("fdance", hurtbox, LIFETIME)
 	local function stopDance()
 		fireVFX("fdance", hurtbox, 0)
@@ -97,14 +94,10 @@ local function useFunc(this:myself)
 	local started    = tick()
 	local nextHit    = started + FIRST_TICK
 
-	--[[ ONE ignite per victim per CAST. rowa1's guard was
-		`if not RootPart:FindFirstChild("flameFx")` -- never re-light someone
-		already alight. Without it this move's own 0.1s tick stacked Burn into
-		itself ~13 times, taking a 3-a-tick DoT to 21 and scaling the emitters
-		with it.
-		Keyed to THIS CAST on purpose, not to "is the victim burning at all":
-		Burn.onStack still stacks, so another move landing on the same victim
-		piles onto the fire exactly as before. Only the self-stack was wrong. ]]
+	--[[ ONE ignite per victim per CAST, or this move's own 0.1s tick stacks
+		Burn into itself ~13 times and takes a 3-a-tick DoT to 21.
+		Keyed to THIS CAST, not to "is the victim burning at all": Burn.onStack
+		still stacks, so another move piles on as before. ]]
 	local burned: {[number]: boolean} = {}
 	local function ignite(enemy: any)
 		local id = enemy.entityId

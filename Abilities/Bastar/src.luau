@@ -52,7 +52,7 @@ end
 local BASTARD = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.slash,
-	dmg      = 20,
+	dmg      = 18,
 	--- 2.0 halved: see the header
 	stun     = 1,
 	posMult  = 4,
@@ -66,7 +66,7 @@ local BASTARD = {
 local GS_THROW = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.slash,
-	dmg      = 20,
+	dmg      = 10,
 	stun     = 0.8,
 	posMult  = 4,
 	parryH   = -0.04,
@@ -160,26 +160,18 @@ local function useFunc(this:myself)
 		this:executeAttack(attack)
 
 		if attack:isHit() and enemy.grab then
-			--[[ !! PINNED ON THE BLADE, not the root. rowa1 welds to
-				`gsBlade` and parents the weld there too -- they are IMPALED
-				and carried on the sword. Welding to the root instead leaves
-				them floating at the caster's waist, which is the whole
-				reason this looked wrong.
-				The offset is along the blade rather than in front of the
-				body, and it falls back to the root if there is no blade. ]]
+			--[[ !! PINNED ON THE BLADE, not the root -- they are IMPALED and
+				carried on the sword. Welding to the root leaves them floating
+				at the caster's waist. The offset runs along the blade, and
+				falls back to the root if there is no blade. ]]
 			--- PURE ROTATION: the blade already IS where they should hang.
 			--- rowa1: C0 = CFrame.Angles(90, 0, 180).
 			enemy.grab:grab(humObj,
 				CFrame.Angles(math.rad(90), 0, math.rad(180)), 2, blade)
-			--[[ TRUE stun for the pin, same call shape as ToshiCounter: an
-				ordinary :Stun REFUSES TO WRITE under hyper armour, so an
-				armoured victim was being impaled on the blade and could still
-				swing off it. 0.88 is the hold below, not a new number.
+			--[[ TRUE stun for the pin: an ordinary :Stun REFUSES TO WRITE under
+				hyper armour, so an armoured victim could swing off the blade.
 				GUARDED because TrueStun is NOT in the Combatant contract --
-				SimpleEntity has :Stun and no :TrueStun, so a boss caught by
-				this would hard-error. Same guard Freeze and ToshiCounter use.
-				No extra lockout: TrueStun maxes against stun.Value, and
-				BASTARD's own stun (1.0) already outlasts the pin. ]]
+				SimpleEntity has :Stun only. Same guard Freeze/ToshiCounter use. ]]
 			if enemy.TrueStun then
 				enemy:TrueStun(0.88)
 			end

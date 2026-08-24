@@ -41,9 +41,9 @@ local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local CHAIN = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blood),
-	dmg      = 10,
+	dmg      = 8,
 	stun     = 1,
-	posMult  = 4,
+	posMult  = 3,
 	--parryH   = -0.1,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "grab")
@@ -189,10 +189,8 @@ local function useFunc(this:myself)
 			--- whoever the PARRIER is pointing at, on the cone the cast used.
 			--- !! `me` is the CASTER and that is the point: it excludes both people
 			--- the chain must not pick -- the caster (a chain onto its own thrower
-			--- draws zero-length and yanks a root to its own midpoint) and the
-			--- parrier (search origin, distance 0, and handing it back is not a
-			--- reward). Nobody in the cone means nobody: deflect re-decides
-			--- unconditionally, so it flies straight and times out.
+			--- draws zero-length) and the parrier (search origin, distance 0).
+			--- Nobody in the cone means nobody: it flies straight and times out.
 			local newTarget = Targeting.nearestInDirection(
 				proot.Position, look, humObj, RANGE, Targeting.TIGHT)
 			--- rowa1's rocket blend, degeneracy handled. See parryDir.
@@ -236,12 +234,16 @@ local function useFunc(this:myself)
 
 	local originCF = CFrame.new(myRoot.Position, target.HRootPart.Position)
 
-	--[[ fired by hand rather than through cfg.fxId, because the beam's NEAR
-		end has to be the caster's hand -- see the note on fxId above. ]]
-	fireVFX("bchain", 1, originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
-		arm, target.HRootPart)
+	local p = this:projectile(table.freeze(cfg), originCF)
 
-	this:projectile(table.freeze(cfg), originCF)
+	--[[ fired by hand, not via cfg.fxId, because the beam's NEAR end has to be
+		the caster's hand. AFTER the projectile so the chain can be handed its
+		`id`, or it ignores everything except its own parry path. Motion goes as
+		ONE table so retuning the chain is a change here and nowhere else. ]]
+	fireVFX("bchain", 1, originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
+		{ steer = CHAIN_CFG.steer, accel = CHAIN_CFG.accel,
+			maxSpeed = CHAIN_CFG.maxSpeed },
+		arm, target.HRootPart, p and p.id)
 
 	this:endLag(0.25)
 end

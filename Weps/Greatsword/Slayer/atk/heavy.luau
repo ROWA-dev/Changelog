@@ -80,18 +80,9 @@ return function(this:wepTyp&any): wepType.atkResult
 	this:indicateAtk()
 	playSound(hold, "heavier", 0.2)
 
-	--[[ 0.915, NOT 1. This is the one windup in the weapon that must NOT be
-		written as a base number, and shipping it as 1 made the catch land
-		early relative to its own telegraph.
-
-		rowa1's heavy windup is `local endt = tick() + 1` -- a RAW 1.0s, with
-		no AtkRate on it, unlike its m1 which writes `0.2*AtkRate`. So 1.0 is
-		already the final number, not a base to be scaled. Passing 1 here
-		would run it through scaledTime (x1.18).
-		Solving `t*1.18 = 1.0` gives 0.847, which lands the catch at exactly
-		rowa1's 1.0s.
-		(Its DECLARED Attacking.Time is 1.4, which is a lie in the other
-		direction -- S5 note 7g. Neither number is usable as written.) ]]
+	--[[ 0.847, NOT 1: rowa1's heavy windup is a RAW 1.0s with no AtkRate on
+		it, so it is already final. scaledTime would scale it (x1.18), and
+		0.847*1.18 = 1.0. The declared Attacking.Time of 1.4 is unusable. ]]
 	if this:feintWait(0.847) then
 		if anim then anim:Stop() end
 		return
@@ -187,15 +178,13 @@ return function(this:wepTyp&any): wepType.atkResult
 	end
 	beat(this, held, dmgConfig.heavyBreak)
 
-	--- THE DRAG. rowa1 MiniDash2, which differs from MiniDash in one expression:
-	--- it claims FULL vertical authority at Velocity.Y 0, pinning the caster's
-	--- vertical motion. That is what makes it a skate rather than a shove.
+	--- THE DRAG. rowa1 MiniDash2 claims FULL vertical authority at Velocity.Y 0,
+	--- which is what makes it a skate rather than a shove.
 	--- !! bodymover derives maxforce from the velocity's own direction, so a
 	--- purely horizontal (0,0,-n) can only ever be a MiniDash. The small -2 on Y
-	--- is the fix: it skips the Y-flattening branch AND puts a real number in
-	--- maxforce.Y, and pressing slightly down is the closest this gets to the pin.
-	--- decayT IS DELIBERATELY OMITTED -- a falling scaler is right for a sprint
-	--- lunge and wrong for a drag. 0.7 not 0.6 so the slide covers the whole grind.
+	--- skips the Y-flattening branch AND puts a real number in maxforce.Y.
+	--- decayT IS DELIBERATELY OMITTED: a falling scaler is right for a sprint
+	--- lunge and wrong for a drag. 0.7 so the slide covers the whole grind.
 	local drag = this:bodyForce(Vector3.new(0, -2, -10), 0.7, true)
 
 	-- THE GRIND

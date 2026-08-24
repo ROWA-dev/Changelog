@@ -32,7 +32,6 @@ end
 
 --- wield
 function module.wield(self:myself&any)
-	-- wield stuff here
 	local humobj = self._humObj
 	local char:any = humobj.Hum.Parent
 	local model = self._model
@@ -48,7 +47,6 @@ end
 
 --- uunwield
 function module.unwield(self:myself)
-	-- unwield stuff here
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end

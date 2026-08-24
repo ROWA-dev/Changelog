@@ -70,8 +70,20 @@ export type myself = baseClass.myself & {
 	inCombat: (self:myself) -> boolean,
 
 	-- returns true on sucess
+	--- THE WIELDED SET: weapons you have committed to, capped by maxWeapons.
+	--  Members live holstered on the back and swap into the hand for free.
 	equippedWeapons: {weaponBase.myself},
+	--- how many may be in that set at once. AdditiveValue so a card can raise
+	--  it (`maxWeapons:SetMod("multiHanded", 1)`); NOT dual wielding, only one
+	--  is ever `wielding_weapon`.
+	maxWeapons: AdditiveValue.myself,
+	--- drawn but NOT committed: in the right hand, roblox-Tool style, unusable.
+	heldWeapon: weaponBase.myself?,
+
 	EquipWeapon:   (self: myself, newWeapon: weaponBase.myself) -> boolean,
+	WieldWeapon:   (self: myself, wep: weaponBase.myself?) -> (boolean, string?),
+	canWield:      (self: myself, wep: weaponBase.myself) -> (boolean, string?),
+	reholster:     (self: myself) -> (),
 	UseAbility:    (self: myself, newAbility: abilityTyp) -> boolean,
 	UnwieldWeapon: (self: myself) -> boolean,
 
@@ -121,6 +133,19 @@ local function landHitSpeedBuff(humObj:any, extraTime:number)
 	humObj._landHitExpire = time() + speedboostTime
 	if not humObj._landHitTask then
 		humObj._landHitTask = task.spawn(landSpeed, humObj)
+	end
+end
+
+--- detach, never destroy: wepItem and the NPC Tool script own their weapons
+--- and outlive the character.
+local function releaseWep(w:any)
+	if w == nil then return end
+	local ok, err = pcall(function()
+		if w.putAway then w:putAway() end
+		if w.unequip then w:unequip() end
+	end)
+	if not ok then
+		warn(err, debug.traceback())
 	end
 end
 
@@ -193,6 +218,7 @@ function module.new(hum: Humanoid): myself
 	self.cooldowns:setCooldown("feint", 2)
 	self.cooldowns:setCooldown("feint2", 2)
 	self.cooldowns:setCooldown("parry", 1.2)
+	self.cooldowns:setCooldown("wieldMsg", 2) -- anti chat-spam on refused wields
 
 	self.canAtkThreshold = 0
 	self.dodgeThreshold  = 0
@@ -201,6 +227,8 @@ function module.new(hum: Humanoid): myself
 	self.attackAt        = 0
 
 	self.equippedWeapons = {}
+	self.maxWeapons      = AdditiveValue.new(2)
+	self.heldWeapon      = nil
 	self.wielding_weapon = nil
 	self.using_ability  = nil
 
@@ -458,15 +486,12 @@ function module.destroy(self:myself&any)
 		return
 	end
 	self.isActive = false
+	releaseWep(self.heldWeapon)
+	self.heldWeapon = nil
+
 	if self.equippedWeapons then
-		--warn("DESTROY WEPS RAH", self.equippedWeapons)
-		for i, w in ipairs(self.equippedWeapons) do
-			local ok,err = pcall(function()
-				w:destroy()
-			end)
-			if not ok then
-				warn(err, debug.traceback())
-			end
+		for _, w in ipairs(self.equippedWeapons) do
+			releaseWep(w)
 		end
 		table.clear(self.equippedWeapons)
 	end
@@ -486,9 +511,8 @@ function module.destroy(self:myself&any)
 		self._emoteInstance:destroy()
 		self._emoteInstance = nil
 	end
-	if self.wielding_weapon then
-		self.wielding_weapon:destroy()
-	end
+	-- already released by _clearWieldedWeapon at the top; same ownership rule.
+	releaseWep(self.wielding_weapon)	self.wielding_weapon = nil
 	if self.plrObj then
 		self.plrObj.HumObj = nil
 	end
@@ -497,6 +521,7 @@ function module.destroy(self:myself&any)
 	self.cooldowns:Destroy()
 
 	self.hurtboxSize:destroy()
+	self.maxWeapons:destroy()
 	self.dmgRecord:destroy()
 	self.cards:destroy()
 	self.ragdoll:destroy()
@@ -587,39 +612,97 @@ function _clearWieldedWeapon(self:myself)
 end
 
 
---- false is failed to equip
-function module.EquipWeapon(self:myself, newWeapon: weaponBase.myself): boolean
+local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
+
+--- bind a weapon to me if it isn't already; :holdOut and :wield both need it.
+local function bindWep(self:myself, w:any)
+	if w._humObj ~= self then w:equip(self) end
+end
+
+--- re-park committed-but-inactive weapons so two holsters stop clashing.
+function module.reholster(self:myself&any)
+	for i, w in ipairs(self.equippedWeapons) do
+		if w ~= self.wielding_weapon and w.holsterAt then
+			pcall(w.holsterAt, w, i)
+		end
+	end
+end
+
+--- may this entity COMMIT to `wep`? NPCs have no slot and are never gated.
+function module.canWield(self:myself, wep:any): (boolean, string?)
+	if wep == nil then return false, "no weapon" end
+	if self.plrObj == nil then return true end
+
+	local slot = self.plrObj.loadedSlot
+	if slot == nil then return false, "no slot loaded" end
+	if Requirements.check(slot, wep.req) then return true end
+	return false, Requirements.missing(slot, wep.req)
+end
+
+--[[ SELECT, and it never fails. In the wielded set -> straight to hand, the
+	free swap the set exists for. Not in it -> HELD OUT, inert, until
+	:WieldWeapon commits it. Boolean return is read by Weps/Utils/Template. ]]
+function module.EquipWeapon(self:myself&any, newWeapon: weaponBase.myself): boolean
 	if newWeapon == nil then
 		error("attempted to :EquipWeapon(nil). u forgot to put a weapon stupid!")
 	end
-	_clearWieldedWeapon(self)
 
-	local alreadyIndex = nil
-	for i, w in ipairs(self.equippedWeapons) do
-		if w == newWeapon then
-			alreadyIndex = i
-			break
+	--[[ An NPC has no click to commit with, so selecting IS committing.
+		Every bot / summon / Tool script reaches a weapon through here and has
+		no other route into the wielded set, so hold-out is a dead state for
+		them. canWield already passes plrObj == nil, this just skips the pose. ]]
+	if self.plrObj == nil then
+		return (self:WieldWeapon(newWeapon))
+	end
+
+	bindWep(self, newWeapon)
+
+	local ok
+	if table.find(self.equippedWeapons, newWeapon) then
+		if self.wielding_weapon == newWeapon then return true end
+		newWeapon:wield()
+		ok = true
+	else
+		-- holdOut reuses the weapon's own wield weld, so the model lands in the
+		-- hand but wielding_weapon stays nil and every swing path dead-ends.
+		ok = newWeapon:holdOut()
+	end
+	self:reholster()
+	return ok
+end
+
+--- COMMIT: `req`-gated. Defaults to the held weapon, which is how M1 promotes it.
+function module.WieldWeapon(self:myself&any, wep: weaponBase.myself?): (boolean, string?)
+	local target = wep or self.heldWeapon
+	if target == nil then return false, "nothing held" end
+	if self.wielding_weapon == target then return true end
+
+	local allowed, reason = self:canWield(target)
+	if not allowed then return false, reason end
+
+	bindWep(self, target)
+
+	local already = table.find(self.equippedWeapons, target)
+	if already then
+		table.remove(self.equippedWeapons, already) -- re-queue as newest
+	else
+		-- evict oldest first; maxWeapons is an AdditiveValue so a card raises
+		-- the cap without touching this line.
+		local cap = math.max(1, math.floor(self.maxWeapons.Value))
+		while #self.equippedWeapons >= cap do
+			local evicted = table.remove(self.equippedWeapons, 1)
+			if evicted then evicted.committed = nil end
+			releaseWep(evicted)
 		end
 	end
-	if alreadyIndex then
-		table.remove(self.equippedWeapons, alreadyIndex) -- remove old spot
+
+	table.insert(self.equippedWeapons, target)
+	target.committed = true -- wepItem persists this; survives respawn + rejoin
+	if self.heldWeapon == target then
+		self.heldWeapon = nil
 	end
-
-	local maxEquippedSlots = 2
-
-	--print(self.equippedWeapons)
-	while #self.equippedWeapons >= maxEquippedSlots do
-		local oldest = table.remove(self.equippedWeapons, 1) -- queue pop oldest
-		if oldest and oldest.unequip then
-			--print("UNEUIP", oldest._humObj)
-			oldest:unequip()
-		end
-	end
-
-	table.insert(self.equippedWeapons, newWeapon)
-	newWeapon:equip(self)
-	newWeapon:wield()
-
+	target:wield()
+	self:reholster()
 	return true
 end
 

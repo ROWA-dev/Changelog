@@ -25,8 +25,10 @@ local config:configs = {
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
 		dmg      = 15,
 		stun     = 0.75,
-		posMult  = 1.5,
-		onHit    = require(script.slash)
+		posMult  = 1,
+		onHit    = require(script.slash),
+		
+		parryH   = -0.03
 	},
 
 	--- rowa1 fsM2, now shared. PORTW_00's one gotcha.
@@ -41,7 +43,7 @@ local config:configs = {
 		dmg      = 14,
 		stun     = 2,
 		posMult  = 3,
-		parryH   = -0.06,
+		--parryH   = -0.06,
 		onHit    = require(script.catch)
 	},
 
@@ -49,9 +51,9 @@ local config:configs = {
 	heavyBreak = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
-		dmg      = 6,
-		stun     = 0.7,
-		posMult  = 4,
+		dmg      = 10,
+		stun     = 1,
+		posMult  = 6,
 		onHit    = require(script.breakHit)
 	},
 
@@ -86,10 +88,9 @@ local config:configs = {
 	downSlam = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 18,
+		dmg      = 14,
 		stun     = 0.8,
 		posMult  = 4,
-		parryH   = -0.04,
 		onHit    = require(script.downSlamHit)
 	}
 }

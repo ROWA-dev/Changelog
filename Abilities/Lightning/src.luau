@@ -36,18 +36,13 @@ local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local LNING = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,
-	dmg      = 18,
+	dmg      = 16,
 	stun     = 1.2,
 	--- !! DO NOT remove this again. CalculatePostureDmg is the first line of
 	--- HandleAttack and reads `dmg * posMult` unguarded, so a nil posMult throws
 	--- into use()'s pcall -- every effect plays and NOBODY IS EVER DAMAGED.
 	--- That signature means a dmgTbl field HandleAttack reads unconditionally.
 	posMult  = 2,
-	--[[ a targeted, no-travel AoE is unavoidable by construction, so this is
-		the ability that most needs rowa2's dodge knob -- rowa1 had no such
-		field and leaned entirely on the loud 4-stage telegraph. Both. ]]
-	dodgeH   = 0.15,
-	parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "LightningRelease")
 	end,

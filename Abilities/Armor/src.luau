@@ -73,14 +73,11 @@ local MAX_HITS  = 10
 --- !! FULL EXTENT, NOT RADII -- Destruction halves this itself, so passing
 --- radii digs a crater half the size.
 local DIG_SIZE = Vector3.new(16.5, 10.5, 16.5)
---[[ Scaled off the SHORT radius, not the long one. S10.4's "radius * 0.6"
-	is written for Spheres, where there is only one radius; this dig is
-	deliberately FLATTENED (Y is 64% of XZ), and 8.25*0.6 = 5 is almost the
-	entire 5.25 Y radius, so subdivision terminates on the vertical axis
-	immediately. The carve then takes whole slabs or nothing, which starves
-	`destroyed` of exactly the chunks Grab picks from -- and Grab is the
-	only caller that CARES what comes out rather than what is left.
-	5.25*0.6 instead. Bastar scales off its short axis for the same reason. ]]
+--[[ Scaled off the SHORT radius (5.25*0.6), not the long one. S10.4's
+	"radius * 0.6" is written for Spheres; this dig is FLATTENED, so 8.25*0.6
+	would be almost the whole Y radius and subdivision terminates on the
+	vertical axis immediately -- starving `destroyed` of the chunks Grab picks
+	from. Bastar scales off its short axis for the same reason. ]]
 local DIG_MINSZ = 3
 --[[ NINE, not five. rowa1 selects 9 chunks spaced evenly across the break
 	list and then assigns them with `armorParts[1 + i%#armorParts]` -- so

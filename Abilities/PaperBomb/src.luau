@@ -33,7 +33,7 @@ local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local EXPLO3 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.fire,
-	dmg      = 12,
+	dmg      = 10, -- too op bro
 	stun     = 0.2,
 	posMult  = 0.5,
 	parryH   = 0.2,
@@ -110,13 +110,10 @@ local function makeCast(this: any)
 		stopOnWorld = true,
 		fxId        = "kunaiProj",
 
-		--[[ MUST NOT YIELD. This runs inside the scheduler's step loop, and
-			the fuse used to be a plain `task.wait` right here -- which
-			suspended that loop mid-iteration and corrupted its swap-remove,
-			silently dropping other projectiles. That is why kunai
-			"sometimes stopped exploding forever and just threw".
-			BaseProjectile.kill detaches payloads now, but this stays
-			non-yielding on purpose: arming is a table insert. ]]
+		--[[ MUST NOT YIELD. This runs inside the scheduler's step loop, so a
+			yield suspends it mid-iteration and corrupts its swap-remove,
+			silently dropping other projectiles. BaseProjectile.kill detaches
+			payloads now, but this stays non-yielding: arming is a table insert. ]]
 		onExpire = function(proj: any, pos: Vector3, _hitWorld: boolean)
 			local action = proj.action
 			if action == nil or action._humObj == nil then return end

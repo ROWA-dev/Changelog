@@ -28,7 +28,6 @@ end
 --methods
 --- wield
 function module.wield(self:myself&any)
-	-- wield stuff here
 	local humobj = self._humObj
 	humobj.cooldowns:setCooldown("heavy", 6)
 	
@@ -49,7 +48,6 @@ end
 
 --- unwield
 function module:unwield()
-	-- unwield stuff here
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end

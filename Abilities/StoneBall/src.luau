@@ -31,7 +31,7 @@ local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local BLDR2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.earth),
-	dmg      = 20,
+	dmg      = 18,
 	stun     = 0.6,
 	posMult  = 2,
 	--- positive on purpose: it is a big slow telegraphed rock. Keep the sign.
@@ -42,13 +42,10 @@ local BLDR2 = {
 }
 
 local ROLL_TIME = 1
---[[ rowa1 BodyVelocity Velocity = Dir*90; /5 converts to 18, which read far
-	too fast in play, so this is deliberately cut to ~2/3.
-
-	THAT IS A TUNING CALL FOR THIS MOVE, NOT A RULE. It was briefly written
-	up as "sustained movers want two thirds" and applied to Burst's charge,
-	which then came out a third too slow. Start from the literal conversion
-	and cut only what actually feels wrong. ]]
+--[[ rowa1 BodyVelocity Dir*90; /5 converts to 18, which read too fast in play,
+	so this is cut to ~2/3. THAT IS A TUNING CALL FOR THIS MOVE, NOT A RULE --
+	applied as one to Burst's charge it came out a third too slow. Start from
+	the literal conversion and cut only what actually feels wrong. ]]
 local ROLL_SPEED = 12
 --- rowa1 Attacking.Time = 0.6, and its task.wait agrees for once
 local WINDUP    = 0.6
@@ -69,15 +66,10 @@ local function useFunc(this:myself)
 	--- rowa1 froze input for the whole windup and roll
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 
-	--[[ THE RUMBLE STARTS WITH THE CAST, not with the roll. rowa1 clones
-		bground onto the root and plays groundshake as its FIRST act, so the
-		wind-up has a build-up under it; starting it at the roll instead left
-		0.52s of total silence and made the launch read as coming out of
-		nowhere.
-		The reason it had been moved was that a fixed duration kept dusting
-		under a cast that never happened -- but bground is cancellable now,
-		and rowa1 handles the same case the same way (Debris:AddItem(bground,
-		0) on its interrupt path). So: start it early, kill it on the feint. ]]
+	--[[ THE RUMBLE STARTS WITH THE CAST, not with the roll, so the wind-up has
+		a build-up under it instead of 0.52s of silence. bground is cancellable,
+		so the feint path kills it rather than letting it dust a cast that never
+		happened. ]]
 	fireVFX("bground", humObj.HRootPart, WINDUP + ROLL_TIME)
 
 	if this:feintWait(WINDUP) then

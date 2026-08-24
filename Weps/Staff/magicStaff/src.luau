@@ -33,7 +33,6 @@ end
 
 --- wield
 function module.wield(self:myself&any)
-	-- wield stuff here
 	local humobj = self._humObj
 	local char:any = humobj.Hum.Parent
 	local model = script.Model:Clone() -- that works too findFirstChildOfClass
@@ -51,7 +50,6 @@ end
 
 --- unwield
 function module.unwield(self:myself&any)
-	-- unwield stuff here
 
 	if self.lastAnim then
 		self.lastAnim:Stop()

@@ -106,17 +106,12 @@ local function launchShard(this: myself, offset: Vector3, shardId: number)
 		* CFrame.new(offset.X, offset.Y, offset.Z)
 		* rotate
 
-	--[[ !! THE SHARD FLIES ALONG ITS OWN -UpVector, AND KEEPS ITS PITCHED
-		ORIENTATION. Those are two different things and an earlier pass
-		conflated them: it sent CFrame.new(pos, pos + flyDir), which points
-		the mesh along its travel and throws the 70 degree pitch away, so
-		every shard flew nose-first instead of diving blade-down.
-		`cf` carries BOTH -- the client uses it as the visual orientation and
-		derives the heading from its own -UpVector, exactly as rowa1 did. ]]
+	--[[ !! THE SHARD FLIES ALONG ITS OWN -UpVector AND KEEPS ITS PITCHED
+		ORIENTATION -- two different things. Sending CFrame.new(pos, pos+flyDir)
+		points the mesh along its travel and throws the 70 degree pitch away.
+		`cf` carries BOTH: the client uses it as the visual orientation and
+		derives the heading from its own -UpVector. ]]
 	local flyDir = -cf.UpVector
-
-	--- CLIENT gets the pitched CFrame: it needs the ORIENTATION.
-	fireVFX("iceShard", 1, shardId, root, cf, SHARD.speed)
 
 	--[[ SERVER gets a look-at: BaseProjectile only reads .Position and
 		.LookVector off this, so it wants the HEADING and does not care how
@@ -155,7 +150,15 @@ local function launchShard(this: myself, offset: Vector3, shardId: number)
 		end
 	end
 
-	this:projectile(table.freeze(cfg), originCF)
+	local p = this:projectile(table.freeze(cfg), originCF)
+
+	--[[ !! FIRED AFTER THE PROJECTILE, so the shard can be handed its `id` and
+		follow a deflect or an early end. It used to go first, which is why the
+		drawn shard was on its own the moment the real one was interfered with.
+		CLIENT gets the pitched CFrame: it needs the ORIENTATION, not the
+		heading -- see the note on flyDir above. ]]
+	fireVFX("iceShard", 1, shardId, root, cf, SHARD.speed,
+		{ id = p and p.id, maxDistance = SHARD.maxDistance, lifetime = SHARD.lifetime })
 end
 
 local function useFunc(this:myself)

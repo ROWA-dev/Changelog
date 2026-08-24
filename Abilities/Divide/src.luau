@@ -124,15 +124,11 @@ local function useFunc(this:myself)
 		if not (mySpeed + 6 > theirSpeed or not theyAreAttacking) then continue end
 
 		local attack = this:makeAtk(UCUT, enemy, forward)
-		--[[ NO DECAY, like rowa1 -- and the reason is gravity, not style.
-			A decaying vertical mover is fighting 196 studs/s^2 the whole way
-			down its own ramp, so it barely lifts at all; an earlier pass
-			swapped to decay and the uppercut stopped leaving the ground.
-			rowa1 holds (0,12,0) flat, which converts to 7.2 at the x0.6
-			ratio. Slightly under that so the arc peaks a touch lower.
-
-			They are SUPPOSED to come back down before the follow-up -- the
-			0.6s gap below is what catches them, not a short launch. ]]
+		--[[ NO DECAY, and the reason is gravity: a decaying vertical mover
+			fights 196 studs/s^2 the whole way down its ramp and barely lifts.
+			rowa1 holds (0,12,0) flat = 7.2 at the x0.6 ratio; slightly under.
+			They are SUPPOSED to land before the follow-up -- the 0.6s gap
+			below is what catches them, not a short launch. ]]
 		attack.knockback = this:knockback(Vector3.new(0, 6, 0), 0.2, false, -1)
 		this:executeAttack(attack)
 
@@ -185,15 +181,10 @@ local function useFunc(this:myself)
 		this:executeAttack(attack)
 		if attack:isHit() then
 			landed = true
-			--[[ !! UNRAGDOLL HERE, do not add one.
-				An earlier pass ragdolled on this beat, which was invented --
-				rowa1's "bflash" row has no onHit at all. Worse, it fought the
-				NEXT step: the grab plays a `Victim` animation on them, and a
-				ragdolled character has its Motor6Ds disabled, so the
-				animation drives nothing.
-				The uppercut's own 0.8s ragdoll is usually still running when
-				this lands, so it has to be ended explicitly rather than
-				waited out. ]]
+			--[[ !! UNRAGDOLL HERE, do not add one. The grab plays a `Victim`
+				animation on them and a ragdolled character has its Motor6Ds
+				disabled, so the animation would drive nothing. The uppercut's
+				0.8s ragdoll is usually still running, so end it explicitly. ]]
 			if attack.enemyEntity.ragdoll:inRagdoll() then
 				attack.enemyEntity.ragdoll:unragdoll()
 			end

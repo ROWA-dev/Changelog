@@ -58,24 +58,16 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Punch, 0, 1, 1.5)
 
-	--[[ AERIAL AIM. rowa1 locked the caster into a client hover
-		("arialControll") for the whole cast, but ONLY when already airborne.
-		Modules/aerialAim is that, rebuilt -- it no-ops on the ground and on
-		NPCs, so there is no branch here, only a destructor to call.
-
-		THE HOLD OUTLIVES THE CHARGE. rowa1 releases at the very END, after
-		the last beam tick, not when the beam fires -- so the caster is still
-		hanging while the lane resolves. Budget the whole move plus a margin;
-		the client self-releases on that ceiling if anything throws. ]]
+	--[[ AERIAL AIM. Modules/aerialAim no-ops on the ground and on NPCs, so
+		there is no branch here, only a destructor to call.
+		THE HOLD OUTLIVES THE CHARGE -- rowa1 releases after the LAST beam tick,
+		not when the beam fires, so budget the whole move plus a margin. ]]
 	local releaseAir = aerialAim(humObj, CHARGE_TIME + TICKS * TICK_RATE + 0.5)
 
-	--[[ !! NOT -13. That was a full root, and a rooted R6 character cannot
-		TURN -- AutoRotate only yaws you while you are actually moving -- so
-		the beam always fired wherever you happened to be facing when the
-		cast started. Cero samples its direction at RELEASE, which is
-		pointless if you are physically unable to re-aim during the 1.2s
-		charge. Heavy slow, not a weld. (Airborne, the hover above is doing
-		the aiming instead and walkSpeed is irrelevant.) ]]
+	--[[ !! NOT -13, which is a full root -- and a rooted R6 character cannot
+		TURN (AutoRotate only yaws you while actually moving), so the beam always
+		fired wherever you faced at cast start. Cero samples its direction at
+		RELEASE, so that has to stay re-aimable. Heavy slow, not a weld. ]]
 	humObj.walkSpeed:SetMod(cooldownID, -9)
 
 	local leftArm = char:FindFirstChild("Left Arm")

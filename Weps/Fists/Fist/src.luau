@@ -6,6 +6,8 @@ export type myself = baseWep.myself & {
 
 local module = {
 	Name = "fist",
+	--- must be a TABLE: nil would inherit Light's {light=2}.
+	req = {},
 }
 module.__tostring = baseWep.__tostring
 module.__index = module
@@ -14,7 +16,6 @@ setmetatable(module, { __index = baseWep })
 function module.new(): myself&any
 	local abstract = baseWep.new() :: baseWep.myself
 	local self = setmetatable(abstract, module) :: myself&any
-	-- fist stuff here
 	return self
 end
 

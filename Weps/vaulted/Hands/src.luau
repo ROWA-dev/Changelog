@@ -14,7 +14,6 @@ setmetatable(module, { __index = baseWep })
 function module.new(): myself&any
 	local abstract = baseWep.new() :: baseWep.myself
 	local self = setmetatable(abstract, module) :: myself&any
-	-- fist stuff here
 	return self
 end
 

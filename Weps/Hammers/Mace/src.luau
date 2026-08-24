@@ -17,35 +17,37 @@ setmetatable(module, { __index = baseWep })
 function module.new(): myself&any
 	local abstract = baseWep.new() :: baseWep.myself
 	local self = setmetatable(abstract, module) :: myself&any
+	local model = script.Model:Clone()
+	self._model = model
+	self._trail = model:WaitForChild("Trail1")
 	return self
 end
 
 function module.destroy(self:myself)
 	self:unequip()
+	if self._model then
+		self._model:Destroy()
+	end
 	baseWep.destroy(self)
 end
 
 --methods
 --- wield
 function module.wield(self:myself&any)
-	-- wield stuff here
 	local humobj = self._humObj
 	humobj.cooldowns:setCooldown("heavy", 10)
 	
 	local char:any = humobj.Hum.Parent
-	local model = script.Model:Clone()
+	local model = self._model
 	model.mtr.Part0 = char["Right Arm"]
 	model.mtr.Part1 = model.Handle
 	model.Parent = char
 	
-	self._model = model
-	self._trail = model:WaitForChild("Trail1")
 	baseWep.wield(self)
 end
 
 --- unwield
 function module:unwield()
-	-- unwield stuff here
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end

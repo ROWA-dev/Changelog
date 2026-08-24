@@ -78,14 +78,10 @@ local function useFunc(this:myself)
 		game.Debris:AddItem(circle, 4)
 	end
 
-	--[[ rowa1 charged for 15 iterations of Rwait(0.05): Emit(8) sparks each
-		one, and a ring every second one. 15 emits total, ~120 particles.
-
-		!! THE CALLBACK RUNS EVERY FRAME, NOT EVERY 0.05s. Emitting straight
-		out of it ran at ~60Hz instead of 20Hz -- three times the particles
-		rowa1 produced, which is why the windup looked like a firework. The
-		accumulator restores rowa1's cadence and makes the emit rate
-		independent of framerate. ]]
+	--[[ rowa1 charged for 15 iterations of Rwait(0.05): Emit(8) each, ~120
+		particles. !! THE CALLBACK RUNS EVERY FRAME, NOT EVERY 0.05s, so
+		emitting straight out of it runs at ~60Hz instead of 20Hz. The
+		accumulator restores the cadence and makes it framerate-independent. ]]
 	local sinceEmit, ticks = 0, 0
 	local feinted = this:feintWait(0.72, function(dt: number)
 		sinceEmit += dt

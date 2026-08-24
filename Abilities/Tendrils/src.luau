@@ -40,13 +40,9 @@ local BLOOD_MAGIC = bit32.bor(dmgFlag.magic, dmgFlag.blood)
 local BLODGRAB = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = BLOOD_MAGIC,
-	dmg      = 10,
+	dmg      = 8,
 	stun     = 1,
 	posMult  = 5,
-	--[[ a ranged catch with no travel time needs an out, and rowa2 has the
-		knob rowa1 did not. ]]
-	dodgeH   = 0.15,
-	--parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "grab")
 	end,
@@ -56,7 +52,7 @@ local BLODGRAB = {
 local BLODBREAK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = BLOOD_MAGIC,
-	dmg      = 28,
+	dmg      = 20,
 	stun     = 0.7,
 	posMult  = 4,
 	onHit    = function(attack)
@@ -148,13 +144,10 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 	fireVFX("bldtendrils", 2, eroot, movePos)
 
-	--[[ TRUE stun for the hoist, same call shape as ToshiCounter. This IS a
-		grab (see the header) and the victim spends HOLD_TIME anchored in the
-		air by the client tween -- an ordinary :Stun is refused under hyper
-		armour, so an armoured target hung there still able to attack.
-		rowa1's `blodgrab` row asked for this outright: truestun 1.4.
-		GUARDED: TrueStun is not in the Combatant contract (SimpleEntity has
-		:Stun and no :TrueStun). ]]
+	--[[ TRUE stun for the hoist: this IS a grab and the victim spends HOLD_TIME
+		anchored by the client tween, but an ordinary :Stun is refused under
+		hyper armour. rowa1's `blodgrab` asks for truestun 1.4 outright.
+		GUARDED: TrueStun is not in the Combatant contract. ]]
 	if target.TrueStun then
 		target:TrueStun(HOLD_TIME)
 	end

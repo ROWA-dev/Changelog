@@ -36,30 +36,17 @@ function module.new(): myself&any
 	self._model = model
 	self._trail = model:WaitForChild("Trail1")
 
-	--[[ rowa1's `local AtkRate = 1.05`, its one Settings constant. PORTW_00
-		maps it to self.atkRate and OMITTING IT WAS A REAL MISS -- it is not
-		cosmetic. atkRate does two things at once, matching rowa1 exactly:
-		  * scaledTime multiplies EVERY wait by it, so windups, beats and
-		    endlag all stretch 5% (CombatAction.scaledTime)
-		  * PlayAnim divides anim speed by it -> 1/1.05 = 0.952, which is
-		    literally rowa1's `AtkAnim:AdjustSpeed(1/AtkRate)`
-		Without it the weapon ran at 1.0 on both, so every swing was 5% quick
-		AND the animation played 5% fast on top -- which is what read as the
-		windup being too fast.
+	--[[ rowa1's `local AtkRate = 1.05`. It does two things at once: scaledTime
+		multiplies EVERY wait by it, and PlayAnim divides anim speed by it
+		(1/1.05 = 0.952, rowa1's `AtkAnim:AdjustSpeed(1/AtkRate)`).
 		AdditiveValue is base 1, so the mod is the 0.05 delta, not 1.05. ]]
 	self.atkRate:SetMod("oblitar", 0.05)
 	return self
 end
 
---[[ ORDER MATTERS HERE, and it changed when this moved to Heavy.
-	Medium.destroy has its `self:unequip()` COMMENTED OUT, so destroying the
-	model first was safe under Swords. Heavy.destroy DOES call unequip, and
-	GreatAxe.unequip does `self._model.Parent = script` -- on an instance we
-	had already destroyed, which throws "The Parent property is locked".
-	So: unequip FIRST, then drop the model.
-	Executer and StarkAxe never destroy their clone at all and leave it parked
-	under the family module; this keeps the cleanup, which is the house RAM
-	rule, without fighting the family's order. ]]
+--[[ unequip FIRST, then drop the model. Heavy.destroy calls unequip, and
+	GreatAxe.unequip does `self._model.Parent = script` -- on an already
+	destroyed instance that throws "The Parent property is locked". ]]
 function module.destroy(self:myself)
 	self:unequip()
 	if self._model then

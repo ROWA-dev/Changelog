@@ -48,7 +48,7 @@ local REND_1 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
 	dmg      = 14,
-	stun     = 1,
+	stun     = 1.2,
 	posMult  = 2,
 	parryH   = -0.04,
 	onHit    = function(attack)
@@ -59,7 +59,7 @@ local REND_2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
 	dmg      = 14,
-	stun     = 1,
+	stun     = 1.2,
 	posMult  = 2,
 	parryH   = -0.04,
 	onHit    = function(attack)
@@ -67,8 +67,8 @@ local REND_2 = {
 	end,
 }
 
-local HIT_SIZE = Vector3.new(10, 10, 10)
-local GROUND_PROBE = 60
+local HIT_SIZE = Vector3.new(12, 10, 12)
+local GROUND_PROBE = 4
 
 local groundParams = RaycastParams.new()
 groundParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -135,14 +135,10 @@ local function useFunc(this:myself)
 
 	local anim2 = this:PlayAnim(script.Anim2, 0.1, 1, 1)
 
-	--[[ !! THE GAP IS 1.1s, NOT 0.45s.
-		rowa1 computes `local endt = tick() + 1.1` AFTER the first slam -- a
-		fresh window, not an offset from the move's start. (An earlier port
-		read it as `st + 1.1` and gave the second beat 0.37s, which fired the
-		slam while the hop was still mid-air, so the leap never read at all.)
-
-		The hop fires 0.2s INTO that window and lasts 0.4s, leaving ~0.5s of
-		hang before the ground hits. That spacing is the move. ]]
+	--[[ !! THE GAP IS 1.1s, NOT 0.45s. rowa1 computes `endt = tick() + 1.1`
+		AFTER the first slam -- a fresh window, not an offset from the move's
+		start. The hop fires 0.2s INTO that window and lasts 0.4s, leaving ~0.5s
+		of hang before the ground hits. That spacing is the move. ]]
 	--- the two beats add to rowa1's real 1.1s gap
 	if this:feintWait(0.2) then
 		if anim2 then anim2:Stop() end

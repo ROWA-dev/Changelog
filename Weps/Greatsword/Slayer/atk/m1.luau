@@ -66,13 +66,10 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		0.1, -- fadetime
 		1,   -- weight
 		1,   -- speed. atkRate divides this -> 0.847, rowa1's AdjustSpeed
-		-- endlag, then atkCB. See the note below on why endlag is 0.
 		--- !! ZERO, NOT nil: the helper only sets `m1last` inside `elseif endlag`,
 		--- and 0 is truthy, so 0 gates the chain with an already-expired time
-		--- while nil leaves it ungated. Same delay, different meaning.
-		--- Zero rather than 0.08 because rowa1's gate has already expired by the
-		--- time the swing resolves -- the cadence correction lives in the windup
-		--- above, where rowa1 pays it, not after the hit where it reads as sticky.
+		--- while nil leaves it ungated. Zero rather than 0.08 because the cadence
+		--- correction lives in the windup above, where rowa1 pays it.
 		0, -- endlag
 		nudge
 	)

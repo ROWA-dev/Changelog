@@ -276,7 +276,7 @@ end
 --[[ MANA. Anchor (a,t,m) + closed form, nothing ticks. DOC_GOTCHAS "MANA".
 	dv/dt = K*(1-v/M)^3 solved exactly, so the 2K/M term is derived from the
 	CUBE -- change the exponent and this has to be re-derived. ]]
-local MANA_K = 4
+local MANA_K = 3
 
 --- Pure, module-level: one closure total, not one per entity.
 local function manaCurve(a: number, t: number, m: number, now: number): number

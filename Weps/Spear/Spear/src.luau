@@ -56,12 +56,9 @@ end
 
 --- The streak behind a thrown spear. THE TRAIL ONLY: the blade's wind /
 --- windlines / sharp emitters are PULSED from the flight loop, never switched
---- on. They ship Enabled = false with junk Rates (`wind` is literally inf)
---- because they have only ever been :Emit assets -- enabling one spews forever
---- and picking a Rate would be inventing art. Stopping the flight stops the
---- effect, so nothing is left switched on to forget.
---- A Trail is the exception: Enabled is its only control, and WepBase drives
---- `_trail` this way for every weapon.
+--- on -- they ship Enabled = false with junk Rates (`wind` is inf) because they
+--- have only ever been :Emit assets. A Trail is the exception: Enabled is its
+--- only control, and WepBase drives `_trail` this way for every weapon.
 function module.setFlightFx(self:myself&any, on:boolean)
 	local model = self._model
 	local spear = model and model:FindFirstChild("Model")

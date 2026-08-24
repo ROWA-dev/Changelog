@@ -69,13 +69,7 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
 
-	--- !! and the OWNER by hand: rowa1's blast has no owner check and neither
-	--- does its flight sweep -- blowing yourself up with the joke ultimate is
-	--- the joke. Added here rather than as a query flag because HitboxQuery
-	--- ignoring the caster is correct for every attack except a bomb.
-	--- WATCH THE RADIUS: rowa1's (12,12,12) box is a FULL size, so it reached 6
-	--- studs, not 12. BLAST_RADIUS 12 is double the original and now applies to
-	--- you too. Left alone as a balance call, not fixed silently.
+	-- so you can hit yourself
 	local me = action._humObj
 	if me ~= nil then table.insert(hits, me) end
 
@@ -99,15 +93,11 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	end
 end
 
---[[ THE ROCKET DOES NO CONTACT DAMAGE -- the explosion is the whole payload,
-	exactly as in rowa1 where touching someone only set `triggerExplode`.
-
-	But it still has to NOTICE people, and it has to be PARRYABLE, and both
-	of those mean going through the attack pipeline. So it carries a real
-	damage table with everything zeroed: contact resolves, deals nothing, and
-	its onHit converts the touch into an expiry. A dmgTbl of nil would make
-	the base skip entity queries entirely and the rocket would fly straight
-	through its target. ]]
+--[[ THE ROCKET DOES NO CONTACT DAMAGE -- the explosion is the whole payload.
+	But it still has to NOTICE people and be PARRYABLE, both of which mean
+	going through the attack pipeline, so it carries a real damage table with
+	everything zeroed. A nil dmgTbl would make the base skip entity queries
+	entirely and the rocket would fly straight through its target. ]]
 local PROXIMITY = table.freeze({
 	weight  = dmgUtils.weighEnum.Light,
 	type    = dmgFlag.magic,
@@ -152,12 +142,10 @@ local ROCKET_CFG = table.freeze({
 				a frame. parryDir keeps the blend and handles that collapse. ]]
 			local look = eroot.CFrame.LookVector
 			local newDir = proj:parryDir(look)
-			--[[ the SEARCH uses the raw facing, not the blended heading.
-				rowa1 does the same (GetNearestInDirection takes the
-				parrier's LookVector) and it matters: the blend carries a
-				lift and half the incoming heading, so searching along it
-				aims the cone at the sky and picks whoever the parrier is
-				NOT looking at. Where it flies and who it hunts are two
+			--[[ the SEARCH uses the raw facing, not the blended heading: the
+				blend carries a lift and half the incoming heading, so searching
+				along it aims the cone at the sky and picks whoever the parrier
+				is NOT looking at. Where it flies and who it hunts are two
 				different questions. ]]
 			local newTarget = Targeting.nearestInDirection(
 				eroot.Position, look, attack.enemyEntity, TARGET_RANGE, ROCKET_CONE)

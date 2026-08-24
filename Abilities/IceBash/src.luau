@@ -1,4 +1,5 @@
 --!strict
+-- this needs to get reworked TODO
 --[[ IceBash - rowa1 Items/Ability/IceBash. Port notes: README.md/PORT_IceBash.
 
 	A committed overhead ice smash. Longest reach of the simple set, ragdolls
@@ -33,7 +34,7 @@ local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local ICE3 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.ice, dmgFlag.blunt),
-	dmg      = 19,
+	dmg      = 18,
 	stun     = 0.6,
 	posMult  = 2,
 	--parryH   = -0.04,
@@ -82,13 +83,10 @@ local function useFunc(this:myself)
 		this:executeAttack(attack)
 		if attack:isHit() then
 			hitAny = true
-			--[[ !! 0.8 AND false, NOT 60. rowa1's ice3 used the `ragdollWait`
-				OnHitFunc, which ragdolls for 0.8 SECONDS FLAT. The other
-				OnHitFunc, `ragdtillground`, is the until-you-land one and is
-				what every `(60, true)` call in this codebase means -- 60 is a
-				CAP, and stopOnGround ends it early.
-				`(60, false)` therefore means "sixty seconds flat, never check
-				the ground", which is why victims stopped getting up. ]]
+			--[[ !! 0.8 AND false, NOT 60. rowa1's ice3 uses `ragdollWait`, which
+				is 0.8 SECONDS FLAT. Every `(60, true)` here is the OTHER
+				OnHitFunc, where 60 is a CAP and stopOnGround ends it early --
+				so `(60, false)` means 60s flat and victims never get up. ]]
 			attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 8)
 			--[[ 3 of a 10 meter. IceBash is the SETUP in the ice kit -- a
 				solid chunk off one committed heavy, but never a freeze on its

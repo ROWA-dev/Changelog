@@ -166,9 +166,13 @@ local function useFunc(this:myself)
 	--- rowa1's hit volume is (0.5,0.5,0.5) * magnitude(averageSize)
 	local hitSize = Vector3.one * math.clamp(avg.Magnitude * 0.5, 4, 10)
 
-	fireVFX("boulderKick", 2, char, originCF, SPEED, GRAVITY, MAX_DIST, LIFETIME)
-
-	this:projectile(table.freeze({
+	--[[ !! THE PROJECTILE IS SPAWNED BEFORE THE FX, and the order is the whole
+		point: the drawn rock needs the projectile's `id` to receive a
+		correction, and the id does not exist until it is spawned. This used to
+		fire stage 2 first, which is why the rock was the one projectile whose
+		visual could not follow a deflect. Both calls are in the same
+		synchronous block, so nothing steps in between. ]]
+	local p = this:projectile(table.freeze({
 		class       = Projectile.Arcing,
 		speed       = SPEED,
 		gravity     = GRAVITY,
@@ -193,6 +197,9 @@ local function useFunc(this:myself)
 			fireVFX("camShake", pos, 300, 1, 0.15)
 		end,
 	}), originCF)
+
+	fireVFX("boulderKick", 2, char, originCF, SPEED, GRAVITY, MAX_DIST, LIFETIME,
+		p and p.id)
 
 	this:endLag(0.3)
 end

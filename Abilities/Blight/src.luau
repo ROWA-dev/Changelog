@@ -48,7 +48,7 @@ local BLIGHT = {
 	end,
 }
 
-local TRAVEL_TIME  = 0.4
+local TRAVEL_TIME  = 0.6
 local TRAVEL_DIST  = 22   -- rowa1: 30 steps of a decelerating 1.5..0 stud stride
 local BLAST_RADIUS = 20
 
@@ -60,16 +60,10 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local anim    = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	if this:feintWait(TRAVEL_TIME) then
-		if anim then anim:Stop() end
-		return
-	end
+	-- blight has no more windup
 
-	--[[ rowa1 took the cooldown BEFORE the windup, so feinting Blight still
-		burned all 20 seconds. Every other ability takes it after. Ported as
-		the correct behaviour, not the bug. ]]
 	this:useMana()
-	this:triggerCD(cooldownID, 13, true)
+	this:triggerCD(cooldownID, 14, true)
 
 	local origin  = hurtbox.Position
 	local forward = hurtbox.CFrame.LookVector
@@ -95,6 +89,9 @@ local function useFunc(this:myself)
 			nil,
 			true -- world space
 		)
+		
+		-- so you can hit yourself
+		if humObj ~= nil then table.insert(hits, humObj) end
 
 		for _, enemy in pairs(hits) do
 			local eroot = enemy.HRootPart

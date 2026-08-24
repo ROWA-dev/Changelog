@@ -9,13 +9,10 @@
 local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
---[[ rowa1's audio telegraph, and it was missing entirely. The m1 plays
-	Swing1 (pitched down to 0.7, started 0.2s in) plus afterswing at 0.3 into
-	the 0.5 windup -- i.e. 0.2s BEFORE the hit. That cue is most of how the
-	swing reads as heavy; with no sound at all the wind-up has nothing to
-	announce it, which is the other half of "the windup is too fast".
-	Scheduled rather than played up front so it keeps rowa1's offset, and
-	guarded so a feint does not leave a swing sound with no swing. ]]
+--[[ rowa1's audio telegraph: Swing1 (pitched to 0.7, started 0.2s in) plus
+	afterswing at 0.3 into the 0.5 windup, i.e. 0.2s BEFORE the hit. That cue is
+	most of how the swing reads as heavy. Scheduled rather than played up front
+	so it keeps the offset, and guarded so a feint leaves no orphan sound. ]]
 local function telegraph(this:wepBase.myself&any)
 	local hold = this._model and this._model:FindFirstChild("Hold")
 	if hold == nil then return end

@@ -15,11 +15,17 @@ setmetatable(module, { __index = baseWep })
 function module.new(): myself&any
 	local abstract = baseWep.new() :: baseWep.myself
 	local self = setmetatable(abstract, module) :: myself&any
+	local model = script.StickBaton:Clone()
+	self._model = model
+	self._trail = model:WaitForChild("Trail")
 	return self
 end
 
 function module.destroy(self:myself)
 	self:unequip()
+	if self._model then
+		self._model:Destroy()
+	end
 	baseWep.destroy(self)
 end
 
@@ -27,16 +33,12 @@ end
 
 --- wield
 function module.wield(self:myself&any)
-	-- wield stuff here
 	local humobj = self._humObj
 	local char:any = humobj.Hum.Parent
-	local model = script.StickBaton:Clone() -- that works too findFirstChildOfClass
+	local model = self._model
 	model.mtr.Part0 = char["Right Arm"]
 	model.mtr.Part1 = model.Hold
 	model.Parent = char
-	
-	self._model = model
-	self._trail = model:WaitForChild("Trail")
 	
 	humobj.cooldowns:setCooldown("heavy", 6)
 	baseWep.wield(self)
@@ -45,7 +47,6 @@ end
 
 --- unwield
 function module.unwield(self:myself&any)
-	-- unwield stuff here
 	
 	if self.lastAnim then
 		self.lastAnim:Stop()

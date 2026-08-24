@@ -26,14 +26,10 @@ local config:configs = {
 	},
 	--[[ THE THROWN SPEAR. rowa1 `spH`: Medium, slash+weaponHeavy, 28 dmg,
 		truestun 0.4 + stun 0.9 (collapsed to one, README S4.2), posMult 2.
-		Damage brought down to 20: this pierces, ragdolls, and cannot be
-		blocked out of existence -- a block only bends it -- and the reach is
-		the whole point of the move.
-		NO parryH/dodgeH: rowa1's row carries neither, and the parry reward
-		here is already large (the spear goes home and can stick in the
-		thrower). Do not add one without a playtest.
-		NO knockback either: rowa1 PINS on a clean hit and only shoves on a
-		block. See PORTW_SpearThrow 3.2 and heavy.luau. ]]
+		Damage down to 20: this pierces, ragdolls and cannot be blocked out of
+		existence. NO parryH/dodgeH and NO knockback -- rowa1 carries neither,
+		the parry reward is already large, and it PINS on a clean hit.
+		Do not add either without a playtest. ]]
 	throw = {
 		weight   = weighEnum.Medium,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),

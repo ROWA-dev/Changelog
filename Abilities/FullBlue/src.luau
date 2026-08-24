@@ -66,7 +66,7 @@ local AIM_RANGE    = 30             -- raycast ahead of the caster
 local AIM_LIFT     = 7              -- the orb chases 7 studs above the aim point
 local SPAWN_AHEAD  = 8
 local SPAWN_UP     = 12
-local MANA_PER_SEC = 13             -- rowa1 drained dt*13 every frame
+local MANA_PER_SEC = 5             -- rowa1 drained dt*13 every frame
 
 --- !! the pull is a TARGET VELOCITY, not an accumulating impulse: rowa1's
 --- damping term is the only thing bounding its sum, and without it the speed
@@ -171,7 +171,7 @@ local function useFunc(this:myself)
 	local frame = 0
 	local pulse = FX_PULSE
 	local endt = tick() + LIFETIME
-	local mana = humObj.mana
+	local manaOwed = 0
 
 	while tick() < endt do
 		local dt = task.wait()
@@ -196,10 +196,24 @@ local function useFunc(this:myself)
 		--- rowa1 also ended the channel below 5 health
 		if humObj.Hum and humObj.Hum.Health <= 5 then break end
 
-		--- CLAMP AT 0. `mana` is a plain NumberValue, nothing clamps for you
-		--- (PORT_FullBlue step 2, same note as StoneBall).
-		mana.Value = math.max(0, mana.Value - dt * MANA_PER_SEC)
-		if mana.Value <= 0 then break end
+		--- !! NEVER `mana.Value`. :setMana rawsets the anchor triple (a,t,m) and
+		--- THEN sets Value; writing Value alone moves the number without
+		--- restamping its clock, so :manaNow never sees the drain. It also
+		--- clamps, so rowa1's math.max is gone. (PORT_FullBlue step 2 predates
+		--- the anchor and is wrong now.)
+		--- BATCHED ONTO THE DAMAGE TICK: :setMana replicates (id 23), so
+		--- charging per frame is ~240 packets a channel against ~15 here.
+		local canHurt = frame % HURT_EVERY == 0
+		manaOwed += dt * MANA_PER_SEC
+		if canHurt then
+			--- test the computed value, NOT a second :manaNow -- the anchor is
+			--- stamped from its own tick() call, so re-reading right after a
+			--- setMana(0) returns ~3e-6, not 0, and the channel never ends.
+			local left = humObj:manaNow() - manaOwed
+			manaOwed = 0
+			humObj:setMana(left)
+			if left <= 0 then break end
+		end
 
 		local pos = field.Position
 
@@ -212,7 +226,6 @@ local function useFunc(this:myself)
 		velocity *= DRIFT_DAMP ^ (dt * 60)
 		field.Position = pos + velocity * dt
 
-		local canHurt = frame % HURT_EVERY == 0
 		local _, hits = this:hitbox(CFrame.new(pos), ATTRACT_SIZE, nil, true)
 
 		for _, enemy in pairs(hits) do
@@ -269,6 +282,10 @@ local function useFunc(this:myself)
 			end
 		end
 	end
+
+	--- settle the part-tick the loop did not charge, so an interrupt costs what
+	--- it actually used instead of rounding down to the last damage tick.
+	if manaOwed > 0 then humObj:setMana(humObj:manaNow() - manaOwed) end
 
 	if anim then anim:Stop(0.2) end
 	releaseAir()

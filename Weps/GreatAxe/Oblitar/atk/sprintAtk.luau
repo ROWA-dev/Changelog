@@ -23,12 +23,10 @@ return function(this:wepTyp): wepType.atkResult
 		this,
 		script.sprintAtk, -- anim
 		dmgConfig.m1, -- dmgtbl
-		--[[ 0.55 BASE. rowa1's real waits are 0.2 + 0.25 = 0.45, and that is
-			what shipped -- but the m1 was deliberately slowed +0.1 in
-			playtest and this was left behind, so the running attack came out
-			faster than the standing one on a weapon that is supposed to
-			commit. Carries the same +0.1. Like the m1's, this is a tuning
-			call, NOT a rowa1 number -- do not "correct" it back by reading
+		--[[ 0.55 BASE. rowa1's real waits are 0.2 + 0.25 = 0.45, but the m1 was
+			deliberately slowed +0.1 in playtest and this carries the same, or
+			the running attack comes out faster than the standing one.
+			A TUNING call, NOT a rowa1 number -- do not "correct" it by reading
 			Main. ]]
 		0.47, -- windup BASE
 		12, -- force

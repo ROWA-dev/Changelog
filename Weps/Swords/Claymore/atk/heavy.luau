@@ -156,15 +156,6 @@ vfx["Critical Hit"]:Play()
 		local destSz = hitboxSize*Vector3.new(0.5,1,1)
 		hitboxCF = CFrame.new(endp) * hitboxCF.Rotation + Vector3.new(0,destSz.Y/2 - 2,0)
 		
-		--[[local data = destruction.OBB(
-			nil,
-			hitboxCF * CFrame.new(0,2,-4),
-			destSz,
-			5,
-			ogCF.LookVector*100 + Vector3.new(0,40,0)
-		)
-		total += #data]]
-		
 		local vfxCF =  CFrame.new(endp) * hitboxCF.Rotation
 		local vfx2 = getVFX()--script.vfx2:Clone()
 		vfx2.CFrame = vfxCF

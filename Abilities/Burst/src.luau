@@ -174,14 +174,11 @@ local function useFunc(this:myself)
 			this:executeAttack(attack)
 
 			if attack:isHit() and enemy.grab then
-				--[[ !! STUCK TO THE ARM, not the root. rowa1 welds them to
-					`igniteballFX` -- the fireball on the fist -- and parents
-					the weld there, so they ride ahead of the caster on the
-					ball rather than clipping through their chest.
-					The ball itself is client-side now, so the ARM is the
-					server-side equivalent anchor; it is the same place.
-					maxTime is a dead-man switch -- a Burst that errors
-					mid-rush must not leave someone stuck to a player. ]]
+				--[[ !! STUCK TO THE ARM, not the root, so they ride ahead of the
+					caster on the fireball rather than clipping through their
+					chest (the ball is client-side, the arm is its anchor).
+					maxTime is a dead-man switch -- a Burst that errors mid-rush
+					must not leave someone stuck to a player. ]]
 				--[[ PURE ROTATION, no translation. The anchor part IS the
 					position -- the arm is already out in front holding the
 					ball, so translating on top of it shoves them into space.
@@ -189,13 +186,10 @@ local function useFunc(this:myself)
 					flat across the fist. ]]
 				enemy.grab:grab(humObj,
 					CFrame.Angles(math.rad(90), 0, math.rad(180)), 2, rightArm)
-				--[[ TRUE stun for the ride (ToshiCounter's shape). :Stun alone
-					is refused under hyper armour, so an armoured victim rode
-					the fireball swinging. Duration is exactly what is left of
-					the rush -- they are released the moment it ends, and the
-					blast's own stun takes over from there.
-					GUARDED: TrueStun is not in the Combatant contract
-					(SimpleEntity has no :TrueStun). ]]
+				--[[ TRUE stun for the ride: :Stun alone is refused under hyper
+					armour, so an armoured victim rode the fireball swinging.
+					Duration is what is left of the rush; the blast's own stun
+					takes over. GUARDED: not in the Combatant contract. ]]
 				if enemy.TrueStun then
 					enemy:TrueStun((TICKS - i) * TICK_RATE)
 				end

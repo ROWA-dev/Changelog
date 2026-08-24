@@ -1,10 +1,8 @@
-# quality of life
-Update 1.4.5
+# more balancing
+Update 1.4.6
 
-combat tags UI visual
-attempting to use ability with insufficient mana now has a sound played on your character and shows whats needed in your mana bar (shaky vfx)
-fixed mana system desyncing and lazy state
+wepitem cannot be equipped if not met stat requirements now
+req is inside weapon classes as a static for example Heavy is req = { w = { heavy = 2 } }
+might change syntax later on
 
-debloated a bunch of code
-
-and more (sum balancing stuff i think)
+and more

@@ -38,7 +38,7 @@ local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local BOLT = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
-	dmg      = 24,
+	dmg      = 20,
 	stun     = 1,
 	posMult  = 3,
 	parryH   = -0.04,
@@ -57,17 +57,13 @@ local function useFunc(this:myself)
 
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
-	local anim    = this:PlayAnim(script.Anim, 0, 1, 1)
+	local anim    = this:PlayAnim(script.Anim, 0, 1, 0.9)
 
 	fireVFX("boltp", FX_CHARGE, humObj.Hum)
 
-	--- isRootRelative TRUE so the lunge follows you as you turn; a world-space
-	--- LookVector locks the direction at frame 0 and the dash is unsteerable.
-	--- KEEP THE HANDLE -- without :destroy() the player slides the full 0.3s
-	--- after a cancel. 8 = rowa1's power 40 over bodyForce's internal x5.
-	local dash = this:bodyForce(Vector3.new(0, 0, -8), 0.3, true)
+	local dash = this:bodyForce(Vector3.new(0, 0, -7.5), 0.4, true)
 
-	if this:feintWait(0.42) then
+	if this:feintWait(0.5) then
 		if anim then anim:Stop() end
 		if dash then dash:destroy() end
 		fireVFX("boltp", FX_FIZZLE, humObj.Hum)

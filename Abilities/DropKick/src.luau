@@ -41,15 +41,10 @@ local DROP_KICK = {
 	end,
 }
 
---[[ rowa1 drove the dive through a CLIENT mover at 90 studs/s -> the /5
-	conversion gives 18.
-
-	An earlier pass applied the "sustained movers want two thirds" rule and
-	used 12, but that rule is for something held for a FIXED long duration
-	like StoneBall's one-second roll. This dive ends the moment it hits
-	SOMETHING, usually well under half a second, so it behaves like an
-	impulse and wants the full converted value. At 12 the fall was visibly
-	floaty. ]]
+--[[ rowa1 drove the dive through a CLIENT mover at 90 studs/s -> /5 gives 18.
+	The "sustained movers want two thirds" rule does NOT apply: that is for a
+	fixed long hold like StoneBall's roll. This ends the moment it hits
+	something, so it behaves like an impulse and wants near the full value. ]]
 local DIVE_FORCE = 16
 local MAX_DIVE   = 2
 --[[ the hop only has to get you off the ground -- the dive is the move.
@@ -168,15 +163,10 @@ local function useFunc(this:myself)
 	end
 	fireVFX("dropKickLand", origin, dir)
 
-	--[[ THE IMPACT ITSELF STILL SWINGS.
-		rowa1 seeded its hit list BEFORE the ride and then resolved damage
-		unconditionally at the end, so even its "I hit the floor" exit swung
-		at whatever was in the box. rowa2 moved the query inside the loop and
-		dropped that, leaving `hits` nil on every landing -- so a kick that
-		slammed down right next to someone did nothing at all.
-		One query AT the impact point restores it, without rowa1's stale
-		pre-dive list. Lifted 2 studs so it covers a standing target's body
-		rather than being buried in the floor it just cratered. ]]
+	--[[ THE IMPACT ITSELF STILL SWINGS: the loop leaves `hits` nil on a
+		landing, so without this a kick slammed down next to someone did
+		nothing. Lifted 2 studs to cover a standing target's body rather than
+		being buried in the floor it just cratered. ]]
 	if hits == nil and not humObj:inStun() then
 		local _, found = this:hitbox(
 			CFrame.new(origin + Vector3.new(0, 2, 0)),

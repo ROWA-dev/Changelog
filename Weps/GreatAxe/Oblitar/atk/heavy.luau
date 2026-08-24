@@ -126,12 +126,8 @@ return function(this:wepTyp&any): wepType.atkResult
 		landed = true
 	end
 
-	--[[ NO ENDLAG, and that is not an oversight.
-		This shipped with `endLag(landed and 0.2 or 0.4)`, invented here rather
-		than ported -- rowa1 has NONE: after Damage(9) it sets
-		`Attacking.Value = false` and the move is simply over. Up to 0.4s of
-		invented recovery on the back of an already-committed two-beat swing is
-		the main reason the heavy read as sluggish.
+	--[[ NO ENDLAG, and that is not an oversight: rowa1 has none -- after
+		Damage(9) it sets `Attacking.Value = false` and the move is over.
 		If it needs a whiff punish later, add it on the `not landed` branch
 		ONLY, and keep it well under 0.4. ]]
 	return landed

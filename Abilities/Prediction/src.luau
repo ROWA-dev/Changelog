@@ -58,14 +58,13 @@ local function useFunc(this:myself)
 
 	local reflect: any = humObj.statusEffects:apply(statusEffects.Reflect, WINDOW, ABSORB_CAP)
 
-	--- rowa1 tagged this `noFeint`: the stance cannot be cancelled once
-	--- committed, so atkWait, not feintWait. A CORRECT READ still ends it early,
-	--- which is why the wait is rewritten as a poll -- returning early IS the
-	--- cancel, since `use` clears `attacking` the moment useFunc returns.
-	--- Reads `reflected`, not `absorbed`: the hit that SHATTERS the stance must
-	--- not count as a read.
-	--- `or 0` is load-bearing: the effect's cleanup can destroy it mid-poll, and
-	--- a nil compare throws into use()'s pcall, leaking the walkSpeed mod below.
+	--- `noFeint`: the stance cannot be cancelled once committed, so atkWait, not
+	--- feintWait. A CORRECT READ still ends it early, which is why the wait is a
+	--- poll -- returning early IS the cancel, since `use` clears `attacking` the
+	--- moment useFunc returns. Reads `reflected`, not `absorbed`: the hit that
+	--- SHATTERS the stance must not count as a read.
+	--- `or 0` is load-bearing: cleanup can destroy the effect mid-poll, and a nil
+	--- compare throws into use()'s pcall, leaking the walkSpeed mod below.
 	local total  = this:scaledTime(WINDOW)
 	local waited = 0
 	local landed = false
@@ -80,14 +79,11 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 	if anim then anim:Stop(0.2) end
 
-	--[[ a whiffed stance leaves you open, which is the cost of guessing wrong.
-		A landed one skips it entirely -- that IS the reward.
-
-		The reflect itself is still running here, and still extending on every
-		hit (HIT_EXTEND). That is rowa1-faithful, since pframes outlived the
-		0.8s ability body -- but it does mean you attack WHILE reflecting. If
-		you want one read to answer exactly one attack, drop the effect on the
-		landed branch: humObj.statusEffects:remove(statusEffects.Reflect) ]]
+	--[[ a whiffed stance leaves you open; a landed one skips it, and that IS
+		the reward. The reflect is still running here and still extending on
+		every hit (HIT_EXTEND), so you attack WHILE reflecting. To make one read
+		answer exactly one attack, drop the effect on the landed branch:
+		humObj.statusEffects:remove(statusEffects.Reflect) ]]
 	if not landed then
 		this:endLag(0.3)
 	end
