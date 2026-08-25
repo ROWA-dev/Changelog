@@ -1,10 +1,9 @@
-# balancing n bug fixes
-Update 1.4.7
+# bare minimum prog
+Update 1.5.0
 
-bug fixes...
+baseprog...
+still needs alot of polishing ecp the UI
 
-the stuff from the trello
-
-even less documentation bloat
+pushed the weapon, ability registries into the github
 
 and more

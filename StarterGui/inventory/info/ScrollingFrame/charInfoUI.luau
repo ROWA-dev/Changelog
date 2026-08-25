@@ -1,12 +1,14 @@
 --!strict
 local clientData = require(game.ReplicatedFirst:WaitForChild("ClientData"))
 local ElementRegistry = require(game.ReplicatedStorage.Modules.ElementRegistry)
+local MAX_STAT = require(game.ReplicatedStorage.Class.plrObjClient.slot).MAX_STAT
 local plrObj = clientData.plrObj
 
 local frame = script.Parent
 
 local lvlBar    = frame:WaitForChild("lvl")
 local xpBar     = lvlBar:WaitForChild("bar")
+local lvlLabel  = lvlBar:WaitForChild("level")
 
 local baseSection   = frame:WaitForChild("stats")
 local wepSection    = frame:WaitForChild("weaponStats")
@@ -48,6 +50,8 @@ local function clearContainer(container: Frame)
 	end
 end
 
+local loadedSlot -- the click guard needs allocPts at CLICK time, not at build time.
+
 local function makeStatBar(container: Frame, name: string, value: number, color: Color3?, onClickFn: () -> ())
 	local stat = script.stat:Clone()
 	stat.Name = name
@@ -55,16 +59,20 @@ local function makeStatBar(container: Frame, name: string, value: number, color:
 	local statBar = mainBarFrame:WaitForChild("bar")
 	if color then statBar.BackgroundColor3 = color end
 	stat.label.Text = name
-	statBar.Size = UDim2.new(value / 10, 0, 1, 0)
+	statBar.Size = UDim2.new(value / MAX_STAT, 0, 1, 0)
 	stat.Visible = true
 	stat.Parent = container
-	mainBarFrame.MouseButton1Click:Connect(onClickFn)
+	mainBarFrame.MouseButton1Click:Connect(function()
+		if loadedSlot == nil or loadedSlot.allocPts <= 0 then return end
+		onClickFn()
+	end)
 end
 
 plrObj.slotLoaded:Connect(function(slotData, _serialData)
+	loadedSlot = slotData
 
 	local function updateExpUI()
-		lvlBar:WaitForChild("level").Text = "LVL " .. tostring(slotData.lvl)
+		lvlLabel.Text = "LVL " .. slotData.lvl .. "   PROG " .. slotData:earnedProg()
 		xpBar.Size = UDim2.new(slotData.exp / slotData:nextLevelXp(), 0, 1, 0)
 	end
 
@@ -76,7 +84,7 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 		for k, v:number in pairs(slotData.baseStats) do
 			local statFrame = statsContainer:FindFirstChild(k)
 			if statFrame then
-				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(v / 10, 0, 1, 0)
+				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(v / MAX_STAT, 0, 1, 0)
 			end
 		end
 	end
@@ -85,7 +93,7 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 		for k, v:number in pairs(slotData.weaponStats) do
 			local statFrame = wepContainer:FindFirstChild(k)
 			if statFrame then
-				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(v / 10, 0, 1, 0)
+				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(v / MAX_STAT, 0, 1, 0)
 			end
 		end
 	end
@@ -94,7 +102,7 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 		for _, name in ipairs(ElementRegistry) do
 			local statFrame = elemContainer:FindFirstChild(name)
 			if statFrame then
-				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(slotData.elements:Get(name) / 10, 0, 1, 0)
+				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(slotData.elements:Get(name) / MAX_STAT, 0, 1, 0)
 			end
 		end
 	end
@@ -125,8 +133,8 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 	end
 
 	slotData.onStatChange:Connect(function(patch)
-		if patch.exp or patch.lvl then
-			updateExpUI()
+		if patch.exp or patch.lvl or patch.allocPts then
+			updateExpUI() -- earnedProg moves with allocPts, not just lvl
 		end
 		if patch.allocPts then
 			updateAllocPtsUI()
