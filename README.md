@@ -1,8 +1,10 @@
-# more balancing
-Update 1.4.6
+# balancing n bug fixes
+Update 1.4.7
 
-wepitem cannot be equipped if not met stat requirements now
-req is inside weapon classes as a static for example Heavy is req = { w = { heavy = 2 } }
-might change syntax later on
+bug fixes...
+
+the stuff from the trello
+
+even less documentation bloat
 
 and more

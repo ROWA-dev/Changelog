@@ -88,6 +88,7 @@ local function useFunc(this:myself)
 
 	if this:feintWait(CAST_TIME) then
 		if anim then anim:Stop() end
+		this:triggerCD(cooldownID, 4, true) -- 4s cd upon cancelling it
 		fireVFX("bloodcast", 2, root, vfxID)
 		return
 	end
@@ -101,11 +102,10 @@ local function useFunc(this:myself)
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, RANGE,
 		TENDRIL_CONE)
 
-	--[[ rowa1 spent NO cooldown on a whiff -- it returns before `cd = tick()`.
-		Kept, but a token cost so it cannot be spammed as a free scan. ]]
+	-- cd for 8s on miss
 	if target == nil or target.HRootPart == nil then
 		if anim then anim:Stop() end
-		this:triggerCD(cooldownID, 1, true)
+		this:triggerCD(cooldownID, 8, true)
 		return
 	end
 

@@ -18,6 +18,7 @@ export type myself = baseWep.myself & {
 }
 
 local module = {
+	arialCD = 2,
 	postureGain = 6,
 	Name = "Slayer",
 }
@@ -56,7 +57,6 @@ end
 --- wield
 function module.wield(self:myself&any)
 	local humobj = self._humObj
-	--- rowa1 gates the heavy on `tick() > lastHeavy + 8`, set AFTER it lands.
 	humobj.cooldowns:setCooldown("heavy", 10)
 
 	local char:any = humobj.Hum.Parent

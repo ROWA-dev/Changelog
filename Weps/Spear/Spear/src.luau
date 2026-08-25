@@ -1,25 +1,12 @@
 --!strict
---- Spear - rowa2 id 9. Family Medium/Spear.
---- THE HEAVY IS A THROW: it leaves your hand, flies, sticks in what it reaches,
---- and while it is gone you fight with your FISTS. It returns on its own after
---- at most 4.6s, sooner if you walk to it.
---- rowa1's Spear/Main throw joined to rowa2's stance switch -- rowa1 had the
---- throw but no fist mode, rowa2 had the fist mode but merely DROPPED the spear.
---- Full notes: rowa1OldPlanToPort/README.md/PORTW_SpearThrow.md
---- spearState 1 = in hand, 2 = thrown. Every exit goes through :resetSpear,
---- the only thing allowed to touch the weld/anchor pair -- see its header.
+-- Spear - the heavy is a THROW: it leaves your hand, you fight with fists, it returns within 4.6s.
 local baseWep = require(script.Parent)
 
 export type myself = baseWep.myself & {
-	spearState: number
+	spearState: number -- 1 = in hand, 2 = thrown; every exit goes through :resetSpear
 }
 
---[[ Resolved ONCE, at load, BEFORE any instance can park its own clone
-	beside it. :unwield parks `_model` at `script` (the house pattern --
-	Executer, Slayer, Oblitar all do it), so a later `script.Model` would
-	resolve by CHILD ORDER between the template and somebody's used clone.
-	That is S11 Q5's landmine, and a used clone can now be carrying throw
-	state. ]]
+-- !! resolved ONCE at load: :unwield parks _model at `script`, so a later script.Model could resolve to a used clone by child order.
 local TEMPLATE = script:WaitForChild("Model")
 
 local module = {
@@ -33,10 +20,7 @@ setmetatable(module, { __index = baseWep })
 function module.new(): myself&any
 	local abstract = baseWep.new() :: baseWep.myself
 	local self = setmetatable(abstract, module) :: myself&any
-	--[[ ONE model per weapon instance, like Katana/Claymore/Slayer. This
-		used to clone inside :wield and never destroy, so every re-equip
-		leaked a model into `script` -- harmless while the model was
-		stateless, and not harmless now that it carries a throw. ]]
+	-- ONE model per weapon instance; cloning in :wield instead leaks a model on every re-equip.
 	local model = TEMPLATE:Clone()
 	self._model = model
 	self._trail = model:WaitForChild("Trail1")
@@ -52,13 +36,9 @@ function module.destroy(self:myself&any)
 	baseWep.destroy(self)
 end
 
---methods
+-- methods
 
---- The streak behind a thrown spear. THE TRAIL ONLY: the blade's wind /
---- windlines / sharp emitters are PULSED from the flight loop, never switched
---- on -- they ship Enabled = false with junk Rates (`wind` is inf) because they
---- have only ever been :Emit assets. A Trail is the exception: Enabled is its
---- only control, and WepBase drives `_trail` this way for every weapon.
+-- the streak behind a thrown spear, THE TRAIL ONLY: the blade emitters are pulsed from the flight loop, never switched on.
 function module.setFlightFx(self:myself&any, on:boolean)
 	local model = self._model
 	local spear = model and model:FindFirstChild("Model")
@@ -66,22 +46,13 @@ function module.setFlightFx(self:myself&any, on:boolean)
 	if trail and trail:IsA("Trail") then trail.Enabled = on end
 end
 
---- Put the spear back in the hand and the weapon back in spear stance.
---- Idempotent, safe to call when nothing was thrown.
---- !! THE ORDER OF THE LAST TWO WRITES IS LOAD-BEARING. A thrown spear is
---- ANCHORED and modelWeld joins it to Hold, which is Motor6D'd to the Right
---- Arm -- re-enable the weld while it is still anchored and the anchor
---- propagates into the CHARACTER'S OWN ASSEMBLY: the player freezes with no
---- error anywhere. Unanchor FIRST, then weld. rowa1 has the same order.
---- spearState is cleared BEFORE the projectile is killed on purpose: the
---- flight's onExpire will not touch the model unless still in state 2.
+-- !! puts the spear back, idempotent; UNANCHOR FIRST THEN WELD, or the anchor propagates into the character's assembly and freezes the player.
 function module.resetSpear(self:myself&any)
-	self.spearState = 1
+	self.spearState = 1 -- cleared before the kill: onExpire skips the model unless still in state 2
 
 	local proj = self._spearProj
 	self._spearProj = nil
-	--- :kill directly rather than through the Projectile registry, so this
-	--- file needs no require of the projectile side at all.
+	-- :kill directly, so this file needs no require of the projectile side.
 	if proj ~= nil and proj.dead ~= true and proj.kill then
 		proj:kill(false)
 	end
@@ -97,16 +68,14 @@ function module.resetSpear(self:myself&any)
 
 	self:setFlightFx(false)
 	handle.humweld.Part0 = nil
-	--- the old DROP left this collidable so the assembly would rest on the
-	--- floor. Nothing drops any more.
+	-- nothing drops any more, so this stays off.
 	hold.CanCollide = false
 
 	handle.Anchored = false          -- 1) free it
 	hold.modelWeld.Enabled = true    -- 2) THEN put it back in the hand
 end
 
---- resetSpear plus the pickup tells. The recall timer and the throw's own
---- bail branches both come through here.
+-- resetSpear plus the pickup tells; the recall timer and the throw's bail branches both come here.
 function module.recallSpear(self:myself&any)
 	if self.spearState ~= 2 then return end
 	self:resetSpear()
@@ -117,21 +86,19 @@ function module.recallSpear(self:myself&any)
 	local equip = handle and handle:FindFirstChild("equip")
 	if equip then (equip :: Sound):Play() end
 
-	--- rowa1 stops the idle when the spear leaves and replays it here.
+	-- the idle stops when the spear leaves and replays here.
 	if self.idleTrack and self._humObj then
 		self.idleTrack:Play()
 	end
 end
 
---- wield
+-- wield
 function module.wield(self:myself&any)
 	local humobj = self._humObj
 	local char:any = humobj.Hum.Parent
 	local model = self._model
 
-	--[[ back to spear stance on EVERY wield. spearState used to be written
-		only in .new(), so unequipping while thrown and re-equipping handed
-		you the fist moveset with a spear visibly in your hand. ]]
+	-- back to spear stance on EVERY wield, or re-equipping while thrown hands you the fist moveset with a spear in hand.
 	self:resetSpear()
 
 	model.mtr.Enabled = true
@@ -139,24 +106,19 @@ function module.wield(self:myself&any)
 	model.mtr.Part1 = model.Hold
 	model.Parent = char
 
-	--[[ THE THROW HAS ITS OWN ID. While the spear is gone this weapon falls
-		through to WepBase's default fist heavy, which gates on "heavy" --
-		sharing one id would let a throw eat the punch's cooldown and vice
-		versa. 6s matches rowa1's `lastHeavy + 6`, measured from the START of
-		the throw, so the spear is back (<=4.6s) with a little to spare.
-		"heavy" is Fist's own 6. ]]
+	-- separate ids: the fist heavy gates on "heavy", so one shared id would cross-eat cooldowns. 6s runs from the START of the throw.
 	humobj.cooldowns:setCooldown("spearThrow", 6)
 	humobj.cooldowns:setCooldown("heavy", 6)
 	baseWep.wield(self)
 end
 
---- unwield
+-- unwield
 function module.unwield(self:myself&any)
 	if self.lastAnim then
 		self.lastAnim:Stop()
 	end
 
-	--- a spear in flight must not be parked into ServerStorage mid-throw
+	-- a spear in flight must not be parked into ServerStorage mid-throw
 	self:resetSpear()
 
 	local model = self._model
@@ -167,14 +129,13 @@ function module.unwield(self:myself&any)
 	baseWep.unwield(self)
 end
 
---- unequip
---- the family parks the model; reset before it, not after.
+-- unequip: the family parks the model, so reset before it, not after.
 function module.unequip(self:myself&any)
 	self:resetSpear()
 	baseWep.unequip(self)
 end
 
---- attack
+-- attack
 module.attack = require(script.attack)
 
 return table.freeze(module)

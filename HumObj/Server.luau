@@ -70,14 +70,11 @@ export type myself = baseClass.myself & {
 	inCombat: (self:myself) -> boolean,
 
 	-- returns true on sucess
-	--- THE WIELDED SET: weapons you have committed to, capped by maxWeapons.
-	--  Members live holstered on the back and swap into the hand for free.
+	-- THE WIELDED SET: weapons you have committed to, capped by maxWeapons; members live holstered on the back and swap into the hand for free.
 	equippedWeapons: {weaponBase.myself},
-	--- how many may be in that set at once. AdditiveValue so a card can raise
-	--  it (`maxWeapons:SetMod("multiHanded", 1)`); NOT dual wielding, only one
-	--  is ever `wielding_weapon`.
+	-- how many may be in that set at once; AdditiveValue so a card can raise it. NOT dual wielding, only one is ever `wielding_weapon`.
 	maxWeapons: AdditiveValue.myself,
-	--- drawn but NOT committed: in the right hand, roblox-Tool style, unusable.
+	-- drawn but NOT committed: in the right hand, roblox-Tool style, unusable.
 	heldWeapon: weaponBase.myself?,
 
 	EquipWeapon:   (self: myself, newWeapon: weaponBase.myself) -> boolean,
@@ -136,8 +133,7 @@ local function landHitSpeedBuff(humObj:any, extraTime:number)
 	end
 end
 
---- detach, never destroy: wepItem and the NPC Tool script own their weapons
---- and outlive the character.
+-- detach, never destroy: wepItem and the NPC Tool script own their weapons and outlive the character.
 local function releaseWep(w:any)
 	if w == nil then return end
 	local ok, err = pcall(function()
@@ -156,10 +152,8 @@ local resolveParry = require(script.resolution.resolveParry)
 local resolveBlock = require(script.resolution.resolveBlock)
 local resolveHit   = require(script.resolution.resolveHit)
 
---- One regen loop, three call sites; the nested while/Changed:Wait is deliberate throttling.
---- stepTime nil = wait() ~30Hz, n = wait(n), "frame" = task.wait() -- steps integrate dt, so
---- swapping a call site's timer changes its regen RATE, not just its resolution.
---- `step` returning false kills the coroutine, not just the inner loop (health needs that on death).
+-- one regen loop, three call sites; the nested while/Changed:Wait is deliberate throttling.
+-- !! steps integrate dt, so changing a call site's timer changes its regen RATE, not just its resolution. `step` returning false kills the coroutine, not just the inner loop.
 local function regenLoop(self: any, changedSignal: any, isBelowMax: () -> boolean, step: (number) -> boolean, stepTime: (number | string)?)
 	task.spawn(function()
 		while self.isActive do
@@ -180,12 +174,8 @@ local function regenLoop(self: any, changedSignal: any, isBelowMax: () -> boolea
 	end)
 end
 
---- HumObj GENUINELY REQUIRES a Humanoid, unlike EntityBase.
---  It is the full player-character surface: ragdoll, grab, CharController and
---  the animation stack all take a Humanoid directly. So it refuses up front
---  with a clear message instead of failing five subsystems deep.
---  An odd-shaped entity should NOT be a HumObj -- subclass EntityBase and take
---  Combatant's inert defaults instead.
+-- !! HumObj GENUINELY REQUIRES a Humanoid, unlike EntityBase: ragdoll, grab, CharController and the animation stack all take one directly, so it refuses up front.
+-- an odd-shaped entity should NOT be a HumObj -- subclass EntityBase and take Combatant's inert defaults instead.
 function module.new(hum: Humanoid): myself
 	if typeof(hum) ~= "Instance" or not hum:IsA("Humanoid") then
 		error(
@@ -199,11 +189,7 @@ function module.new(hum: Humanoid): myself
 	local self:myself = setmetatable(abstract, module) :: any
 
 	self.isActive 		= true
-	-- destroy() stamps "norepli" on the root to mark it dead. a live HumObj on
-	-- that same root must clear it, or the marker outlives the corpse: loadChar
-	-- does Unregister(hum) -> Get(hum), which destroys and rebuilds on a char
-	-- that never died, and CharController reads the stale tag as "apply air
-	-- friction forever". Symmetric with destroy, keep it that way.
+	-- destroy() stamps "norepli" on the root, so a live HumObj on that same root must clear it or CharController reads the stale tag as "apply air friction forever". Symmetric with destroy.
 	if self.HRootPart then
 		self.HRootPart:RemoveTag("norepli")
 	end
@@ -261,9 +247,7 @@ function module.new(hum: Humanoid): myself
 
 	self:AddConnection(self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
 		if attack:isBlocked() then
-			-- _lastBlocked means "my guard last DID something", not "blocking.Value
-			-- last flipped". ChangeBlocking only stamps the EDGES, so holding guard
-			-- through a string let it expire mid-combo. Sole reader is ToshiCounter.
+			-- _lastBlocked means "my guard last DID something", not "blocking.Value last flipped", since ChangeBlocking only stamps the EDGES. Sole reader is ToshiCounter.
 			self._lastBlocked = tick()
 			game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("block",
 				self.HRootPart,
@@ -280,7 +264,7 @@ function module.new(hum: Humanoid): myself
 			self.ragdoll:unragdoll()
 		elseif attack:isHit() then
 			local now = tick()
-			--- HYPER ARMOUR: a SECOND interrupt path that never consults stun, so it gates itself; true stun still cancels via :Stun -> onStunned.
+			-- HYPER ARMOUR: a SECOND interrupt path that never consults stun, so it gates itself; true stun still cancels via :Stun -> onStunned.
 			if now < self.attackAt - 0.1 and self.wielding_weapon and not self:inHyperArmour() then
 				local equippedWep:any = self.wielding_weapon
 				equippedWep:stopLastAnim(true)
@@ -337,9 +321,7 @@ function module.new(hum: Humanoid): myself
 				local relativeAtkDir = myTorso.CFrame:VectorToObjectSpace(attack.atkDir)
 				local allHitAnims = script.HitAnims:GetChildren()
 				local hitAnim = allHitAnims[math.random(1,#allHitAnims)]
-				-- this flinch is what cancels abilities: it takes over
-				-- lastAbilityAnim. one slot, so both cannot play -- armoured
-				-- skips the anim entirely. blood/vfx are outside this branch.
+				-- this flinch is what cancels abilities: it takes over lastAbilityAnim, one slot, so both cannot play. Armoured skips the anim entirely.
 				if not self:inHyperArmour() then
 					local hitTrack = self:LoadAnimation(hitAnim)
 					hitTrack.Priority = Enum.AnimationPriority.Action4
@@ -384,8 +366,7 @@ function module.new(hum: Humanoid): myself
 		self:Die()
 	end), "humDied")
 
-	-- self.Model, not HRootPart.Parent: the rootpart is not guaranteed to sit
-	-- directly under the model on a non-standard rig.
+	-- self.Model, not HRootPart.Parent: the rootpart need not sit directly under the model on a non-standard rig.
 	local character:Model = self.Model or self.HRootPart.Parent::any
 	local hurtbox = character:FindFirstChild("hurtbox") or script.hurtbox:Clone()
 	hurtbox:WaitForChild("Weld").Part0 = self.HRootPart
@@ -418,11 +399,6 @@ function module.new(hum: Humanoid): myself
 		self:AddConnection(self.floating.Changed:Connect(function(v)
 			if v > 0 and self.isDead ~= true then
 				self.ragdoll:unragdoll()
-			--[[if self.ragdoll:inRagdoll() then
-					self.ragdoll:unragdoll()
-					self.targetFloatY.Value = nil
-					self.floating.Value = 0
-				end]]
 			end
 		end), "floating_unragdoll")
 	end
@@ -465,8 +441,7 @@ function module.new(hum: Humanoid): myself
 		return true
 	end, "frame") -- floating alone used task.wait(); posture used wait()
 
-	--- Posture is stepped here AND in CharController, so a client hitch loses regen the
-	--- server granted -- linear, so the mana anchor shape would fix it. Own playtest.
+	-- posture is stepped here AND in CharController, so a client hitch loses regen the server granted; the mana anchor shape would fix it.
 	regenLoop(self, self.posture.Changed, function()
 		return self.posture.Value < self.maxPosture.Value
 	end, function(dt)
@@ -540,32 +515,12 @@ function module.Die(self:myself)
 end
 
 local returnEnums = DmgUtils.returnEnum
---[==[ HandleAttack — the dispatcher.
-
-	Resolution ORDER is the contract, and it is the one thing this function
-	still owns:  dead -> parry -> dodge -> block -> hit.
-	The combat test harness pins that order; if you reorder these, that suite
-	fails, which is the point.
-
-	Each branch lives in HumObj/resolution/. They are PURE MOVES -- the balance
-	numbers inside them (the parry stun fallback, the asymmetric posture trade,
-	the mutual-stun reset) were carried across verbatim.
-
-	dodge is still inline BECAUSE IT IS ONE LINE. Extracting a one-line branch
-	to match its siblings would be symmetry for its own sake and would add a
-	file to read for no information gained.
-
-	THE BLOCK BRANCH CAN RETURN nil ON PURPOSE. A broken guard falls
-	through to the hit branch, which is how guard-breaking works. Do not
-	collapse `if blocked ~= nil then return blocked end` into
-	`return blocked`.
-]==]
+-- !! HandleAttack - the dispatcher. Resolution ORDER is the contract: dead -> parry -> dodge -> block -> hit, and the combat test harness pins it.
+-- !! THE BLOCK BRANCH CAN RETURN nil ON PURPOSE -- a broken guard falls through to the hit branch, which is how guard-breaking works. Do not collapse it into `return blocked`.
 function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 	local enemyEntity = attack.enemyEntity
 
-	-- NEVER `return nil` here. A caller receiving nil cannot tell "target was
-	-- already dead" from "this function forgot to return", and that ambiguity
-	-- IS the bug. Routed through onAttackReturn so attack.status is really set.
+	-- !! NEVER `return nil` here: a caller cannot tell "already dead" from "forgot to return". Routed through onAttackReturn so attack.status is really set.
 	if self.isDead then
 		return attack:onAttackReturn(returnEnums.aborted, atkSource)
 	end
@@ -576,10 +531,7 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 		return resolveParry(self, attack, atkSource, atkPostureDMG)
 	end
 
-	--[[ PASS THE ATTACK. The parry branch above and the block branch below
-		both do; this one did not, and that single omission made every
-		`dmgTbl.dodgeH` in the game a no-op -- including HollowPurple's -10,
-		which is its entire i-frame-piercing design (README S10.6). ]]
+	-- !! PASS THE ATTACK, as the parry and block branches do: without it every `dmgTbl.dodgeH` is a no-op, including HollowPurple's i-frame-piercing -10.
 	if enemyEntity.isDodge and enemyEntity:isDodge(attack) then
 		return attack:onAttackReturn(returnEnums.dodged, atkSource)
 	end
@@ -614,12 +566,12 @@ end
 
 local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
 
---- bind a weapon to me if it isn't already; :holdOut and :wield both need it.
+-- bind a weapon to me if it isn't already; :holdOut and :wield both need it.
 local function bindWep(self:myself, w:any)
 	if w._humObj ~= self then w:equip(self) end
 end
 
---- re-park committed-but-inactive weapons so two holsters stop clashing.
+-- re-park committed-but-inactive weapons so two holsters stop clashing.
 function module.reholster(self:myself&any)
 	for i, w in ipairs(self.equippedWeapons) do
 		if w ~= self.wielding_weapon and w.holsterAt then
@@ -628,7 +580,7 @@ function module.reholster(self:myself&any)
 	end
 end
 
---- may this entity COMMIT to `wep`? NPCs have no slot and are never gated.
+-- may this entity COMMIT to `wep`? NPCs have no slot and are never gated.
 function module.canWield(self:myself, wep:any): (boolean, string?)
 	if wep == nil then return false, "no weapon" end
 	if self.plrObj == nil then return true end
@@ -639,18 +591,13 @@ function module.canWield(self:myself, wep:any): (boolean, string?)
 	return false, Requirements.missing(slot, wep.req)
 end
 
---[[ SELECT, and it never fails. In the wielded set -> straight to hand, the
-	free swap the set exists for. Not in it -> HELD OUT, inert, until
-	:WieldWeapon commits it. Boolean return is read by Weps/Utils/Template. ]]
+-- SELECT, and it never fails: in the wielded set -> straight to hand, not in it -> HELD OUT and inert until :WieldWeapon commits it.
 function module.EquipWeapon(self:myself&any, newWeapon: weaponBase.myself): boolean
 	if newWeapon == nil then
 		error("attempted to :EquipWeapon(nil). u forgot to put a weapon stupid!")
 	end
 
-	--[[ An NPC has no click to commit with, so selecting IS committing.
-		Every bot / summon / Tool script reaches a weapon through here and has
-		no other route into the wielded set, so hold-out is a dead state for
-		them. canWield already passes plrObj == nil, this just skips the pose. ]]
+	-- an NPC has no click to commit with, so selecting IS committing; canWield already passes plrObj == nil, this just skips the pose.
 	if self.plrObj == nil then
 		return (self:WieldWeapon(newWeapon))
 	end
@@ -663,15 +610,14 @@ function module.EquipWeapon(self:myself&any, newWeapon: weaponBase.myself): bool
 		newWeapon:wield()
 		ok = true
 	else
-		-- holdOut reuses the weapon's own wield weld, so the model lands in the
-		-- hand but wielding_weapon stays nil and every swing path dead-ends.
+		-- holdOut reuses the weapon's own wield weld, so the model lands in the hand but wielding_weapon stays nil and every swing path dead-ends.
 		ok = newWeapon:holdOut()
 	end
 	self:reholster()
 	return ok
 end
 
---- COMMIT: `req`-gated. Defaults to the held weapon, which is how M1 promotes it.
+-- COMMIT: `req`-gated; defaults to the held weapon, which is how M1 promotes it.
 function module.WieldWeapon(self:myself&any, wep: weaponBase.myself?): (boolean, string?)
 	local target = wep or self.heldWeapon
 	if target == nil then return false, "nothing held" end
@@ -686,8 +632,7 @@ function module.WieldWeapon(self:myself&any, wep: weaponBase.myself?): (boolean,
 	if already then
 		table.remove(self.equippedWeapons, already) -- re-queue as newest
 	else
-		-- evict oldest first; maxWeapons is an AdditiveValue so a card raises
-		-- the cap without touching this line.
+		-- evict oldest first; maxWeapons is an AdditiveValue, so a card raises the cap without touching this line.
 		local cap = math.max(1, math.floor(self.maxWeapons.Value))
 		while #self.equippedWeapons >= cap do
 			local evicted = table.remove(self.equippedWeapons, 1)
@@ -743,19 +688,8 @@ function module.inCombat(self:myself): boolean
 	return self.dmgRecord:inCombat()
 end
 
---[[ Combatant contract. What killing me is worth in xp, TOTAL, before
-	onDeath/processXp splits it by damage share.
-
-	A kill is KILL_LEVELS levels AT MY OWN LEVEL, so an even 1v1 pays the
-	winner exactly one level at any level -- both sides ride the same curve.
-	The curve is NOT copied: slot.nextLevelXp is the single source, and
-	`lvlStub` reuses one table so this allocates nothing.
-
-	THIS is the only place that asks "is this thing player-backed?". Keep it
-	that way -- the moment the payout has to ask, we are back to rowa1, where
-	the rule lived in seven files. Anything not player-backed answers with
-	`.xpLevel`, one plain number a summon or boss script sets in one line,
-	exactly like it sets cards. Unset == 0 == worth nothing. ]]
+-- Combatant contract: what killing me is worth in xp, TOTAL, before onDeath/processXp splits it by damage share. A kill is KILL_LEVELS levels AT MY OWN LEVEL.
+-- !! THIS is the only place that asks "is this thing player-backed?". Anything not player-backed answers with `.xpLevel`; unset == 0 == worth nothing.
 local slotCurve = require(game.ReplicatedStorage.Class.plrObjClient.slot)
 local KILL_LEVELS = 2
 local lvlStub = { lvl = 0 }
@@ -803,42 +737,17 @@ function module.isParry(self:myself, atk:atkTyp?)
 	return tick() <= self.cooldowns:lastUsedAt("parry") + window
 end
 
---- how much a MOVING defender shifts their own dodge window, and the speed
---- it takes to earn it. One place, so it is one number to tune or to zero.
+-- how much a MOVING defender shifts their own dodge window, and the speed it takes to earn it. One place, so it is one number to tune or to zero.
 local VELOCITY_NUDGE   = 0.1
 local NUDGE_MIN_SPEED  = 8
 
---[[ isDodge -- BUILT LIKE isParry, DELIBERATELY, AND IT DID NOT USED TO BE.
-	The three defence questions are siblings: each answers "did the defender
-	beat THIS attack", each reads a per-attack knob off the dmgTbl, and each
-	is a PREDICATE. isParry accumulates a local `window` and never touches
-	self.parryWindow. This now does the same against self.dodgeThreshold.
-
-	!! IT USED TO WRITE TO dodgeThreshold, AND THAT FIELD IS THE DODGE.
-	Dash sets it (tick() + dodgeWindow), DashCancel clamps it, Clap and
-	HollowPurple push it forward. So ASKING THE QUESTION CHANGED THE ANSWER,
-	permanently and cumulatively -- there was no per-attack scope to undo it.
-	Worst caller: Cards/PingCompensation polls `humObj:isDodge(atk)` every
-	Heartbeat for up to 0.9x the attacker's ping, so a defender moving faster
-	than NUDGE_MIN_SPEED drifted their own window by 0.1 PER FRAME POLLED --
-	tenths of a second of dodge appearing or vanishing based on nothing but
-	how long someone's ping was. Nick_Amplifier and HeavensEqualizer poll it
-	too. The nudge is a local term now and expires with the question, which
-	is what it always read as.
-]]
+-- !! isDodge is a PREDICATE and must NEVER write to dodgeThreshold: Dash sets that field, DashCancel clamps it, Clap and HollowPurple push it forward, so asking the question would change the answer permanently and cumulatively.
+-- PingCompensation polls this every Heartbeat for up to 0.9x the attacker's ping, so the nudge is a LOCAL term that expires with the question. Built like isParry, deliberately.
 function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
 	local window:number = offset or 0
 
 	if atk then
-		--[[ THE PRESSURE VALVE (README S10.6). Positive widens the out;
-			a large negative is rowa1's global `bypassiframes` SET expressed
-			as a number on the ATTACKER's own table instead of an exemption
-			list inside the resolver -- HollowPurple's -10 means "i-frames do
-			not answer this".
-			IT WAS DEAD UNTIL NOW. HandleAttack called :isDodge() with no
-			attack, so for the one caller that actually decides whether a hit
-			lands, this branch never ran and every dodgeH in the game was
-			cosmetic. ]]
+		-- THE PRESSURE VALVE: positive widens the out, a large negative means "i-frames do not answer this" (HollowPurple's -10). A knob on the ATTACKER's own table, not an exemption list in the resolver.
 		if atk.dmgTbl.dodgeH then
 			window += atk.dmgTbl.dodgeH
 		end
@@ -846,17 +755,9 @@ function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
 		local root = self.HRootPart
 		local velo = if root then root.AssemblyLinearVelocity else Vector3.zero
 		local atkDir = atk.atkDir
-		--[[ atkDir is WORLD-SPACE and NOT guaranteed unit -- call sites pass
-			everything from a bare LookVector to `dir * 20`. Normalise it, or
-			the nudge silently scales with whatever the caller multiplied by.
-			Both guards also keep :Unit away from a zero vector, which is NaN
-			(the old code computed the dot BEFORE checking the speed). ]]
+		-- !! atkDir is WORLD-SPACE and NOT guaranteed unit, so normalise it or the nudge scales with whatever the caller multiplied by. The guards also keep :Unit off a zero vector.
 		if velo.Magnitude > NUDGE_MIN_SPEED and atkDir.Magnitude > 0 then
-			--[[ -1 moving against the blow, +1 moving with it. Moving INTO
-				an attack widens the window, running with it narrows it.
-				SIGN PRESERVED from the original -- this is a design call, not
-				a bug, and it is now decided in exactly one place if it turns
-				out to read backwards. ]]
+			-- -1 moving against the blow, +1 moving with it: moving INTO an attack widens the window, running with it narrows it. Design call, decided in one place.
 			window -= velo.Unit:Dot(atkDir.Unit) * VELOCITY_NUDGE
 		end
 	end
@@ -900,12 +801,10 @@ function module.canAttack(self:myself)
 	)
 end
 
--- gate is duplicated from baseClass.Stun so it sits ABOVE the side effects:
--- otherwise an armoured player still eats onStunned + loses their swing.
+-- gate is duplicated from baseClass.Stun so it sits ABOVE the side effects: otherwise an armoured player still eats onStunned and loses their swing.
 function module.Stun(self:myself, stunTime:number, bypassArmour:boolean?)
 	if self.isActive ~= true then return end
-	-- hooked here not in baseClass: statusEffects is server-only. via
-	-- activeEffects because a raw _hyperUntil write has no effect object.
+	-- hooked here, not in baseClass, because statusEffects is server-only; via activeEffects because a raw _hyperUntil write has no effect object.
 	if not bypassArmour and tick() < self._hyperUntil then
 		local armour = self.statusEffects.activeEffects
 			and self.statusEffects.activeEffects.HyperArmour
@@ -1085,7 +984,7 @@ function module.canBlock(self:myself&any)
 	)
 end
 
---- returns true if it was a parry
+-- returns true if it was a parry
 function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean																																															-- A I R Z Y was here and made every script
 	self._wantblock = setTo
 	if setTo == true and not self:canBlock()  then
@@ -1170,8 +1069,6 @@ function module.bodyForce(self:myself, forceVector:Vector3, t: number, isRootRel
 	return knockForce(forceVector, self.HRootPart, t, isRootRelative, decayT, decayBias)
 end
 
----
-
 function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Player)
 	self.maxPosture:initReplicateServer(5, remoteEvent, plr)
 	self.walkSpeed:initReplicateServer(6, remoteEvent, plr)
@@ -1190,18 +1087,8 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		remoteEvent:FireClient(plr, 1, duration)
 	end), "repl_1_stun")
 
-	--[[ TRUE STUN IS NOT DERIVABLE FROM ID 1.
-
-		:TrueStun routes through :Stun, so all the client ever saw was an
-		ordinary stun packet -- a guard break and a jab look identical on the
-		wire. Client-side `trueStun` therefore sat at 0 for a player's entire
-		session, which quietly killed BOTH readers of it:
-		  * CharController's hard `JP = 0 / WS = 0` branch never ran
-		  * shiftlock kept steering you through a guard break (ClientClass)
-
-		Duration on the wire, not the timestamp, matching id 1. 0 = clear, so
-		the grab cancels that write `trueStun.Value = 0` release it too.
-	]]
+	-- !! TRUE STUN IS NOT DERIVABLE FROM ID 1: :TrueStun routes through :Stun, so a guard break and a jab look identical on the wire, leaving client-side `trueStun` at 0 forever and killing both its readers.
+	-- duration on the wire, not the timestamp, matching id 1. 0 = clear.
 	self:AddConnection(self.trueStun.Changed:Connect(function(number: number) 
 		local duration = number - tick()
 		if number == 0 or duration <= 0 then
@@ -1209,29 +1096,9 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		end
 		remoteEvent:FireClient(plr, 14, duration)
 	end), "repl_14_trueStun")
---[[ The plain "signal fired -> forward its value under an id" cases.
-
-		These six were six separate raw :Connect blocks that differed only by
-		which signal and which integer. Collapsed into a table so the id/field
-		pairing is READABLE IN ONE PLACE, without touching the wire format or
-		the client side. Every connection is janitored.
-
-		onDash/onDashCancel deliberately forward NO payload, matching the
-		original `FireClient(plr, 8)` with no third argument.
-	]]
---[[ NOTE the two lists. They are NOT interchangeable and must not be
-		merged with a `x.Changed or x` fallback:
-
-		  * attacking/blocking/posture/parryWindow are VALUE OBJECTS. The
-		    signal is `x.Changed` and it carries the new value.
-		  * onDash/onDashCancel are RAW Signals (HumObjClient:138-139). They
-		    are the signal, and they forward no payload.
-
-		Signal's __index ERRORS on an unknown member rather than returning nil
-	-- "Attempt to get Signal::Changed (not a valid member)" -- so
-		`entry.signal.Changed or entry.signal` does not degrade, it throws, and
-		it would have taken out initReplicateServer for every player.
-	]]
+-- the plain "signal fired -> forward its value under an id" cases, tabled so the id/field pairing is readable in one place. onDash/onDashCancel deliberately forward NO payload.
+-- !! the two lists are NOT interchangeable: valueRepl holds VALUE OBJECTS whose signal is `x.Changed`, simpleRepl holds RAW Signals that forward no payload.
+-- do not merge them with `entry.signal.Changed or entry.signal` -- Signal's __index THROWS on an unknown member rather than returning nil, so it would take out initReplicateServer for every player.
 	local valueRepl = {
 		{ value = self.attacking,   id = 2 },
 		{ value = self.blocking,    id = 3 },
@@ -1256,8 +1123,7 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		end), "repl_" .. id)
 	end
 
-	-- bespoke: these two send an id AND a value, so they are not part of the
-	-- simpleRepl table above.
+	-- bespoke: these two send an id AND a value, so they are not part of the simpleRepl table above.
 	self:AddConnection(self.cooldowns.CooldownChanged:Connect(function(id: string, value: number) 
 		remoteEvent:FireClient(plr, 10, id, value)
 	end), "repl_10_cdChanged")
@@ -1276,28 +1142,14 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		remoteEvent:FireClient(plr, 23, number)
 	end), "repl_23_mana")
 
-	--[[ id 24 -- WHO am I fighting, and how long is left on them.
-		(enemyModel, joined, remaining?). Membership only changes on an edge, so
-		this is two packets per enemy per fight plus one correction per TTL --
-		never a stream. The enemy's Model is already replicated, so health,
-		posture and name must NOT go on this wire; the client reads those off
-		the Model it is handed.
-
-		Being inside initReplicateServer IS the player gate -- only loadChar
-		calls it -- so an NPC's dmgRecord keeps onEdge nil and arms no timers.
-
-		Not AddConnection'd because it is a field, not a connection:
-		dmgRecord:destroy() (in this class's destroy) clears it, which is also
-		what kills any expiry timer still in flight. ]]
+	-- id 24 -- WHO am I fighting and how long is left: (enemyModel, joined, remaining?). Membership only changes on an edge, so this is never a stream.
+	-- !! the enemy's Model is already replicated, so health, posture and name must NOT go on this wire. Being inside initReplicateServer IS the player gate, so an NPC keeps onEdge nil.
+	-- not AddConnection'd because it is a field, not a connection: destroy() clears it for a LIVE entity, onDeath does it for a dead one.
 	self.dmgRecord.onEdge = function(enemyModel: Instance, joined: boolean, remaining: number?)
 		remoteEvent:FireClient(plr, 24, enemyModel, joined, remaining)
 	end
 
 
---[[local rcon = remoteEvent.OnServerEvent:Connect(function(plr: Player, id:number, value: any)
-		if plr.Character and self.Hum and plr.Character:FindFirstChild("Humanoid") ~= self.Hum then
-			return
-		end]]
 	self.SubscribedEventCB = function(id:number, value: any)
 		--print("im working!", id, value)
 		if id == 1 then

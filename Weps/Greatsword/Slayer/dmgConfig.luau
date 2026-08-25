@@ -27,7 +27,7 @@ local config:configs = {
 		stun     = 0.75,
 		posMult  = 1,
 		onHit    = require(script.slash),
-		
+
 		parryH   = -0.03
 	},
 

@@ -33,7 +33,7 @@ local config:configs = {
 		posMult  = 0.7,
 		onHit    = require(script.multiple),
 		stunMeOnParried = 0,
-		parryH   = 0.3
+		parryH   = 0.4
 	}
 }
 

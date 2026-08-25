@@ -60,7 +60,7 @@ local VOLLEY_STAGGER = 0.15
 local VOLLEY_RANGE = 60
 local CD          = 18
 --- rowa1 refunded a whiff down to a 1 second cooldown. Good design, kept.
-local WHIFF_CD    = 1
+local WHIFF_CD    = 6
 
 --- one bolt: it CHARGES, then it fires. Shared by the opener and every volley shot.
 --- !! EVERY BOLT HAS ITS OWN 0.6s CHARGE -- the volley is ten overlapping

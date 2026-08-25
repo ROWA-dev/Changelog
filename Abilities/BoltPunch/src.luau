@@ -40,8 +40,7 @@ local BOLT = {
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
 	dmg      = 20,
 	stun     = 1,
-	posMult  = 3,
-	parryH   = -0.04,
+	posMult  = 2,
 	onHit    = function(attack, source: any)
 		local eroot = attack.enemyEntity.HRootPart
 		hitSfx(eroot, "LightningClash")

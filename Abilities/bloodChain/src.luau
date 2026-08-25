@@ -1,11 +1,6 @@
 --!strict
---- bloodChain - hop backwards, spin up a blood chain, hurl it at a locked
---- target. On a connect BOTH parties are yanked to the midpoint between them
---- (rowa1 runs two BodyPositions, one per root) -- so the backward hop is a
---- wind-up, not a disengage, whatever PORT_bloodChain guessed.
---- The chain WINDS UP as it flies, 60 -> 160 studs/s.
---- Parrying REDIRECTS it rather than breaking it; see the parry branch in onHit
---- for who it may pick next and, more importantly, who it may not.
+-- bloodChain - hop backwards, spin up a blood chain, hurl it at a locked target; on a connect BOTH parties are yanked to the midpoint, so the hop is a wind-up, not a disengage.
+-- the chain WINDS UP as it flies (60 -> 160 studs/s), and parrying REDIRECTS it rather than breaking it.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -30,14 +25,8 @@ local Targeting  = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 "chain": Heavy, magic, 10 dmg, stun 0.8, posMult 4, parryH -0.1.
-	Low damage, high posture, negative parry help -- a guard-breaking opener,
-	not a damage move. Preserve that shape.
-
-	!! `blood` MOVED BIT POSITION between the games (rowa1 1024, rowa2 4096 --
-	README S4.1), so it is written by NAME. rowa1 tagged this `magic` only
-	despite the blood family; the flag is added here because the ability is
-	literally called bloodChain and `isElemental` catches both either way. ]]
+-- low damage, high posture: a guard-breaking opener, not a damage move. Preserve that shape.
+-- !! `blood` is written by NAME, never by bit value.
 local CHAIN = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blood),
@@ -53,17 +42,12 @@ local CHAIN = {
 local WINDUP     = 0.8
 local RANGE      = 200
 local YANK_TIME  = 1
---- rowa1 stopped pulling once they were this close
+-- stop pulling once they are this close
 local YANK_STOP  = 4
---- rowa1 MiniDash(-look + up*0.4, 60); bodyForce scales by 5, so 60/5 = 12
 local HOP_FORCE  = 14
 
---[[ the mutual yank. rowa1 used two BodyPositions, one per root, both aimed
-	at the midpoint. AlignPosition is the modern equivalent and nothing in
-	rowa2 expresses "converge on a point" -- bodyForce is a fire-and-forget
-	impulse and would overshoot.
-	Returns a destructor. CALL IT ON EVERY EXIT: a stranded AlignPosition
-	drags a player around permanently. ]]
+-- the mutual yank: two AlignPositions aimed at the midpoint, since bodyForce is fire-and-forget and would overshoot.
+-- !! returns a destructor, CALL IT ON EVERY EXIT -- a stranded AlignPosition drags a player around permanently.
 local function yankTogether(rootA: BasePart, rootB: BasePart): () -> ()
 	local made = {}
 
@@ -91,7 +75,7 @@ local function yankTogether(rootA: BasePart, rootB: BasePart): () -> ()
 			local mid = (rootA.Position + rootB.Position) / 2
 			alignA.Position = mid
 			alignB.Position = mid
-			--- rowa1 stopped early once they met
+			-- stop early once they meet
 			if (rootA.Position - rootB.Position).Magnitude < YANK_STOP then break end
 			task.wait()
 		end
@@ -108,25 +92,20 @@ end
 
 local CHAIN_CFG = table.freeze({
 	class       = Projectile.Homing,
-	--- rowa1 wound 60 -> 160 over the flight
+	-- winds 60 -> 160 over the flight
 	speed       = 60,
 	accel       = 100,
 	maxSpeed    = 160,
-	--- it tracks hard; the chain is not meant to be outrun sideways
+	-- it tracks hard; the chain is not meant to be outrun sideways
 	steer       = 8,
 	lifetime    = 1,
 	maxDistance = 220,
-	--- rowa1's arrival test was `dist < 3`
 	size        = Vector3.new(3, 3, 3),
 	dmgTbl      = CHAIN,
 	pierce      = 1,
-	--- a chain crosses cover; rowa1 never raycast it
+	-- a chain crosses cover
 	stopOnWorld = false,
-	--[[ NO fxId. The generic projectile fx contract only passes
-		(originCF, speed, maxDistance, size), and the beam needs the
-		CASTER'S ARM for its near end -- without Attachment0 a Beam renders
-		nothing at all. So bchain is fired by hand below with the arm and the
-		target, and the projectile itself draws nothing. ]]
+	-- !! NO fxId: the beam needs the CASTER'S ARM for its near end, and without Attachment0 a Beam renders nothing. bchain is fired by hand below.
 	fxId        = nil,
 })
 
@@ -138,12 +117,10 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
-	--[[ the chain hangs off this for its whole life and the fx module KEYS
-		ON IT (bchain's `active` registry), so all four stages have to be
-		handed the same part. Looked up once. ]]
+	-- the fx module KEYS ON this part, so all four stages must be handed the same one. Looked up once.
 	local arm = char:FindFirstChild("Right Arm")
 
-	--- the backward wind-up hop, root-relative so it follows your facing
+	-- the backward wind-up hop, root-relative so it follows your facing
 	local hop = this:bodyForce(Vector3.new(0, 0.5, 1).Unit * HOP_FORCE, 0.3, true)
 
 	fireVFX("bchainWindup", humObj.HRootPart, arm, WINDUP)
@@ -158,13 +135,12 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
 
-	--[[ rowa1 used GetNearestInDirection5 (TIGHT), aimed slightly DOWN --
-		the chain is thrown at chest height, not along the eyeline. ]]
+	-- aimed slightly DOWN: the chain is thrown at chest height, not along the eyeline.
 	local aimDir = (hurtbox.CFrame.LookVector + Vector3.new(0, -0.3, 0)).Unit
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, aimDir, humObj, RANGE, Targeting.TIGHT)
 
-	--- rowa1 simply did nothing without a target. Refund most of the cost.
+	-- no target: refund most of the cost.
 	if target == nil or target.HRootPart == nil then
 		this:triggerCD(cooldownID, 2)
 		this:endLag(0.2)
@@ -175,10 +151,7 @@ local function useFunc(this:myself)
 	local cfg = table.clone(CHAIN_CFG)
 	cfg.target = target
 	cfg.onHit = function(proj, attack)
-		--[[ PARRIED: THE CHAIN IS SLAPPED ASIDE, NOT CUT. It used to simply
-			die here, which is a fine reward and a boring one. Whipped onto
-			somebody else it keeps the read (it is no longer YOUR problem)
-			and hands the parrier the aim. ]]
+		-- PARRIED: the chain is SLAPPED ASIDE, not cut -- whipped onto somebody else it keeps the read and hands the parrier the aim.
 		if attack:isParried() then
 			local proot = attack.enemyEntity.HRootPart
 			if proot == nil then
@@ -186,25 +159,19 @@ local function useFunc(this:myself)
 				return
 			end
 			local look = proot.CFrame.LookVector
-			--- whoever the PARRIER is pointing at, on the cone the cast used.
-			--- !! `me` is the CASTER and that is the point: it excludes both people
-			--- the chain must not pick -- the caster (a chain onto its own thrower
-			--- draws zero-length) and the parrier (search origin, distance 0).
-			--- Nobody in the cone means nobody: it flies straight and times out.
+			-- !! passing the CASTER here excludes both people the chain must not pick: the caster (zero-length draw) and the parrier (search origin, distance 0).
 			local newTarget = Targeting.nearestInDirection(
 				proot.Position, look, humObj, RANGE, Targeting.TIGHT)
-			--- rowa1's rocket blend, degeneracy handled. See parryDir.
+			-- blended heading with the head-on case handled. See parryDir.
 			proj:deflect(proj:parryDir(look), newTarget, 0.15, attack.enemyEntity)
-			--[[ this projectile has NO fxId (see CHAIN_CFG), so the generic
-				projSteer correction has nothing to correct -- the drawn chain
-				is bchain's own stage 1 loop and stage 3 is how it is turned. ]]
+			-- no fxId (see CHAIN_CFG), so stage 3 is how the drawn chain is turned.
 			fireVFX("bchain", 3, arm, proj.pos, proj.dir,
 				newTarget and newTarget.HRootPart or nil)
 			return
 		end
 
 		if not attack:isHit() then
-			--- rowa1 only kept flying on a DODGE; anything else ended it
+			-- only a DODGE keeps it flying; anything else ends it
 			if not attack:isDodged() then Projectile.kill(proj) end
 			return
 		end
@@ -212,23 +179,17 @@ local function useFunc(this:myself)
 		local eroot = attack.enemyEntity.HRootPart
 		if eroot == nil or myRoot == nil or myRoot.Parent == nil then return end
 
-		--[[ a DEFLECTED chain can run back into its own thrower -- they stop
-			being the ignored owner the moment someone parries it -- and the
-			targeting above only keeps it from AIMING at them, not from
-			flying through them. There is nothing to yank in that case, so it
-			takes its damage and drops. ]]
+		-- a DEFLECTED chain can run back into its own thrower, and there is nothing to yank in that case, so it takes its damage and drops.
 		if eroot == myRoot then
 			Projectile.kill(proj)
 			return
 		end
 
 		fireVFX("bchainYank", myRoot, eroot)
-		--[[ LATCH the flying chain onto them for the pull. Without this the
-			beam just timed out mid-air and the yank played with nothing
-			visibly connecting the two -- see bchain's header. ]]
+		-- LATCH the flying chain onto them for the pull, or the yank plays with nothing visibly connecting the two.
 		fireVFX("bchain", 2, arm, eroot, YANK_TIME)
 		local release = yankTogether(myRoot, eroot)
-		--- hard stop: the yank must never outlive its own window
+		-- hard stop: the yank must never outlive its own window
 		task.delay(YANK_TIME + 0.2, release)
 	end
 
@@ -236,10 +197,7 @@ local function useFunc(this:myself)
 
 	local p = this:projectile(table.freeze(cfg), originCF)
 
-	--[[ fired by hand, not via cfg.fxId, because the beam's NEAR end has to be
-		the caster's hand. AFTER the projectile so the chain can be handed its
-		`id`, or it ignores everything except its own parry path. Motion goes as
-		ONE table so retuning the chain is a change here and nowhere else. ]]
+	-- fired by hand because the beam's NEAR end must be the caster's hand, and AFTER the projectile so the chain can be handed its `id`.
 	fireVFX("bchain", 1, originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
 		{ steer = CHAIN_CFG.steer, accel = CHAIN_CFG.accel,
 			maxSpeed = CHAIN_CFG.maxSpeed },

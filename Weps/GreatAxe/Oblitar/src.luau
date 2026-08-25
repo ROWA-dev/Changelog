@@ -68,12 +68,7 @@ function module.wield(self:myself&any)
 	model.mtr.Part1 = model.Hold
 	model.Parent = char
 
-	--[[ 5, not Claymore's 10. rowa1 gated this heavy on
-		`tick() > lastHeavy + 5` and set lastHeavy AFTER the second beat
-		landed, so the real gap is 5s from the END of the sequence. Kept as
-		written; it is short for a two-beat heavy and is the first number to
-		revisit if the weapon reads as oppressive. ]]
-	humobj.cooldowns:setCooldown("heavy", 5)
+	humobj.cooldowns:setCooldown("heavy", 6)
 	baseWep.wield(self)
 end
 

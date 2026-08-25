@@ -145,7 +145,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	fireVFX("camShake", hurtbox.Position, 200, 0.5, 1)
 	fireVFX("shockRing",
 		CFrame.new(hurtbox.Position + Vector3.new(0,-2,0),
-		           hurtbox.Position + Vector3.new(0,-100,0)),
+			hurtbox.Position + Vector3.new(0,-100,0)),
 		Vector3.new(8, 8, 0.5), 0.9, true)
 
 	--[[ tint the debris to whatever is underfoot. Small touch, but it is the

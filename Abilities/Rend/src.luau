@@ -61,7 +61,6 @@ local REND_2 = {
 	dmg      = 14,
 	stun     = 1.2,
 	posMult  = 2,
-	parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit")
 	end,

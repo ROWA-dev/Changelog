@@ -94,23 +94,10 @@ export type myself = baseClass.entity & {
 	onDash: Signal.Signal<Vector3>,
 	onDashCancel: Signal.Signal<Vector3>,
 
-	--[[ WHO this client is currently fighting. Identity only -- read health,
-		posture, name and position straight off the Model, which is already
-		replicated. Nothing about the enemy comes down id 24 except the Model.
-
-		Maps Model -> the Destroying connection that evicts it, so a killed or
-		despawned enemy leaves the set immediately instead of lingering until
-		the server's TTL.
-
-		`combatDeadline` is ONE tick() stamp, not a per-enemy table: combat ends
-		when the LAST entry expires, so only the maximum ever matters and leaves
-		always happen in deadline order. 0 when out of combat.
-
-		Built in new(), NOT initReplicateClient: onCharAdd fires onHumObjSetup
-		(inside setupHumObj) BEFORE it calls initReplicateClient, so anything
-		binding off that signal would have found them nil. Costs nothing extra
-		-- setupHumObj is the only caller of new(), and it is LocalPlayer-only.
-		Still optional: the inert/Combatant-defaults path can skip new(). ]]
+	-- WHO this client is fighting, IDENTITY ONLY: read health, posture, name and position straight off the Model, which is already replicated.
+	-- maps Model -> the Destroying connection that evicts it, so a DESPAWNED enemy leaves immediately; a KILLED one leaves on id 24 instead.
+	-- `combatDeadline` is ONE tick() stamp, not a per-enemy table: combat ends when the LAST entry expires, so only the maximum matters. 0 when out of combat.
+	-- !! built in new(), NOT initReplicateClient: onHumObjSetup fires before initReplicateClient, so anything binding off that signal would find these nil.
 	combatants: { [Instance]: RBXScriptConnection }?,
 	combatDeadline: number,
 	onCombatChanged: Signal.Signal<Instance, boolean>?,
@@ -119,30 +106,20 @@ export type myself = baseClass.entity & {
 local module = {
 	Name = "HumObj_Client",
 
-	-- hyper armour. absolute tick() stamp like stun. class-table default so
-	-- unarmoured entities cost nothing. owned by StatusEffects/HyperArmour.
+	-- hyper armour: absolute tick() stamp like stun, class-table default so unarmoured entities cost nothing. Owned by StatusEffects/HyperArmour.
 	_hyperUntil = 0,
 
-	--[[ Studs of HipHeight the current slide still owes back, 0 when upright.
-		Class-level default so `stopSlideState` can never read nil on an entity
-		that skipped `module.new`'s init (inert/Combatant defaults path). ]]
+	-- studs of HipHeight the current slide owes back, 0 when upright; class-level default so stopSlideState can never read nil on an entity that skipped new().
 	_slideHipDrop = 0,
 
-	--[[ Same reason, plus one more: EntityBase.destroy ends in table.clear but
-		deliberately leaves the metatable, so a dead humObj falls through to
-		these class defaults. Anything still holding a reference (the combat HUD
-		does, until it notices isActive) reads 0 here instead of nil. ]]
+	-- same, plus: EntityBase.destroy leaves the metatable, so a dead humObj falls through to these class defaults and a stale holder reads 0 rather than nil.
 	combatDeadline = 0,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
 setmetatable(module, { __index = baseClass })
 
--- Combatant contract. Behaviour-preserving and meant to be boring: HumObj
--- overrides every one of these for real, so it changes nothing there. It only
--- bites on a client-side HumObjClient, which never had ragdoll/statusEffects/
--- dmgRecord/cards and would previously have errored on them.
--- Must run before this file's table.freeze.
+-- Combatant contract: HumObj overrides all of these for real, so this only bites on a client-side HumObjClient. MUST run before this file's table.freeze.
 require(Classes:WaitForChild("Combatant")).applyInertDefaults(module, "HumObj_Client")
 
 local setupChar = require(script:WaitForChild("setupCharacter"))
@@ -162,8 +139,7 @@ function module.new(hum: Humanoid):myself
 	self.floating    = numVal.new(0)
 	self.targetFloatY = objValue.new()
 	self.posture     = numVal.new(80)
-	-- ANCHOR, not a running total. .Value is mana as of the last write; read
-	-- it with :manaNow(). Seeded below, once maxMana exists.
+	-- !! ANCHOR, not a running total: .Value is mana as of the last write, so read it with :manaNow(). Seeded below, once maxMana exists.
 	self.mana        = numVal.new(0)
 
 	self.slideSpeed  = AdditiveValue.new(28)
@@ -194,10 +170,7 @@ function module.new(hum: Humanoid):myself
 	self._lastBlocked = 0
 	self._lastDoubleDash = 0
 	self._wantSlide = false
---[[ How many studs of HipHeight the slide currently owes back. NEVER do
-		`HipHeight -= 1.5` / `+= 1.5` in a pair -- a missed or doubled call
-		leaks the offset forever (permanent crouched/floating character). Only
-		`_enterSlideHip`/`_exitSlideHip` touch this. ]]
+	-- !! NEVER pair `HipHeight -= 1.5` / `+= 1.5` by hand: a missed or doubled call leaks the offset forever. Only _enterSlideHip/_exitSlideHip touch this.
 	self._slideHipDrop = 0
 	
 	--
@@ -236,8 +209,7 @@ end
 
 function module.destroy(self:myself)
 	self.isActive = false
-	-- Dynamic, so not janitorable: these live on ENEMY Models and would outlive
-	-- this humObj across a respawn if we did not drop them by hand.
+	-- dynamic, so not janitorable: these live on ENEMY Models and would outlive this humObj across a respawn if not dropped by hand.
 	if self.combatants then
 		for _, con in self.combatants do
 			con:Disconnect()
@@ -271,14 +243,10 @@ function module.destroy(self:myself)
 end
 
 
-----
-
---[[ MANA. Anchor (a,t,m) + closed form, nothing ticks. DOC_GOTCHAS "MANA".
-	dv/dt = K*(1-v/M)^3 solved exactly, so the 2K/M term is derived from the
-	CUBE -- change the exponent and this has to be re-derived. ]]
+-- MANA: anchor (a,t,m) + closed form, nothing ticks (DOC_GOTCHAS "MANA"). The 2K/M term is derived from the CUBE, so changing the exponent means re-deriving it.
 local MANA_K = 3
 
---- Pure, module-level: one closure total, not one per entity.
+-- pure and module-level: one closure total, not one per entity.
 local function manaCurve(a: number, t: number, m: number, now: number): number
 	local u = 1 - a / m
 	if u <= 0 then return m end -- at/over ceiling; u<=0 also breaks the sqrt
@@ -290,9 +258,7 @@ function module.manaNow(self:myself): number
 	local now = tick()
 	local liveMax = self.maxMana.Value
 
-	-- maxMana moved: settle under the OLD ceiling, then re-anchor on the new.
-	-- Lazy here rather than a maxMana.onSet/onRemove hook -- that is 2 Signal
-	-- connections per HumObj forever, on every NPC that never casts. R12.
+	-- maxMana moved: settle under the OLD ceiling, then re-anchor on the new. Lazy rather than a hook, which would cost 2 Signal connections per HumObj forever.
 	if mana.m ~= liveMax then
 		self:setMana(manaCurve(mana.a, mana.t, mana.m, now))
 	end
@@ -300,7 +266,7 @@ function module.manaNow(self:myself): number
 	return manaCurve(mana.a, mana.t, mana.m, now)
 end
 
---- The ONLY way mana is written. Re-anchors, then fires Changed (= replicate).
+-- the ONLY way mana is written: re-anchors, then fires Changed (= replicate).
 function module.setMana(self:myself, v: number)
 	local mana:any = self.mana
 	local m = self.maxMana.Value
@@ -352,18 +318,8 @@ local repliUtils = game.ReplicatedStorage:WaitForChild("Utils")
 local bodyMover = require(repliUtils:WaitForChild("bodymover"))
 local SLIDE_HIP_DROP = 1.5
 
---[[ Every bit of state a slide turns ON lives here and gets turned OFF here,
-	as ONE unit. It is idempotent and cheap when there is nothing to undo, so
-	it doubles as the reaper for orphaned slide state: the controller pings
-	`ChangeSliding(false)` every frame while not sliding, which lands here.
-
-	DO NOT re-gate any of this behind `if slideModif then` again.
-	That was the old shape and it meant "the walkSpeed mod is still present"
-	decided whether HipHeight / the Slide track / torso collision came back.
-	Any path that dropped the mod first (the standing-still crouch fast-path
-	did exactly that) orphaned the rest of it PERMANENTLY -- character stuck
-	crouched with the slide anim looping. `slideModif` only decides whether a
-	slide JUMP is owed, nothing else. ]]
+-- every bit of state a slide turns ON gets turned OFF here as ONE unit; idempotent, so it also reaps orphaned slide state every frame via ChangeSliding(false).
+-- !! DO NOT re-gate any of this behind `if slideModif then`: any path that drops the mod first orphans the rest PERMANENTLY. slideModif only decides whether a slide JUMP is owed.
 local function stopSlideState(self:myself&any, allowSlideJump:boolean)
 	local Hum = self.Hum
 	local SlideAnim = self.charAnims.Slide
@@ -431,14 +387,8 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 	local crouchAnim = self.charAnims.Crouch
 	--self._wantSlide = setTo
 
---[[ Standing still -> the slide key crouches instead of sliding.
-		This fast-path must NEVER write `sliding.Value` for setTo==false
-		and then fall through. <<< It used to, and the `sliding.Value ~= setTo`
-		guard further down then read false and skipped the ENTIRE teardown,
-		leaving walkSpeed's +slideSpeed mod on with sliding.Value==false --
-		nothing decays it (the decay lives in the controller's sliding==true
-		branch) so you keep the anim and fly around steerable at ~41 WS.
-		That is the "stuck fast slide" bug. Both branches return. ]]
+	-- standing still -> the slide key crouches instead of sliding.
+	-- !! this fast-path must NEVER write `sliding.Value` for setTo==false and then fall through: the guard below would skip the ENTIRE teardown and strand the speed mod. Both branches return.
 	if setTo == true and self.Hum.MoveDirection == Vector3.zero and self.sliding.Value ~= true then
 		stopSlideState(self, false) -- reap residue before crouching over it
 		self.sliding.Value = true
@@ -475,10 +425,7 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 		local torso:BasePart = chr:FindFirstChild("Torso")
 		local root = self.HRootPart
 
-	--[[ Only ENTERING needs the torso (collision swap). Bailing out of the
-			stop path on a missing torso would strand the speed mod + HipHeight,
-			which is the same permanent-fast-slide failure this function exists
-			to prevent -- stopSlideState handles a nil torso itself. ]]
+		-- only ENTERING needs the torso: bailing the stop path on a missing torso would strand the speed mod and HipHeight. stopSlideState handles a nil torso itself.
 		if torso == nil and setTo == true then
 			return false
 		end
@@ -496,8 +443,7 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 			torso.CollisionGroup = "no"
 
 			self.walkSpeed:SetMod("slide", self.slideSpeed.Value)
-			-- book the drop instead of assuming a matching `+= 1.5` later.
-			-- guarded so a double-enter can't stack two drops on one payback.
+			-- book the drop rather than assume a matching `+= 1.5` later; guarded so a double-enter cannot stack two drops on one payback.
 			if self._slideHipDrop == 0 then
 				self._slideHipDrop = SLIDE_HIP_DROP
 				Hum.HipHeight -= SLIDE_HIP_DROP
@@ -548,9 +494,7 @@ function module:TrueStun(trueStunTime:number)
 		self.stun.Value,
 		tick() + trueStunTime
 	)
-	-- must pass the flag. without it the gate eats this silently: trueStun.Value
-	-- is already set so inStun() looks right, but stun.Value never changes and
-	-- the stun.Changed replication never fires -> client thinks it is free.
+	-- !! must pass the flag, or the gate eats this silently: inStun() looks right, but stun.Changed never fires and the client thinks it is free.
 	self:Stun(trueStunTime, true)
 end
 
@@ -558,8 +502,7 @@ function module:inTrueStun(): boolean
 	return tick() < self.trueStun.Value
 end
 
---- Armoured right now? Ask this, never `tick() < self._hyperUntil` by hand --
---- anything that INTERRUPTS a victim has to check it, not just :Stun.
+-- !! armoured right now? Ask this, never `tick() < self._hyperUntil` by hand: anything that INTERRUPTS a victim has to check it, not just :Stun.
 function module:inHyperArmour(): boolean
 	return tick() < self._hyperUntil
 end
@@ -763,17 +706,13 @@ function module.PlayAnim(self:myself&any, anim:Animation, fadeT:number?, weight:
 end
 
 
-----
-
 local getDashDir = require(repliStore:WaitForChild("Utils"):WaitForChild("getDashDir"))
 function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 	local combatants = self.combatants :: { [Instance]: RBXScriptConnection }
 	local onCombatChanged = self.onCombatChanged :: Signal.Signal<Instance, boolean>
 
 	local function setCombatant(model: Instance, joined: boolean, remaining: number?)
-		--[[ Clock first: a CORRECTION is a join for an enemy we already have, so
-			it would be swallowed by the dedupe below. Only ever extends -- a
-			second enemy joining must not shorten the first one's deadline. ]]
+		-- clock first: a CORRECTION is a join for an enemy we already have, so the dedupe below would swallow it. Only ever extends.
 		if joined and remaining then
 			self.combatDeadline = math.max(self.combatDeadline, tick() + remaining)
 		end
@@ -854,9 +793,7 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 			self.floating.Value = value
 			-- 13 is taken by _lastJumped stateChange
 		elseif id == 14 then
-			-- duration on the wire, absolute timestamp locally. 0 = clear.
-			-- Written straight to the field: :TrueStun would re-route through
-			-- :Stun and double up the stun that id 1 has already delivered.
+			-- duration on the wire, absolute timestamp locally, 0 = clear. Written straight to the field, since :TrueStun would re-route through :Stun and double up id 1.
 			self.trueStun.Value = if value > 0 then tick() + value else 0
 		elseif id == 20 then
 			self.targetFloatY.Value = value

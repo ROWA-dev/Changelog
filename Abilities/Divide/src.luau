@@ -1,10 +1,6 @@
 --!strict
---- Divide - uppercut, drag them in, then two committed strikes. Three beats,
---- each gated on the last connecting. rowa1 port: README.md/PORT_Divide.
---- No CharAtkWeld cinematic and no `floating` air-combo: the AlignPosition drag
---- does the same job in one object. Adding the hold later is additive.
---- !! the uppercut has a SPEED GATE -- it only lands if you are moving faster
---- than the target OR they are not attacking. Not a free launcher.
+-- Divide - uppercut, drag them in, then two committed strikes; three beats, each gated on the last connecting.
+-- !! the uppercut has a SPEED GATE: it only lands if you are moving faster than the target OR they are not attacking. Not a free launcher.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -29,7 +25,7 @@ local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---- rowa1 "ucut": Light, blunt, 10 dmg, stun 1.0, posMult 3. The launcher.
+-- the launcher.
 local UCUT = {
 	weight   = dmgUtils.weighEnum.Light,
 	type     = dmgFlag.blunt,
@@ -37,16 +33,14 @@ local UCUT = {
 	stun     = 1,
 	posMult  = 3,
 	parryH   = -0.04,
-	--- 0.8s FLAT ragdoll: the uppercut is supposed to ragdoll them IN THE AIR,
-	--- and a ground check would release them the moment they came down.
-	--- Smash shares this rowa1 row; keep the two in step.
+	-- 0.8s FLAT ragdoll: they must ragdoll IN THE AIR, and a ground check would release them the moment they came down. Smash shares this row.
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "kick1")
 		attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 8)
 	end,
 }
 
---- rowa1 "bflash": Heavy, magic, 40 dmg, truestun 0.5 / stun 1.5.
+-- the second beat.
 local BFLASH = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
@@ -54,15 +48,13 @@ local BFLASH = {
 	stun     = 1.5,
 	posMult  = 3,
 	parryH   = -0.04,
-	--- rowa1 bflash sounds: BigPunch, bflash2
+	-- sounds: BigPunch, bflash2
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "BigPunch", "bflash2")
 	end,
 }
 
---[[ rowa1 "bflash2": Heavy, magic, 20 dmg, stun 0.6, posMult 6.
-	posMult 6 was tuned against a 100 posture pool; rowa2's max is 80, and
-	the launcher already spent 3. Pulled to 4. ]]
+-- posMult 4, not 6: the posture pool maxes at 80 and the launcher already spent 3.
 local BFLASH2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
@@ -70,16 +62,13 @@ local BFLASH2 = {
 	stun     = 0.6,
 	posMult  = 4,
 	parryH   = -0.04,
-	--- rowa1 bflash2 sounds: bflash2, HitSoundLow
+	-- sounds: bflash2, HitSoundLow
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "bflash2", "HitSoundLow")
 	end,
 }
 
---[[ hold the victim a few studs in front of the caster.
-	HORIZONTAL ONLY (axes 1,0,1), which is rowa1's MaxAxesForce: it drags
-	them in without fighting gravity or the launch, and that is what makes it
-	read as a pull rather than a float. ]]
+-- hold the victim a few studs in front of the caster, HORIZONTAL ONLY (axes 1,0,1), so it drags without fighting gravity or the launch.
 local DRAG_OPTS = table.freeze({
 	axes = Vector3.new(1, 0, 1),
 	maxTime = 2,
@@ -113,9 +102,7 @@ local function useFunc(this:myself)
 
 	local caught = nil
 	for _, enemy in pairs(hits) do
-		--[[ THE SPEED GATE. rowa1 only lands the uppercut if you are moving
-			faster than them, or they are not attacking. It is what stops
-			this being a free launcher into someone mid-commitment. ]]
+		-- THE SPEED GATE: stops this being a free launcher into someone mid-commitment.
 		local mySpeed = myRoot and myRoot.AssemblyLinearVelocity.Magnitude or 0
 		local eroot = enemy.HRootPart
 		if eroot == nil then continue end
@@ -124,11 +111,7 @@ local function useFunc(this:myself)
 		if not (mySpeed + 6 > theirSpeed or not theyAreAttacking) then continue end
 
 		local attack = this:makeAtk(UCUT, enemy, forward)
-		--[[ NO DECAY, and the reason is gravity: a decaying vertical mover
-			fights 196 studs/s^2 the whole way down its ramp and barely lifts.
-			rowa1 holds (0,12,0) flat = 7.2 at the x0.6 ratio; slightly under.
-			They are SUPPOSED to land before the follow-up -- the 0.6s gap
-			below is what catches them, not a short launch. ]]
+		-- NO DECAY: a decaying vertical mover fights gravity down its ramp and barely lifts. They are SUPPOSED to land before the follow-up.
 		attack.knockback = this:knockback(Vector3.new(0, 6, 0), 0.2, false, -1)
 		this:executeAttack(attack)
 
@@ -144,8 +127,7 @@ local function useFunc(this:myself)
 		return
 	end
 
-	--- the pin's own maxTime is the hard stop, so a stranded AlignPosition
-	--- can never drag someone forever even if this errors.
+	-- the pin's own maxTime is the hard stop, so a stranded AlignPosition can never drag someone forever even if this errors.
 	local release = pinTo(caught.HRootPart, function()
 		if myRoot == nil or myRoot.Parent == nil then return nil end
 		return (myRoot.CFrame * CFrame.new(0, 0, -4)).Position
@@ -170,9 +152,7 @@ local function useFunc(this:myself)
 	end
 
 	forward = hurtbox.CFrame.LookVector
-	--[[ wider than the uppercut on purpose. This beat has to catch someone
-		who has been launched, dragged and is now falling, so a box sized for
-		a standing target misses them on the way down. ]]
+	-- wider than the uppercut on purpose: this beat catches someone falling, and a box sized for a standing target misses them on the way down.
 	local _, hits2 = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(9, 10, 9))
 
 	local landed = false
@@ -181,10 +161,7 @@ local function useFunc(this:myself)
 		this:executeAttack(attack)
 		if attack:isHit() then
 			landed = true
-			--[[ !! UNRAGDOLL HERE, do not add one. The grab plays a `Victim`
-				animation on them and a ragdolled character has its Motor6Ds
-				disabled, so the animation would drive nothing. The uppercut's
-				0.8s ragdoll is usually still running, so end it explicitly. ]]
+			-- !! UNRAGDOLL HERE, do not add one: a ragdolled character has its Motor6Ds disabled, so the grab's Victim animation would drive nothing.
 			if attack.enemyEntity.ragdoll:inRagdoll() then
 				attack.enemyEntity.ragdoll:unragdoll()
 			end
@@ -204,39 +181,24 @@ local function useFunc(this:myself)
 	fireVFX("divideFlash", humObj.HRootPart, char:FindFirstChild("Right Arm"))
 	fireVFX("bflashScreen", char, caught.HRootPart and caught.HRootPart.Parent)
 
-	--- !! THE THIRD BEAT: grab, hold, then release into the finisher. Skipping
-	--- it is what made the move read as two hits instead of three -- the hold is
-	--- the moment the camera reads. The drag comes off first: two things owning
-	--- the victim's position at once fight each other.
+	-- !! THE THIRD BEAT: grab, hold, then release into the finisher. The drag comes off FIRST, or two things own the victim's position and fight.
 	release()
 
 	local held = false
 	if caught.isActive == true and caught.grab then
-		--- maxTime is a dead-man switch: a grab that never releases is a
-		--- player who can never move again, and it is silent.
-		--[[ welded to the RIGHT ARM with a PURE ROTATION -- rowa1's
-			C0 = CFrame.Angles(90, 0, 230), parented to that arm. The arm is
-			already extended, so it is the position; the translation an
-			earlier pass added on top pushed them off the end of it. ]]
+		-- maxTime is a dead-man switch: a grab that never releases is a player who can never move again, silently.
+		-- welded to the RIGHT ARM with a PURE ROTATION; the arm is already extended, so adding a translation pushes them off the end of it.
 		caught.grab:grab(humObj,
 			CFrame.Angles(math.rad(90), 0, math.rad(230)), 1.5,
 			char:FindFirstChild("Right Arm"))
 		held = true
 
-		--[[ TRUE stun for the hold, same call as ToshiCounter. The hold is
-			the payoff of the move and an ordinary :Stun is refused under
-			hyper armour, which let an armoured victim act through the one
-			beat the camera is reading. 0.7 is the atkWait below.
-			GUARDED: TrueStun is not part of the Combatant contract
-			(SimpleEntity has :Stun only). ]]
+		-- TRUE stun for the hold: an ordinary :Stun is refused under hyper armour, letting an armoured victim act through the payoff beat. Guarded, not in Combatant.
 		if caught.TrueStun then
 			caught:TrueStun(0.7)
 		end
 
-		--[[ the VICTIM's own reaction animation. PlayAnim only drives self,
-			so this goes through their Animator directly -- guarded, because
-			a rig mid-teardown can be missing one and a throw here would eat
-			the rest of the move (AbilityBase.use pcalls the useFunc). ]]
+		-- the VICTIM's own reaction animation: PlayAnim only drives self, so this goes through their Animator directly, guarded against a rig mid-teardown.
 		local victimAnim = script:FindFirstChild("Victim")
 		local animator = caught.Hum and caught.Hum:FindFirstChildOfClass("Animator")
 		if victimAnim and animator then
@@ -257,10 +219,10 @@ local function useFunc(this:myself)
 	end
 
 	fireVFX("pauseF", char, caught.HRootPart and caught.HRootPart.Parent)
-	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
+	-- r8 is the inscribed sphere of the 16^3 cut
 	Destruction.Sphere(nil,
 		hurtbox.Position + hurtbox.CFrame.LookVector * 8 + Vector3.new(0, 4, 0),
-		--- studs/SECOND, not a heading
+		-- studs/SECOND, not a heading
 		8, 4.8, hurtbox.CFrame.LookVector * 55)
 	fireVFX("divideFlash", humObj.HRootPart, nil)
 
@@ -268,24 +230,18 @@ local function useFunc(this:myself)
 	local _, hits3 = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(6, 7, 6))
 	for _, enemy in pairs(hits3) do
 		local attack = this:makeAtk(BFLASH2, enemy, forward)
-		-- rowa1 look*30 + (0,8,0), at the x0.6 knockback ratio (README S7)
 		attack.knockback = this:knockback(
 			attack.atkDir * 18 + Vector3.new(0, 4.8, 0), 0.2, false, -1)
 		this:executeAttack(attack)
 		if attack:isHit() then
-			--- rowa1's onHit was ragdtillground: a long CAP ended by ground
+			-- a long CAP ended by the ground, not a fixed duration
 			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 10)
 		end
 	end
 
-	--- !! THE BLACK FLASH -- the payoff, and it was missing entirely. Fired in
-	--- rowa1's order: after the finisher resolves, immediately before the shake.
-	--- It is also the only place LightningClash + bflash2 + bflash play, which is
-	--- why the move's audio read thin without it. The `landed` gate is rowa1's
-	--- `therehit2`: never on a whiffed finisher.
+	-- !! THE BLACK FLASH, the payoff: fires after the finisher resolves, just before the shake, and is the only place LightningClash + bflash2 + bflash play.
 	fireVFX("blackFlash", humObj.HRootPart)
-	--- rowa1's second RedFlash pulse. rowa2 has no such Lighting effect, so
-	--- the participants' screen flash is what carries it (see bflashScreen).
+	-- there is no Lighting effect for the second pulse, so the participants' screen flash carries it.
 	fireVFX("bflashScreen", char, caught.HRootPart and caught.HRootPart.Parent)
 	fireVFX("camShake", hurtbox.Position, 400, 1, 0.3)
 	this:endLag(0.3)

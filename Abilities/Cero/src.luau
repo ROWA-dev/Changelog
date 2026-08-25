@@ -1,10 +1,6 @@
 --!strict
---- Cero - a wide beam cannon. 1.2s charge, then a 15x15x40 lane re-queried
---- four times, carving a tunnel through the terrain. rowa1's biggest hit.
---- rowa1 port: README.md/PORT_Cero.
---- NOT a projectile: the hitbox never moves. One CFrame in front of the caster,
---- re-queried four times at 0.1s on one dedupe list -- the ticks catch someone
---- walking into the beam, they do not sweep it forward.
+-- Cero - a wide beam cannon: 1.2s charge, then a fixed lane re-queried four times, carving a tunnel through the terrain.
+-- NOT a projectile, the hitbox never moves -- the ticks catch someone walking into the beam, they do not sweep it forward.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -28,25 +24,22 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local aerialAim = require(game.ServerStorage.ROWA.Modules.aerialAim)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---- rowa1 "cero" was 60 dmg, the highest single hit in its table.
---- posMult 6 -> 4 like StrongerLeft: 6 was tuned against a 100 posture pool and
---- rowa2's max is 80, so it would guard-break instantly through a block.
---- Bare table on purpose -- all of Cero's feel is in the fx module.
+-- bare table on purpose: all of Cero's feel is in the fx module.
 local CERO = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
-	dmg      = 32,
+	dmg      = 30,
 	stun     = 0.5,
 	posMult  = 4,
 	--parryH   = -0.04,
-	--- replaces rowa1's `noparrystun` membership for this id.
+	-- no parry stun for this id.
 	stunMeOnParried = 0,
 }
 
 local TICKS      = 4
 local TICK_RATE  = 0.1
 local BEAM_STEPS = 6
---- rowa1: 8 MIDDLE emitters x 0.15s, and the declared Attacking.Time agrees
+-- 8 reveal beats x 0.15s
 local CHARGE_TIME = 1.2
 
 local function useFunc(this:myself)
@@ -58,16 +51,10 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Punch, 0, 1, 1.5)
 
-	--[[ AERIAL AIM. Modules/aerialAim no-ops on the ground and on NPCs, so
-		there is no branch here, only a destructor to call.
-		THE HOLD OUTLIVES THE CHARGE -- rowa1 releases after the LAST beam tick,
-		not when the beam fires, so budget the whole move plus a margin. ]]
+	-- aerialAim no-ops grounded and on NPCs; THE HOLD OUTLIVES THE CHARGE, so budget the whole move plus a margin.
 	local releaseAir = aerialAim(humObj, CHARGE_TIME + TICKS * TICK_RATE + 0.5)
 
-	--[[ !! NOT -13, which is a full root -- and a rooted R6 character cannot
-		TURN (AutoRotate only yaws you while actually moving), so the beam always
-		fired wherever you faced at cast start. Cero samples its direction at
-		RELEASE, so that has to stay re-aimable. Heavy slow, not a weld. ]]
+	-- !! NOT a full root: a rooted R6 cannot TURN, and Cero samples its direction at RELEASE, so it has to stay re-aimable. Heavy slow, not a weld.
 	humObj.walkSpeed:SetMod(cooldownID, -9)
 
 	local leftArm = char:FindFirstChild("Left Arm")
@@ -77,11 +64,7 @@ local function useFunc(this:myself)
 	chargeSnd:Play()
 	game.Debris:AddItem(chargeSnd, 4)
 
-	--[[ rowa1's charge is 8 MIDDLE emitters revealed one every 0.15s, i.e.
-		1.2s -- which is exactly the Attacking.Time it declared. One
-		feintWait, and the reveal cadence is the fx module's business.
-		Stage 1 is what actually PUTS it on the hand; without this call the
-		whole wind-up was invisible. ]]
+	-- stage 1 PUTS the charge on the hand; the reveal cadence is the fx module's business.
 	fireVFX("cero", 1, leftArm, CHARGE_TIME)
 
 	if this:feintWait(CHARGE_TIME) then
@@ -89,7 +72,7 @@ local function useFunc(this:myself)
 		releaseAir()
 		humObj.walkSpeed:RemoveMod(cooldownID)
 		game.Debris:AddItem(chargeSnd, 0)
-		--- drop the charge off the hand, or it hangs there forever
+		-- drop the charge off the hand, or it hangs there forever
 		fireVFX("cero", 0, leftArm)
 		return
 	end
@@ -101,8 +84,7 @@ local function useFunc(this:myself)
 	local forward = hurtbox.CFrame.LookVector
 	local origin  = hurtbox.Position
 
-	--- stage 2 CONSUMES the charge built on the hand, rather than cloning a
-	--- second CeroVFX and leaving the first one glowing
+	-- stage 2 CONSUMES the charge built on the hand, rather than cloning a second and leaving the first glowing.
 	fireVFX("cero", 2, hurtbox.CFrame * CFrame.new(-1, 0, -40), leftArm)
 	fireVFX("camShake", origin, 400, 3, 0.3)
 
@@ -111,19 +93,7 @@ local function useFunc(this:myself)
 	fireSnd:Play()
 	game.Debris:AddItem(fireSnd, 4)
 
-	--[[ rowa1 called Destruction:Cero SIX times, stepping 12 studs each, to
-		fake a tunnel out of overlapping cubes. rowa2 has the shape: ONE
-		Cylinder down the lane, which is cheaper and loses the scalloped edge
-		the stepped version left. See README S10.4. ]]
-	--[[ rowa1 stepped a 16^3 cube SIX times down the lane to fake a tunnel.
-		rowa2 has the shape: ONE cylinder, which is cheaper and loses the
-		scalloped edge the stepped version left. ]]
-	--[[ NO DEBRIS. A cero does not shatter a wall, it deletes one -- rubble
-		spraying out of a hole that was burned clean through reads as the
-		beam having merely shoved it. The carve still happens and anything
-		left unsupported still falls; only the flying chunks are suppressed.
-		It is also the widest single carve in the game, so this is the one
-		place where drawing nothing is both righter AND cheaper. ]]
+	-- ONE cylinder down the lane, and NO DEBRIS: a cero deletes a wall rather than shattering it, so only the flying chunks are suppressed. Unsupported geometry still falls.
 	Destruction.Cylinder(nil, origin + Vector3.new(0, 2, 0), forward,
 		12 * BEAM_STEPS, 8, 4.8, nil, true)
 
@@ -134,10 +104,7 @@ local function useFunc(this:myself)
 		end)
 	end
 
-	--[[ ONE fixed lane, re-queried. `seen` spans all four ticks exactly as
-		rowa1's shared humsH did -- WITHOUT it a target standing in the beam
-		eats 38 damage four times. Same trap as Huozai and Freeze; :hitbox
-		only dedupes WITHIN one query. ]]
+	-- !! ONE fixed lane, re-queried: `seen` spans all four ticks, or a target standing in the beam eats the damage four times. :hitbox only dedupes WITHIN one query.
 	local cf = CFrame.new(origin + forward * 20, origin + forward * 40)
 	local seen: {[number]: boolean} = {}
 
@@ -148,15 +115,13 @@ local function useFunc(this:myself)
 			seen[enemy.entityId] = true
 
 			local attack = this:makeAtk(CERO, enemy, forward)
-			-- rowa1 look*60, at the x0.6 knockback ratio (README S7)
 			attack.knockback = this:knockback(attack.atkDir * 36, 0.2, false, -1)
 			this:executeAttack(attack)
 		end
 		task.wait(TICK_RATE)
 	end
 
-	--- rowa1 drops the air lock here, after the last tick, and only then
-	--- clears Attacking
+	-- drop the air lock here, after the last tick.
 	releaseAir()
 
 	this:endLag(0.4)

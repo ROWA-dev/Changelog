@@ -103,6 +103,8 @@ return function(this:wepTyp&any): wepType.atkResult
 		atkRate 1.05 scales what we pass. Do not pre-multiply. ]]
 	if this:feintWait(0.52) then bail() return end
 
+	this:triggerCD("heavy")
+	
 	playSound(hold, "BladeSwing")
 	playSound(fx, "BladeSwing")
 	playSound(fx, "Swing")
@@ -113,8 +115,6 @@ return function(this:wepTyp&any): wepType.atkResult
 
 	-- BEAT TWO.
 	if this:feintWait(0.4) then bail() return end
-
-	this:triggerCD("heavy")
 
 	playSound(hold, "BladeSwing")
 	playSound(fx, "BladeSwing2")
