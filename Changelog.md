@@ -2,6 +2,66 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
+## 1.13.1 - Slayer Slayer
+
+> Note: Temporary update because Air might deny my changes. 😬
+
+### Changes 🛠️
+- Increased Executer heavy attack damage (18 -> 20)
+- Decreased Slayer grind ticks (13 -> 10)
+- Decreased Slayer heavy attack damage (53 -> 36)
+- Increased Slayer heavy attack cooldown (8s -> 10s)
+- Decreased Smash smash damage (30 -> 15)
+
+<br><sub>2026-08-24</sub>
+
+## 1.13.0 - Sneaky Sneaky
+
+### Added ✅
+- Weapons are now items in their base form and require certain stats in order to be equipped
+  - Two weapons can be equipped at a time for thee sake of testing
+  - Weapon requirements are low now for the sake of testing
+
+### Changes 🛠️
+- Decreased mana regeneration rate
+- Decreased Bastar damage (40 -> 28)
+- Increased Blight travel time (0.4s -> 0.6s)
+- Removed Blight windup
+- Blight can now hit player who cast it
+- Decreased Blood Chain damage (10 -> 8)
+- Decreased Blood Chain posture damage multiplier (4x -> 3x)
+- Decreased Bolt Punch damage (24 -> 20)
+- Adjusted Bolt Punch VFX
+- Increased Bolt Punch wind up (0.42s -> 0.5s)
+- Adjusted Boulder Kick VFX
+- Adjusted Full Blue mana drain
+- Decreased Ice Bash damage (19 -> 18)
+- Negated Ice Beam posture damage
+  - Knockback still applies posture
+- Adjusted Ice Shards VFX
+- Decreased Lightning damage (18 -> 16)
+- Decreased Paper Bomb damage (12 -> 10)
+- Increased Rend stun duration (1s -> 1.2s)
+- Increased Rend hitbox (+2 studs X and Z)
+- Decreased Smash damage (40 -> 30)
+- Decreased Stone Ball damage (20 -> 18)
+- Decreased Storm Up damage (19 -> 18)
+- Decreased Streak damage (26 -> 24)
+- Decreased Tendrils grab damage (10 -> 8)
+- Decreased Tendrils break damage (28 -> 20)
+- Decreased Zoltraak damage (9 -> 8)
+- Decreased Zoltraak posture damage multiplier (2x -> 1x)
+- Decreased Slayer M1 posture damage multiplier (1.5x -> 1x)
+- Decreased Slayer M1 parry window (0.2s -> 0.17s)
+- Increased Slayer heavy attack catch parry window (0.14s -> 0.2s)
+- Increased Slayer heavy attack slam damage (6 -> 10)
+- Increased Slayer heavy attack slam stun (0.7s -> 1s)
+- Increased Slayer heavy attack slam posture damage multiplier (4x -> 6x)
+- Decreased Slayer aerial M1 damage (18 -> 14)
+- Debloated code
+
+<br><sub>2026-08-24</sub>
+
 ## 1.12.2 - Combatant Combat
 
 ### Added ✅
@@ -88,7 +148,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Decreased Storm Up posture damage multiplier (2x -> 1x)
 - Increased Stronger Left damage (33 -> 40)
 - Increased Tendrils parry window (0.16s -> 0.2s)
-- Decreased Tendrils damage (32 -> 28)
+- Decreased Tendrils break damage (32 -> 28)
 - Decreased Zoltraak damage (10 -> 9)
 - Decreased Oblitar M1 damage (16 -> 14)
 - Decreased Oblitar heavy attack damage (40 -> 34)

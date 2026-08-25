@@ -57,7 +57,7 @@ end
 function module.wield(self:myself&any)
 	local humobj = self._humObj
 	--- rowa1 gates the heavy on `tick() > lastHeavy + 8`, set AFTER it lands.
-	humobj.cooldowns:setCooldown("heavy", 8)
+	humobj.cooldowns:setCooldown("heavy", 10)
 
 	local char:any = humobj.Hum.Parent
 	local model = self._model

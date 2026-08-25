@@ -15,8 +15,8 @@ type wepTyp = wepType.myself
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
-local GRIND_TICKS = 13
-local GRIND_STEP  = 0.05
+local GRIND_TICKS = 10
+local GRIND_STEP  = 0.065
 --- how long the blade may hold someone. The drag is ~1s; this is the leash.
 local GRAB_MAXTIME = 2.5
 

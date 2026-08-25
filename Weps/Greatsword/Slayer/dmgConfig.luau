@@ -40,7 +40,7 @@ local config:configs = {
 	heavyCatch = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
-		dmg      = 14,
+		dmg      = 10,
 		stun     = 2,
 		posMult  = 3,
 		--parryH   = -0.06,
@@ -51,16 +51,13 @@ local config:configs = {
 	heavyBreak = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
-		dmg      = 10,
+		dmg      = 6,
 		stun     = 1,
 		posMult  = 6,
 		onHit    = require(script.breakHit)
 	},
 
-	--[[ THE GRIND. x13 at 0.05s while you drag them. 2 damage and ZERO stun
-		in rowa1 -- the zero is load-bearing: this fires thirteen times and
-		anything non-zero would re-stun-lock on its own rather than leaving
-		the catch's hold to do it. Do not round it up. ]]
+	--[[ THE GRIND. x10 at 0.065s while you drag them.]]
 	heavyGrind = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
@@ -75,7 +72,7 @@ local config:configs = {
 	heavyLaunch = {
 		weight   = weighEnum.Heavy,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponM1),
-		dmg      = 16,
+		dmg      = 10,
 		stun     = 0.7,
 		posMult  = 2,
 		--[[ carries rowa1's `ragdtillground`. This is the only Slayer row
