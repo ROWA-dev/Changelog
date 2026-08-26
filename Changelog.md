@@ -3,6 +3,20 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.14.0 - Progression Progression
+
+### Added ✅
+- Implemented base progression
+  - System is not final and needs polishing
+  - Max level is currently 30 for testing
+  - Abilities now have specific stat requirements depending on the type of ability
+    - Requirements are subject to change in the future
+  - Each level you receive a hand of five cards
+  - Each card hand can be rerolled infinite times
+
+
+<br><sub>2026-08-25</sub>
+
 ## 1.13.2 - Cool down, Cooldown
 
 ### Added ✅
