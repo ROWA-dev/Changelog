@@ -3,6 +3,24 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.14.1 - Not Light
+
+### Added ✅
+- New card: Strength
+
+### Changes 🛠️
+- Increased ability feint cooldown (2s -> 3s)
+- Missing Drop Kick now has an endlag of 0.4s
+- Fixed Prediction grab bug
+- Increased Canine wind up (0.36s -> 0.38s)
+- Increased Dagger wind up (0.36s -> 0.38s)
+- Increased Fist wind up (0.36s -> 0.38s)
+- Increased Rah wind up (0.39s -> 0.4s)
+- Increased Vise wind up (0.36s -> 0.38s)
+- Increased Rapier wind up (0.38s -> 0.4s)
+
+<br><sub>2026-08-26</sub>
+
 ## 1.14.0 - Progression Progression
 
 ### Added ✅
@@ -13,7 +31,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
     - Requirements are subject to change in the future
   - Each level you receive a hand of five cards
   - Each card hand can be rerolled infinite times
-
 
 <br><sub>2026-08-25</sub>
 
@@ -63,7 +80,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Decreased mana regeneration rate
 - Decreased Bastar damage (40 -> 28)
 - Increased Blight travel time (0.4s -> 0.6s)
-- Removed Blight windup
+- Removed Blight wind up
 - Blight can now hit player who cast it
 - Decreased Blood Chain damage (10 -> 8)
 - Decreased Blood Chain posture damage multiplier (4x -> 3x)
@@ -351,7 +368,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
   - The duration of said hyperarmor is determined by the wind up length of the M1
 
 ### Changes 🛠️
-- Barrage windup decreased (0.6s -> 0.5s)
+- Barrage wind up decreased (0.6s -> 0.5s)
 
 <br><sub>2026-08-08</sub>
 
