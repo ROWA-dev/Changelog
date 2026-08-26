@@ -2,9 +2,32 @@
 For any contributors wanting to help push changes faster, check the [guidelines].
 
 # Changelog
-## 1.13.1 - Slayer Slayer
 
-> Note: Temporary update because Air might deny my changes. 😬
+## 1.13.2 - Cool down, Cooldown
+
+### Added ✅
+- Some moves now have a cooldown upon feint
+  - Feinting Tendrils has a 4 second cooldown
+  - Feinting Oblitar heavy attack puts it on cooldown (6 seconds)
+
+### Changes 🛠️
+- Decreased Bolt Punch posture damage multiplier (3x -> 2x)
+- Increased Bolt Punch parry window (0.16s -> 0.2s)
+- Decreased Cero damage (32 -> 30)
+- Adjusted Full Blue mana drain
+- Fixed phantom Full Blue bug
+- Increased Rend parry window (0.16s -> 0.2s)
+- Increased Smash smash damage (15 -> 20)
+- Zoltraak whiff cooldown increased (1s -> 6s)
+- Oblitar heavy attack cooldown increased (5s -> 6s)
+- Slayer now has an aerial attack cooldown of 2 seconds
+- Decreased Claymore heavy attack damage (36 -> 30)
+- Increased Katana multihit heavy attack parry window (0.5s -> 0.6s)
+- Debloated code
+
+<br><sub>2026-08-25</sub>
+
+## 1.13.1 - Slayer Slayer
 
 ### Changes 🛠️
 - Increased Executer heavy attack damage (18 -> 20)
