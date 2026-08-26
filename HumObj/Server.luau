@@ -74,6 +74,8 @@ export type myself = baseClass.myself & {
 	equippedWeapons: {weaponBase.myself},
 	-- how many may be in that set at once; AdditiveValue so a card can raise it. NOT dual wielding, only one is ever `wielding_weapon`.
 	maxWeapons: AdditiveValue.myself,
+	-- outgoing BASIC-attack damage multiplier. AdditiveValue so a card stacks without touching AttackClass.
+	wepDmgMult: AdditiveValue.myself,
 	-- drawn but NOT committed: in the right hand, roblox-Tool style, unusable.
 	heldWeapon: weaponBase.myself?,
 
@@ -201,8 +203,8 @@ function module.new(hum: Humanoid): myself
 	self.grab           = grabClass.new(hum)
 
 	-- defaults
-	self.cooldowns:setCooldown("feint", 2)
-	self.cooldowns:setCooldown("feint2", 2)
+	self.cooldowns:setCooldown("feint", 2) -- basic feint (wep)
+	self.cooldowns:setCooldown("feint2", 3) -- ability feint
 	self.cooldowns:setCooldown("parry", 1.2)
 	self.cooldowns:setCooldown("wieldMsg", 2) -- anti chat-spam on refused wields
 
@@ -214,6 +216,7 @@ function module.new(hum: Humanoid): myself
 
 	self.equippedWeapons = {}
 	self.maxWeapons      = AdditiveValue.new(2)
+	self.wepDmgMult      = AdditiveValue.new(1)
 	self.heldWeapon      = nil
 	self.wielding_weapon = nil
 	self.using_ability  = nil
@@ -497,6 +500,7 @@ function module.destroy(self:myself&any)
 
 	self.hurtboxSize:destroy()
 	self.maxWeapons:destroy()
+	self.wepDmgMult:destroy()
 	self.dmgRecord:destroy()
 	self.cards:destroy()
 	self.ragdoll:destroy()
@@ -587,8 +591,9 @@ function module.canWield(self:myself, wep:any): (boolean, string?)
 
 	local slot = self.plrObj.loadedSlot
 	if slot == nil then return false, "no slot loaded" end
-	if Requirements.check(slot, wep.req) then return true end
-	return false, Requirements.missing(slot, wep.req)
+	-- missing is nil exactly when check passes; one walk answers both.
+	local why = Requirements.missing(slot, wep.req)
+	return why == nil, why
 end
 
 -- SELECT, and it never fails: in the wielded set -> straight to hand, not in it -> HELD OUT and inert until :WieldWeapon commits it.

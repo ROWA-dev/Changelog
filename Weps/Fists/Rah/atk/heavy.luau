@@ -35,7 +35,16 @@ return function(this:wepBase.myself): wepBase.atkResult
 		attack.hitbox = hitbox
 
 		this:executeAttack(attack)
-		if attack:isHit() then
+		--[[ `attack.enemyEntity == enemy` IS NOT A TAUTOLOGY -- it is the
+			REFLECT check. StatusEffects/Reflect (Prediction) swaps the
+			attack's two entities inside beforeAttacked, so a reflected hit
+			still reports isHit(); it just landed on US. Without this the
+			catch below reads the swapped field, `victimHumObj` becomes the
+			grabber, and :grab welds a root to itself -- see the self-grab
+			guard in Class/HumObj/Grab for what that does.
+			A read grab has to WHIFF, and falling through to the else branch
+			(anim stop + endLag, having just eaten your own heavy) is it. ]]
+		if attack:isHit() and attack.enemyEntity == enemy then
 			isHit = attack
 		end
 	end

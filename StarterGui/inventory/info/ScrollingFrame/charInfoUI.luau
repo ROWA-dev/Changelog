@@ -28,9 +28,9 @@ local BASE_STAT_COLORS = {
 }
 
 local WEP_STAT_COLORS = {
-	heavy  = Color3.new(0.776, 0.772, 0.756),
-	medium = Color3.new(0.776, 0.772, 0.756),
-	light  = Color3.new(0.776, 0.772, 0.756),
+	hvy = Color3.new(0.776, 0.772, 0.756),
+	med = Color3.new(0.776, 0.772, 0.756),
+	lht = Color3.new(0.776, 0.772, 0.756),
 }
 
 local ELEM_COLORS = {

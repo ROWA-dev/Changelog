@@ -184,9 +184,11 @@ local function useFunc(this:myself)
 				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir*10)
 			end
 		end
+		
+		this:endLag(0.25)
+	else -- miss
+		this:endLag(0.4)
 	end
-
-	this:endLag(0.25)
 end
 
 function module.use(self:myself)

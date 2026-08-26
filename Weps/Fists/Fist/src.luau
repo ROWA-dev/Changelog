@@ -6,7 +6,6 @@ export type myself = baseWep.myself & {
 
 local module = {
 	Name = "fist",
-	--- must be a TABLE: nil would inherit Light's {light=2}.
 	req = {},
 }
 module.__tostring = baseWep.__tostring

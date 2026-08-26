@@ -8,6 +8,7 @@ local Debris = game:GetService("Debris")
 
 local clientData = require(game.ReplicatedFirst:WaitForChild("ClientData"))
 local DraftTiers = require(game.ReplicatedStorage.Modules.DraftTiers)
+local Draft      = require(game.ReplicatedStorage.Modules.ReplicateEnums).Draft
 local ShiftLock  = require(game.ReplicatedStorage.Modules.ShiftLock)
 local plrObj = clientData.plrObj
 
@@ -22,8 +23,9 @@ local fxTemplate   = gui:WaitForChild("lvlFx") :: any
 local DEAL_STAGGER = 0.3 -- rowa1 dealt at (i-1)/2; 0.15 was too quick to read
 local SHUFFLE_CD   = 1   -- rowa1's client gate; the server gates again at 0.25
 local GOLD = Color3.fromRGB(255, 183, 0)
---- rowa1's ability face. Its other id (7485051715) is the card face, for when cards join the pool.
+--- rowa1's two faces, picked by the row's Draft kind.
 local ABILITY_ICON = "rbxassetid://8575479406"
+local CARD_ICON    = "rbxassetid://7485051715"
 
 local FLIP   = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 local UNFLIP = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -89,7 +91,7 @@ local function makeCard(row: any, index: number)
 	inner.Label.Text = row.name
 	inner.Desc.Text  = row.desc
 	inner.UIStroke.Color = DraftTiers.colorOf(row.tier)
-	inner.ImageLabel.Image = ABILITY_ICON
+	inner.ImageLabel.Image = if row.k == Draft.Card then CARD_ICON else ABILITY_ICON
 	-- hidden until the flip lands, so the face is never readable edge-on
 	inner.Label.Visible = false
 	inner.Desc.Visible = false
@@ -113,7 +115,7 @@ local function makeCard(row: any, index: number)
 		-- cardOut stays visible so the pick can animate out
 		ShiftLock.block("draft", false)
 
-		plrObj:claimDraft(row.id)
+		plrObj:claimDraft(row.k, row.id)
 
 		for _, v in pairs(cardsPanel:GetChildren()) do
 			if v:IsA("Frame") and v ~= shuffleFrame and v ~= card then v:Destroy() end

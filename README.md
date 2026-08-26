@@ -1,4 +1,11 @@
-# bare minimum prog p2
-Update 1.5.0
+# light weapon nerf? no way
+Update 1.5.1
 
-i forgot i upd the plugin so heres the stuf said in the previous
+all of the light weapon windups nerfed abit
+
+changed format of requirements abit
+
+ability feint cd is now 3s
+u cannot self grab anymore (the tp bug)
+
+and more ?

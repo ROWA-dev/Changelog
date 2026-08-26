@@ -34,7 +34,11 @@ return function(this:wepBase.myself)
 		attack.hitbox = hitbox
 
 		this:executeAttack(attack)
-		if attack:isHit() then
+		--- `attack.enemyEntity == enemy` is the REFLECT check, not a
+		--- tautology: a hit turned around by Prediction still reports
+		--- isHit(), and the catch below would then grab the GRABBER. Same
+		--- line in Rah/Vise; see Class/HumObj/Grab's self-grab guard.
+		if attack:isHit() and attack.enemyEntity == enemy then
 			isHit = attack
 		end
 	end
