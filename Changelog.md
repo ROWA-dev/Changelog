@@ -3,6 +3,15 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.14.2 - Emote Selection
+
+### Added ✅
+- Emotes can be swapped by holding click on an emote and then picking the desired emote from the list that appears
+- New emote: Piano
+- New emote: Scary
+
+<br><sub>2026-08-27</sub>
+
 ## 1.14.1 - Not Light
 
 ### Added ✅
