@@ -1,11 +1,8 @@
-# light weapon nerf? no way
-Update 1.5.1
+# emotes
+Update 1.5.2
 
-all of the light weapon windups nerfed abit
+piano emote and some other emote
 
-changed format of requirements abit
+holding on an emote opens a selection menu - TODO this needs to be clearer
 
-ability feint cd is now 3s
-u cannot self grab anymore (the tp bug)
-
-and more ?
+and more

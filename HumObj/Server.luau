@@ -1,5 +1,5 @@
 --!strict
-
+-- TODO asses redundancy in this entire class... how bad does this scale with alot of humobjs??
 debug.setmemorycategory("HumObjClass")
 local packages = game.ReplicatedStorage:WaitForChild("Packages")
 local classes  = game.ReplicatedStorage:WaitForChild("Class")
@@ -101,6 +101,7 @@ export type myself = baseClass.myself & {
 	SubscribedEventCB: ((id:number, value: any)->())?,
 
 	_emoteInstance: emoteBase.myself?,
+	StopEmote: (self: myself) -> (),
 	destroy: (self: myself) -> (),
 	--new:     (hum: Humanoid) -> myself,
 }
@@ -216,7 +217,7 @@ function module.new(hum: Humanoid): myself
 
 	self.equippedWeapons = {}
 	self.maxWeapons      = AdditiveValue.new(2)
-	self.wepDmgMult      = AdditiveValue.new(1)
+	self.wepDmgMult      = AdditiveValue.new(1) -- TODO might be redundant?
 	self.heldWeapon      = nil
 	self.wielding_weapon = nil
 	self.using_ability  = nil
@@ -408,10 +409,7 @@ function module.new(hum: Humanoid): myself
 
 	do
 		local function stopEmote()
-			if self._emoteInstance then
-				if self._emoteInstance.destroy then self._emoteInstance:destroy() end
-				self._emoteInstance = nil
-			end
+			self:StopEmote()
 		end
 
 		self:AddConnection(self.onStunned:Connect(function(a0: number) 
@@ -457,6 +455,14 @@ function module.new(hum: Humanoid): myself
 	return self
 end
 
+-- the ONE emote teardown. EmoteBase.destroy nils _emoteInstance itself, so the
+-- .destroy guard is only for a table.clear'd leftover (truthy, no metatable).
+function module.StopEmote(self:myself&any)
+	local emote = self._emoteInstance
+	if emote and emote.destroy then emote:destroy() end
+	self._emoteInstance = nil
+end
+
 function module.destroy(self:myself&any)
 	--print("DESTROYED ME!", self.Hum, debug.traceback())
 	_clearWieldedWeapon(self)
@@ -485,10 +491,7 @@ function module.destroy(self:myself&any)
 	if self.parryAnim then
 		self.parryAnim:Destroy()
 	end
-	if self._emoteInstance then
-		self._emoteInstance:destroy()
-		self._emoteInstance = nil
-	end
+	self:StopEmote()
 	-- already released by _clearWieldedWeapon at the top; same ownership rule.
 	releaseWep(self.wielding_weapon)	self.wielding_weapon = nil
 	if self.plrObj then
