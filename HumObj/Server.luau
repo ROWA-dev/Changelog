@@ -17,6 +17,7 @@ local cardLoader      = require(script.cardLoader)
 local rowaRagdoll     = require(script.RowaRagdoll)
 local statusEffects   = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local grabClass       = require(script.Grab)
+local dragBody        = require(script.dragBody)
 
 local knockForce = require(game.ServerScriptService.Knockback)
 local emoteBase = require(game.ServerStorage.ROWA.Emotes.EmoteBase)
@@ -40,6 +41,8 @@ export type myself = baseClass.myself & {
 
 	--stopW: boolean?, -- set to true to cancel windup
 	isDead: boolean?,
+	-- the KNOCKED-DOWN pool. nil until you are first knocked, nil again once you get up, so an entity that never goes down holds nothing.
+	knockedHp: number?,
 	canAtkThreshold: number,
 	dodgeThreshold: number,
 
@@ -56,6 +59,12 @@ export type myself = baseClass.myself & {
 	isBlock: (self: myself, atk:atkTyp?) -> boolean,
 	isDodge: (self: myself, atk:atkTyp?, offset:number?) -> boolean,
 
+	isKnocked: (self:myself)->boolean,
+	-- DRAG. Every field of it is LAZY, these two and dragBody's own constraints alike: nil unless a drag is actually live, so an entity that never drags or gets dragged holds nothing. See HumObj/dragBody.
+	dragging:  myself?,   -- the victim I am hauling
+	draggedBy: myself?,   -- who is hauling me
+	startDrag: (self:myself, victim:myself, limb:BasePart)->boolean,
+	stopDrag:  (self:myself)->(),
 	GuardBreak: (self:myself)->(),
 	GetBlade: (self:myself)->Instance?,
 	feint: (self:myself)->boolean,
@@ -112,6 +121,12 @@ local module = {
 module.__tostring = baseClass.__tostring
 module.__index = module
 setmetatable(module, { __index = baseClass })
+
+local KNOCK_HP   = baseClass.KNOCK_HP -- shared with the client so both sides derive knocked from replicated Health. SINGLE SOURCE: HumObjClient.
+local KNOCKED_HP = 20 -- damage needed to finish someone while they are down.
+local HEALTH_REGEN  = 0.5 -- hp/sec, upright.
+local KNOCKED_REGEN = 0.5 -- hp/sec, down. THE GETUP CLOCK, and the only thing setting how long you lie there: 1 -> past KNOCK_HP.
+
 
 local function landSpeed(humObj:any)
 	while humObj and humObj.walkSpeed do
@@ -401,7 +416,7 @@ function module.new(hum: Humanoid): myself
 
 	do
 		self:AddConnection(self.floating.Changed:Connect(function(v)
-			if v > 0 and self.isDead ~= true then
+			if v > 0 and self.isDead ~= true and not self:isKnocked() then
 				self.ragdoll:unragdoll()
 			end
 		end), "floating_unragdoll")
@@ -429,7 +444,23 @@ function module.new(hum: Humanoid): myself
 		return hum.Health < hum.MaxHealth
 	end, function(dt)
 		if self.isActive ~= true or self.isDead then return false end
-		hum.Health = math.min(hum.Health + dt * 0.5, hum.MaxHealth)
+		-- rate is picked from the PRE-write state, the getup from the POST-write one, or the tick you cross KNOCK_HP re-pins you and getting up costs an extra second.
+		local knocked = self:isKnocked()
+		-- BEING DRAGGED PAUSES THE CLOCK. Getting up IS health crossing KNOCK_HP, so freezing regen freezes the getup; no separate "cannot stand" flag exists or is needed.
+		if not (knocked and self.draggedBy) then
+			hum.Health = math.min(hum.Health + dt * (if knocked then KNOCKED_REGEN else HEALTH_REGEN), hum.MaxHealth)
+		end
+		-- upright entities pay one nil check a second and stop here.
+		if self.knockedHp then
+			if self:isKnocked() then
+				-- re-arm the pin so a long knockdown cannot outlive the ragdoll's own lifetime cap.
+				self.ragdoll:ragdoll(60, false)
+			else
+				-- crossed back over KNOCK_HP: get up, and drop the pool so we hold nothing again.
+				self.knockedHp = nil
+				self.ragdoll:unragdoll(true) -- the one caller that wants the getup animation
+			end
+		end
 		return true
 	end, 1) -- REGEN_STEP: health ticks once a second, unlike the others
 
@@ -509,6 +540,11 @@ function module.destroy(self:myself&any)
 	self.ragdoll:destroy()
 	self.statusEffects:destroy()
 	self.grab:destroy()
+	-- BOTH directions: drop whoever I am hauling, and make whoever is hauling ME let go. Otherwise the survivor keeps a dangling AlignPosition and the victim's parts stay owned by a player who no longer exists.
+	self:stopDrag()
+	if self.draggedBy then
+		self.draggedBy:stopDrag()
+	end
 
 	baseClass.destroy(self)
 end
@@ -804,6 +840,7 @@ function module.canAttack(self:myself)
 	return (
 		not self:inStun() -- cant attack in stun
 			--and self:isDodge() == false
+			and not self:isKnocked() -- cant attack on the floor. rowa1 gated its whole input handler on this.
 			and now > lastDashed
 			and now > self.canAtkThreshold
 	)
@@ -890,6 +927,50 @@ end
 function module.Heal(self:myself, amt:number): number
 	self.Hum.Health += amt
 	return amt
+end
+
+-- am I on the floor right now? DERIVED, never stored, so any route down here counts and getting up is just health crossing back.
+-- adds the SERVER-ONLY isDead term to the shared predicate; the client half is HumObjClient.isKnocked.
+function module.isKnocked(self:myself): boolean
+	return self.isDead ~= true and baseClass.isKnocked(self)
+end
+
+-- see HumObj/dragBody. Assigned rather than wrapped: there is nothing to add here.
+module.startDrag = dragBody.start
+module.stopDrag  = dragBody.stop
+
+--[[ THE DEATH STALL, rowa1 AttackModule:685. Overridden here rather than in
+	resolveHit so SimpleEntity keeps the plain EntityBase version and the
+	Combatant contract needs nothing.
+	Setting Health = 0 rather than calling :Die() keeps the kill flowing
+	through onAttacked -> onDied, so the killer still gets credit. ]]
+function module.Damage(self:myself&any, amt:number)
+	if amt <= 0 or self.isDead then
+		return baseClass.Damage(self, amt)
+	end
+
+	local hum = self.Hum
+	if self:isKnocked() then
+		-- already down: chip the pool, health stays pinned at 1.
+		local pool = (self.knockedHp or KNOCKED_HP) - amt
+		self.knockedHp = pool
+		if pool <= 0 then
+			hum.Health = 0
+		end
+		return
+	end
+
+	-- canBeKnocked, not isKnocked: health has not dropped yet, so this asks whether the entity is knockable AT ALL. One that cannot regen past KNOCK_HP would lie there forever, so it dies normally instead.
+	if hum.Health - amt > KNOCK_HP or not self:canBeKnocked() then
+		return baseClass.Damage(self, amt)
+	end
+
+	-- knocked down: pinned at 1, flat ragdoll (stopOnGround false, or the ground check releases them at once).
+	hum.Health = 1
+	self.knockedHp = KNOCKED_HP
+	-- and stopOnGround false is not enough on its own: the next hit to land re-arms it. This outranks it, and self-expires when health crosses back. RowaRagdoll.doUnragdoll.
+	self.ragdoll.pinned = KNOCK_HP
+	self.ragdoll:ragdoll(60, false)
 end
 
 type ogTransparency = {
@@ -989,6 +1070,7 @@ function module.canBlock(self:myself&any)
 			and now > self._lastDashed + 0.3/self.timeScale.Value
 			--and now > self.cooldowns:lastUsedAt("dash") + 0.3
 			and baseClass.inTrueStun(self) == false
+			and self:isKnocked() == false
 	)
 end
 

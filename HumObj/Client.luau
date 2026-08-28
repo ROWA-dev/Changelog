@@ -75,6 +75,8 @@ export type myself = baseClass.entity & {
 
 	Stun:       (self: myself, stunTime: number, bypassArmour: boolean?) -> (),
 	inStun:     (self: myself, timeOffset:number?) -> boolean,
+	isKnocked:  (self: myself) -> boolean,
+	canBeKnocked: (self: myself) -> boolean,
 	TrueStun:   (self: myself, trueStunTime: number) -> (),
 	inTrueStun: (self: myself) -> boolean,
 	inHyperArmour: (self: myself) -> boolean,
@@ -114,6 +116,9 @@ local module = {
 
 	-- same, plus: EntityBase.destroy leaves the metatable, so a dead humObj falls through to these class defaults and a stale holder reads 0 rather than nil.
 	combatDeadline = 0,
+
+	-- at or below this health you are KNOCKED DOWN. Lives on the shared tier so the CLIENT can gate its own movement: Humanoid.Health already replicates, so both sides derive the same answer for zero wire cost and zero stored state. HumObj owns the mechanic, DOC_CLASSES 3.5.
+	KNOCK_HP = 5,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -283,6 +288,15 @@ function module.setupController(self:myself)
 	controller(self)
 end
 
+-- MaxHealth term: an entity that can never regen past KNOCK_HP would count as knocked forever, since getting up IS health crossing back. HumObj overrides to add the isDead term.
+function module.canBeKnocked(self:myself): boolean
+	return self.Hum.MaxHealth > module.KNOCK_HP
+end
+
+function module.isKnocked(self:myself): boolean
+	return self.Hum.Health <= module.KNOCK_HP and module.canBeKnocked(self)
+end
+
 local function canSlide(self:myself): boolean
 	if self.cooldowns == nil then return false end
 	return (
@@ -290,6 +304,7 @@ local function canSlide(self:myself): boolean
 			and self.attacking.Value == false
 			and tick() > self.stun.Value + 0.1 -- can only dash 0.1s after stun ends
 			and self:inStun() == false
+			and self:isKnocked() == false -- no sliding off the floor
 	)
 end
 
@@ -527,6 +542,7 @@ function module.canDash(self:myself, offset:number?): boolean
 		and now > self._lastDashed + 0.1
 		and now > self.cooldowns:lastUsedAt("feint") + 0.1 -- can only dash 0.1s after a feint
 		and self.attacking.Value == false
+		and not self:isKnocked()
 end
 
 

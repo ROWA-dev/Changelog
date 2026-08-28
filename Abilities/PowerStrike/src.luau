@@ -73,7 +73,7 @@ local function useFunc(this:myself)
 
 	fireVFX("fstrike", hurtbox)
 
-	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(5, 5, 6))
+	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(6,6,7))
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(GOLD, enemy, hurtbox.CFrame.LookVector)
 		attack.knockback = this:knockback(
@@ -97,7 +97,7 @@ local function useFunc(this:myself)
 
 	fireVFX("fstrike2", hurtbox)
 
-	local _, hits2 = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(7, 7, 7))
+	local _, hits2 = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(8,8,8))
 	for _, enemy in pairs(hits2) do
 		local attack = this:makeAtk(GOLD, enemy, hurtbox.CFrame.LookVector)
 		attack.knockback = this:knockback(

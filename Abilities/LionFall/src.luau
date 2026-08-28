@@ -10,7 +10,8 @@ export type myself = baseClass.myself
 type humObj = baseClass.humObj
 
 local module = {
-	Name = "LionFall"
+	Name = "LionFall",
+	manaUse = 20,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -94,7 +95,7 @@ local function useFunc(this:myself)
 		--- whiffed: half cooldown, and a window to be punished in
 		this:triggerCD(cooldownID, WHIFF_CD, true)
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
-		this:atkWait(0.5)
+		this:atkWait(0.6) -- on miss
 		return
 	end
 

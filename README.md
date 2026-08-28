@@ -1,8 +1,8 @@
-# emotes
+# knocked
 Update 1.5.2
 
-piano emote and some other emote
+u get knocked instead of instantly dying now
 
-holding on an emote opens a selection menu - TODO this needs to be clearer
+more balancing
 
 and more

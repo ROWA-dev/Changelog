@@ -114,6 +114,16 @@ local function useFunc(this:myself)
 	if this:canTriggerCD(cooldownID) ~= true then return end
 
 	local humObj  = this._humObj
+	local now = tick()
+
+	if now < humObj.stun.Value + 0.4 then -- cant use 0.4s after stun
+		return
+	end
+
+	if now < humObj._lastBlocked + 0.4 then -- 0.4s
+		return
+	end
+	
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)

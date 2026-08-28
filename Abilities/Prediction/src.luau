@@ -12,7 +12,8 @@ export type myself = baseClass.myself
 type humObj = baseClass.humObj
 
 local module = {
-	Name = "Prediction"
+	Name = "Prediction",
+	manaUse = 20,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -85,7 +86,7 @@ local function useFunc(this:myself)
 		answer exactly one attack, drop the effect on the landed branch:
 		humObj.statusEffects:remove(statusEffects.Reflect) ]]
 	if not landed then
-		this:endLag(0.3)
+		this:endLag(0.6)
 	end
 end
 

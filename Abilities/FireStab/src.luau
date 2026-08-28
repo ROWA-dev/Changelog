@@ -38,7 +38,7 @@ local function useFunc(this:myself & any)
 	) -- LAMBDA OF DOOM	
 
 	local feinted = this:feintWait(0.42)
-	local cd = 10
+	local cd = 12
 
 	if feinted then
 		if anim then
