@@ -3,6 +3,29 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.14.3 - Knock Knock
+
+### Added ✅
+- Players now get knocked instead of death
+
+### Changes 🛠️
+- Increased Barrage damage (3 -> 4 per hit)
+- Dropkick cannot be used for 0.4s after stun
+- Dropkick cannot be used for 0.4s after blocked
+- Increased Fire Stab cooldown (10s -> 12s)
+- Lion Fall now consumes 20 mana on use
+- Increased Lion Fall endlag (0.5s -> 0.6s)
+- Increased Power Strike hitbox (+1 stud)
+- Prediction now consumes 20 mana on use
+- Increased Prediction endlag (0.3s -> 0.6s)
+- Storm Up cannot be used for 0.4s after stun
+- Storm Up cannot be used for 0.4s after blocked
+- ToshiCounter now consumes 20 mana on use
+- Blood Chain cannot be used for 0.4s after stun
+- Blood Chain cannot be used for 0.4s after blocked
+
+<br><sub>2026-08-28</sub>
+
 ## 1.14.2 - Emote Selection
 
 ### Added ✅
