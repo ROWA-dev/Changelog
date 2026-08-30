@@ -23,16 +23,6 @@ local config:configs = {
 		stun     = 0.6,
 		posMult  = 1.2,
 		onHit    = require(script:WaitForChild("punch"))
-	},
-	heavy = {
-		weight   = weighEnum.Medium,
-		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 30,
-		stun     = 0.8,
-		posMult  = 3,
-		parryH   = -0.1,
-		dodgeH   = -0.1,
-		onHit    = require(script.heavy)
 	}
 }
 

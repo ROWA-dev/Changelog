@@ -6,6 +6,10 @@ local dmgConfig = require(script.Parent.Parent.dmgConfig)
 local hitboxClass = require(game.ServerStorage.ROWA.Class.HitboxClass)
 local destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
+local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
+local weighEnum = dmgUtils.weighEnum
+local dmgFlag = dmgUtils.dmgFlags
+
 return function(this:wepTyp): wepType.atkResult
 	if this:canTriggerCD("heavy") == false then return end
 	this:indicateAtk()
@@ -138,12 +142,26 @@ vfx["Critical Hit"]:Play()
 	local hitSound = vfx["hit sound"]
 	local fireworks = vfx.firework
 	
+
+	local dmgHeavy = {
+		weight   = weighEnum.Medium,
+		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
+		dmg      = 30,
+		stun     = 0.8,
+		posMult  = 3,
+		parryH   = -0.1,
+		dodgeH   = -0.1,
+		onHit    = require(script.hvyOnHit)
+	}
+	
 	while tick() < endt do
 		local elapsed = tick() - st
 		--print(elapsed)
 		local dist = elapsed*hitboxSpeed
 		local delta = dist - lastDist
 		lastDist = dist
+		
+		dmgHeavy.dmg -= delta*0.1 -- dmg will fall down to ~23 at end
 		
 		local hitboxSize = Vector3.new(9,20,delta)
 		local hitboxCF = ogCF * CFrame.new(0, 0, -(lastDist - delta/2))
@@ -185,7 +203,7 @@ vfx["Critical Hit"]:Play()
 			alreadyHit[enemy] = true
 			
 			local attack = this:makeAtk(
-				dmgConfig.heavy,
+				dmgHeavy,
 				enemy,
 				hurtbox.CFrame.LookVector
 			)

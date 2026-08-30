@@ -11,13 +11,13 @@ local numVal        = require(packages.valueBase.numberValue)
 local weaponBase = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 local baseClass  = require(classes.HumObjClient)
 
-local DmgUtils        = require(game.ServerScriptService.Utils.DmgUtils)
-local dmgRecord       = require(script.damageRecord)
-local cardLoader      = require(script.cardLoader)
-local rowaRagdoll     = require(script.RowaRagdoll)
-local statusEffects   = require(game.ServerStorage.ROWA.Class.StatusEffects)
-local grabClass       = require(script.Grab)
-local dragBody        = require(script.dragBody)
+local DmgUtils      = require(game.ServerScriptService.Utils.DmgUtils)
+local dmgRecord     = require(script.damageRecord)
+local cardLoader    = require(script.cardLoader)
+local rowaRagdoll   = require(script.RowaRagdoll)
+local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
+local grabClass     = require(script.Grab)
+local dragBody      = require(script.dragBody)
 
 local knockForce = require(game.ServerScriptService.Knockback)
 local emoteBase = require(game.ServerStorage.ROWA.Emotes.EmoteBase)
@@ -222,7 +222,7 @@ function module.new(hum: Humanoid): myself
 	self.cooldowns:setCooldown("feint", 2) -- basic feint (wep)
 	self.cooldowns:setCooldown("feint2", 3) -- ability feint
 	self.cooldowns:setCooldown("parry", 1.2)
-	self.cooldowns:setCooldown("wieldMsg", 2) -- anti chat-spam on refused wields
+	self.cooldowns:setCooldown("wieldMsg", 2) -- anti chat-spam on refused wields -- TODO this is redundant and is a waste?
 
 	self.canAtkThreshold = 0
 	self.dodgeThreshold  = 0
