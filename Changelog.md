@@ -3,7 +3,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
-## 1.14.4 - Evil Air Strike Back
+## 1.15.0 - Evil Air Strike Back
 
 ### Added ✅
 - Added Lion Fall wind up (0.1s)
@@ -31,7 +31,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Decreased Full Blue posture damage multiplier (1x -> 0.25x)
 - Decreased Full Blue tick damage (4 -> 3)
 
-<br><sub>2026-08-30</sub>
+<br><sub>2026-08-31</sub>
 
 ## 1.14.3 - Knock Knock
 
