@@ -40,6 +40,7 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	this:useMana()
 	this:triggerCD(cooldownID, 20, true)
+	this:atkWait(0.1)
 	
 	local triggered = false
 	local triggeredBy = nil
