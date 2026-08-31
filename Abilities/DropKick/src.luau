@@ -32,10 +32,10 @@ local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 local DROP_KICK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blunt),
-	dmg      = 20,
+	dmg      = 18,
 	stun     = 0.5,
-	posMult  = 3,
-	parryH   = -0.04,
+	posMult  = 2.5,
+	--parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit", "HitCrush")
 	end,
@@ -50,7 +50,7 @@ local MAX_DIVE   = 2
 --[[ the hop only has to get you off the ground -- the dive is the move.
 	rowa1's MiniDash(.., 40) converts to 8, but it held for 0.3s and read as
 	a long hang before anything happened. Shorter and softer. ]]
-local HOP_FORCE  = 10
+local HOP_FORCE  = 8
 local HOP_TIME   = 0.1
 
 local diveParams = RaycastParams.new()

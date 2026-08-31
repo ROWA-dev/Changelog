@@ -29,7 +29,7 @@ local aerialAim = require(game.ServerStorage.ROWA.Modules.aerialAim)
 local PURPLE = table.freeze({
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
-	dmg      = 90,
+	dmg      = 70,
 	stun     = 1.6,
 	posMult  = 4,
 	parryH   = -10,
@@ -88,7 +88,7 @@ local function onHit(proj: any, attack: any)
 end
 
 local PURPLE_CFG = table.freeze({
-	speed = 350,
+	speed = 300,
 	-- capped: uncapped, this is a 10k-stud shot still live half a minute later.
 	maxDistance = 300,
 	lifetime    = 1.5,

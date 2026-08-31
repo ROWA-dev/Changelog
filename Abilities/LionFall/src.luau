@@ -36,7 +36,7 @@ local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 local LION_FALL = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
-	dmg      = 20,
+	dmg      = 18,
 	stun     = 1,
 	posMult  = 3,
 	parryH   = -0.1,
@@ -47,7 +47,7 @@ local LION_FALL = {
 	end,
 }
 
-local STANCE     = 0.6
+local STANCE     = 0.4
 local CD         = 22
 --- rowa1 gave back half on a whiff: `cd = tick() - cd/2`
 local WHIFF_CD   = CD / 2
@@ -68,6 +68,9 @@ local function useFunc(this:myself)
 
 	local windup = this:PlayAnim(script.Windup, 0, 1, 1.5)
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
+	this:useMana()
+	this:triggerCD(cooldownID, CD, true)
+	this:atkWait(0.1)
 
 	--- the red tell. rowa1 parented a Highlight straight onto the character.
 	local indicator = script.Highlight:Clone()
@@ -98,9 +101,6 @@ local function useFunc(this:myself)
 		this:atkWait(0.6) -- on miss
 		return
 	end
-
-	this:useMana()
-	this:triggerCD(cooldownID, CD, true)
 
 	local punch = this:PlayAnim(script.Punch, 0, 1, 1)
 

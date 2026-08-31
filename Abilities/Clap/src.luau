@@ -35,7 +35,7 @@ end
 local function useFunc(this:myself)
 	local cooldownID = "clap"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	this:triggerCD(cooldownID, 6)
+	this:triggerCD(cooldownID, 10)
 	
 	local humObj = this._humObj
 	local root:any = humObj.HurtBox

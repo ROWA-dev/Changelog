@@ -28,9 +28,9 @@ local gravWells   = require(game.ReplicatedStorage.Modules.gravWells)
 local BLUE = table.freeze({
 	weight   = dmgUtils.weighEnum.Light,
 	type     = dmgFlag.magic,
-	dmg      = 4,
+	dmg      = 3,
 	stun     = 0.3,
-	posMult  = 1,
+	posMult  = 0.25,
 	parryH   = -10,
 	stunMeOnParried = 0,
 })

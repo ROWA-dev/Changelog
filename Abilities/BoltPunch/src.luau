@@ -60,7 +60,7 @@ local function useFunc(this:myself)
 
 	fireVFX("boltp", FX_CHARGE, humObj.Hum)
 
-	local dash = this:bodyForce(Vector3.new(0, 0, -7.5), 0.4, true)
+	local dash = this:bodyForce(Vector3.new(0, 0, -5), 0.4, true)
 
 	if this:feintWait(0.5) then
 		if anim then anim:Stop() end

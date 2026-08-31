@@ -139,7 +139,7 @@ local function multipleSlash(this:wepTyp&any, humObj):wepType.atkResult
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	this._model.Hold.longwindyslash:Play()
 	if this:feintWait(0.12) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") this._model.Hold.longwindyslash:Stop() return end
-	this:triggerCD("heavy", 8)
+	this:triggerCD("heavy", 10)
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("rHandWepFlicker", humObj.Hum, true, this._model, hurtbox)
 	
 	local hitLanded = false

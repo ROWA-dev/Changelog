@@ -3,6 +3,36 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.14.4 - Evil Air Strike Back
+
+### Added ✅
+- Added Lion Fall wind up (0.1s)
+- Added Toshi Counter wind up (0.1s)
+- Added Prediction wind up (0.1s)
+
+### Changes 🛠️
+- Updated ability requirements
+- Reduced Lion Fall damage (20 -> 18)
+- Reduced Lion Fall stance duration (0.6s -> 0.4s)
+- Increased Tendrils true stun duration (1s -> 1.1s)
+  - Necessary in order to prevent countering the tendril break
+- Reduced Hollow Purple damage (90 -> 70)
+- Reduced Hollow Purple projectile speed
+- Reduced Drop Kick hop force
+- Increased Katana charged heavy attack cooldown (8s -> 10s)
+- Decreased Katana charged heavy attack stun (0.2s -> 0.05s)
+  - The stun duration was greater than the time between hits, making it impossible to parry after getting hit once
+- Decreased Bolt Punch dash velocity
+- Decreased Drop Kick posture damage multiplier (3x -> 2.5x)
+- Increased Drop Kick parry window (0.16s -> 0.2s)
+- Decreased Drop Kick damage (20 -> 18)
+- CUT HUOZAI DAMAGE IN HALF 🔪🩸
+- Increased Clap cooldown (6s -> 10s)
+- Decreased Full Blue posture damage multiplier (1x -> 0.25x)
+- Decreased Full Blue tick damage (4 -> 3)
+
+<br><sub>2026-08-30</sub>
+
 ## 1.14.3 - Knock Knock
 
 ### Added ✅
@@ -10,8 +40,8 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 ### Changes 🛠️
 - Increased Barrage damage (3 -> 4 per hit)
-- Dropkick cannot be used for 0.4s after stun
-- Dropkick cannot be used for 0.4s after blocked
+- Drop Kick cannot be used for 0.4s after stun
+- Drop Kick cannot be used for 0.4s after blocked
 - Increased Fire Stab cooldown (10s -> 12s)
 - Lion Fall now consumes 20 mana on use
 - Increased Lion Fall endlag (0.5s -> 0.6s)
@@ -85,7 +115,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Oblitar heavy attack cooldown increased (5s -> 6s)
 - Slayer now has an aerial attack cooldown of 2 seconds
 - Decreased Claymore heavy attack damage (36 -> 30)
-- Increased Katana multihit heavy attack parry window (0.5s -> 0.6s)
+- Increased Katana charged heavy attack parry window (0.5s -> 0.6s)
 - Debloated code
 
 <br><sub>2026-08-25</sub>

@@ -87,19 +87,20 @@ export type meta = { desc: string, req: Requirements.req, tier: string? }
 local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.StrongLeft] = {
 		desc = "A charged left hook. Long windup, heavy launch.",
-		req = {},
+		req = { strength = 1 },
 	},
-	[manifold.Blaze] = {
-		desc = "A burst of flame that shoves you back as it erupts.",
-		req = { flame = 1 },
-	},
+	-- move is wip
+	-- [manifold.Blaze] = {
+	-- 	desc = "A burst of flame that shoves you back as it erupts.",
+	-- 	req = { flame = 1 },
+	-- },
 	[manifold.Clap] = {
 		desc = "Clap shut on the nearest target within 40 studs.",
-		req = { strength = 2 },
+		req = { strength = 5 },
 	},
 	[manifold.ToshiCounter] = {
 		desc = "A counter stance answering with a two-hit reply.",
-		req = { dexterity = 2 },
+		req = { dexterity = 4 },
 	},
 	[manifold.Barrage] = {
 		desc = "A rapid flurry of punches.",
@@ -107,11 +108,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.FireStab] = {
 		desc = "A flaming stab. Costs mana.",
-		req = { flame = 2 },
+		req = { flame = 3 },
 	},
 	[manifold.Fulminate] = {
 		desc = "A close-range lightning discharge.",
-		req = { wind = 2 },
+		req = { wind = 1, flame = 2 },
 	},
 	[manifold.PowerStrike] = {
 		desc = "Two-stage weapon flourish; the second slash launches.",
@@ -119,11 +120,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.IceBash] = {
 		desc = "A committed overhead ice smash. Long reach.",
-		req = { ice = 1 },
+		req = { ice = 4 },
 	},
 	[manifold.BoltPunch] = {
 		desc = "A lunging lightning straight; the dash leads the windup.",
-		req = { wind = 1 },
+		req = { wind = 1, flame = 2 },
 	},
 	[manifold.PiercingStab] = {
 		desc = "A rooted 0.65s telegraph. The slowest single hit.",
@@ -131,11 +132,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Rend] = {
 		desc = "Two ground slams, the second higher than the first.",
-		req = { strength = 3 },
+		req = { strength = 5 },
 	},
 	[manifold.Blight] = {
 		desc = "A blinding orb that detonates in a 20-stud sphere.",
-		req = { dark = 2 },
+		req = { creation = 2, flame = 2 },
 	},
 	[manifold.StrongerLeft] = {
 		desc = "Three shockwave rings and terrain destruction.",
@@ -148,71 +149,71 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Zoltraak] = {
 		desc = "A lock-on bolt; a connect follows with a 10-shot volley.",
-		req = { mind = 3 },
+		req = { mind = 7 },
 	},
 	[manifold.JoltKick] = {
 		desc = "A lightning roundhouse that chains a second jolt.",
-		req = { wind = 3 },
+		req = { wind = 2, flame = 3 },
 	},
 	[manifold.FlameDance] = {
 		desc = "A 2s spinning fire aura that ignites its outer band.",
-		req = { flame = 3 },
+		req = { flame = 6 },
 	},
 	[manifold.StormUp] = {
 		desc = "A rising spin that launches you both. Air-combo opener.",
-		req = { wind = 3 },
+		req = { wind = 3, flame = 1 },
 	},
 	[manifold.Cero] = {
 		desc = "A wide beam cannon that carves a tunnel.",
-		req = { mind = 5 },
+		req = { mind = 6 },
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.Huozai] = {
 		desc = "A 3s flamethrower in six nested bands.",
-		req = { flame = 6 },
+		req = { flame = 10 },
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.Lightning] = {
 		desc = "Call a bolt down on a target's position.",
-		req = { wind = 4 },
+		req = { wind = 2, flame = 1 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Tendrils] = {
 		desc = "Blood tendrils grab, hoist and break a target.",
-		req = { blood = 3 },
+		req = { blood = 4 },
 	},
 	[manifold.IceSlash] = {
 		desc = "Two ice crescents that cut through and deflect.",
-		req = { ice = 2 },
+		req = { ice = 4 },
 	},
 	[manifold.RPG] = {
-		desc = "One homing rocket. A parry re-acquires someone else.",
+		desc = "One homing rocket. A parry redirects it to someone else.",
 		req = { creation = 4 },
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.PaperBomb] = {
 		desc = "Four explosive kunai that stick and burn a fuse.",
-		req = { dexterity = 3 },
+		req = { creation = 1, flame = 2 },
 	},
 	[manifold.StoneBall] = {
-		desc = "Roll forward inside a giant stone ball at 90 studs/s.",
+		desc = "Roll forward inside a giant stone ball.",
 		req = { earth = 2 },
 	},
 	[manifold.IceShards] = {
 		desc = "Rain twenty ice shards in five waves.",
-		req = { ice = 4 },
+		req = { ice = 3 },
 	},
 	[manifold.bloodChain] = {
 		desc = "A chain that yanks both parties to the midpoint.",
-		req = { blood = 4 },
+		req = { blood = 3 },
 	},
 	[manifold.LionFall] = {
 		desc = "Cancel an incoming attack, answer with one huge punch.",
-		req = { dexterity = 4 },
+		req = { dexterity = 5 },
 	},
 	[manifold.DropKick] = {
 		desc = "Hop up, then dive at the ground on a diagonal.",
-		req = { dexterity = 2 },
+		req = { dexterity = 4, strength = 2 },
 	},
 	[manifold.Divide] = {
 		desc = "Uppercut, drag them in, two committed strikes.",
@@ -220,39 +221,39 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Smash] = {
 		desc = "Uppercut, flash-step up, drive them back down.",
-		req = { strength = 4 },
+		req = { strength = 8 },
 	},
 	[manifold.Burst] = {
 		desc = "Charge with a fireball; anyone caught is dragged along.",
-		req = { flame = 3 },
+		req = { flame = 4 },
 	},
 	[manifold.Bastar] = {
 		desc = "Pin them on the blade, then hurl it down the lane.",
-		req = { hvy = 4 },
+		req = { hvy = 5 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Streak] = {
 		desc = "Blink-slash a 40-stud lane, dragging everyone to its end.",
-		req = { lht = 3 },
+		req = { med = 4 },
 	},
 	[manifold.Prediction] = {
 		desc = "Attacks are turned back on whoever threw them.",
-		req = { dexterity = 5 },
+		req = { mind = 5 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Freeze] = {
 		desc = "A line of ice. Fills the Freeze meter in one hit.",
-		req = { ice = 5 },
+		req = { ice = 6 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Armor] = {
 		desc = "Wear the ground. How much you rip is how much you get.",
-		req = { earth = 5 },
+		req = { earth = 8 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.InverseRed] = {
 		desc = "A red orb fired flat. All the damage is in the blast.",
-		req = { mind = 5 },
+		req = { mind = 3 },
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.FullBlue] = {
@@ -262,11 +263,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.BoulderKick] = {
 		desc = "Rip a chunk of the map out and punt it.",
-		req = { earth = 3 },
+		req = { earth = 4 },
 	},
 	[manifold.HollowPurple] = {
 		desc = "A 4.25s charge, then a beam that ignores geometry.",
-		req = { mind = 7 },
+		req = { mind = 10 },
 		tier = DraftTiers.ULTIMATE,
 	},
 }

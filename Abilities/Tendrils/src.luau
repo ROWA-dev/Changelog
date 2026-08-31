@@ -66,7 +66,7 @@ local TENDRIL_CONE = table.freeze({ distWeight = 10, maxAngle = 0.8 })
 local CAST_TIME   = 0.52
 local REACH_TIME  = 0.22
 --- also the victim's TrueStun below: the caster is released as it ends.
-local HOLD_TIME   = 1
+local HOLD_TIME   = 1.1
 local RANGE       = 60
 local SLOW_KEY    = "tendrils"
 
