@@ -19,9 +19,9 @@ module.__tostring = baseClass.__tostring
 module.__index = module
 setmetatable(module, { __index = baseClass })
 
-function module.new(humObj:humObj):myself
+function module.new(humObj: humObj): myself
 	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self: myself = setmetatable(abstract, module) :: any
 	return self
 end
 
@@ -35,18 +35,24 @@ local WINDOW = 0.7
 local ABSORB_CAP = 1000
 local SLOW_KEY = "prediction"
 
-local function useFunc(this:myself)
+local function useFunc(this: myself)
 	local cooldownID = "prediction"
-	if this:canTriggerCD(cooldownID) ~= true then return end
+	if this:canTriggerCD(cooldownID) ~= true then
+		return
+	end
 
-	local humObj  = this._humObj
+	local humObj = this._humObj
 	local char: any = humObj.HurtBox.Parent
 
 	--[[ the same guards ToshiCounter uses: a counter thrown out of hitstun
 		is free defence rather than a read. ]]
 	local now = tick()
-	if now < humObj.stun.Value + 0.4 then return end
-	if now < humObj._lastBlocked + 0.4 then return end
+	if now < humObj.stun.Value + 0.4 then
+		return
+	end
+	if now < humObj._lastBlocked + 0.4 then
+		return
+	end
 
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
@@ -56,6 +62,7 @@ local function useFunc(this:myself)
 	--- rowa1 locked input for the stance
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 	fireVFX("predictStance", humObj.HRootPart, WINDOW)
+	this:atkWait(0.1)
 
 	local reflect: any = humObj.statusEffects:apply(statusEffects.Reflect, WINDOW, ABSORB_CAP)
 
@@ -66,7 +73,7 @@ local function useFunc(this:myself)
 	--- SHATTERS the stance must not count as a read.
 	--- `or 0` is load-bearing: cleanup can destroy the effect mid-poll, and a nil
 	--- compare throws into use()'s pcall, leaking the walkSpeed mod below.
-	local total  = this:scaledTime(WINDOW)
+	local total = this:scaledTime(WINDOW)
 	local waited = 0
 	local landed = false
 	while waited < total do
@@ -78,7 +85,9 @@ local function useFunc(this:myself)
 	end
 
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
-	if anim then anim:Stop(0.2) end
+	if anim then
+		anim:Stop(0.2)
+	end
 
 	--[[ a whiffed stance leaves you open; a landed one skips it, and that IS
 		the reward. The reflect is still running here and still extending on
@@ -90,7 +99,7 @@ local function useFunc(this:myself)
 	end
 end
 
-function module.use(self:myself)
+function module.use(self: myself)
 	return baseClass.use(self, useFunc)
 end
 
