@@ -128,7 +128,7 @@ local function useFunc(this:myself)
 		it is what makes a whiffed StormUp a mobility option rather than a
 		punish. ]]
 	if target == nil then
-		this:bodyForce(Vector3.new(0, 1, 0).Unit * RISE + Vector3.new(0, 0, -RISE / 4), 0.35, true)
+		this:bodyForce(Vector3.new(0, 1, 0).Unit * RISE + Vector3.new(0, 0, -RISE / 4), 0.2, true)
 		this:endLag(0.2)
 		return
 	end
@@ -163,7 +163,7 @@ local function useFunc(this:myself)
 		fireVFX("messySpinShock",
 			hurtbox.Position + forward * 2 + Vector3.new(0, 10, 0))
 		fireVFX("camShake", hurtbox.Position, 400, 2, 0.2)
-		this:bodyForce(Vector3.new(0, 1, 0).Unit * RISE + Vector3.new(0, 0, -RISE / 4), 0.35, true)
+		this:bodyForce(Vector3.new(0, 1, 0).Unit * RISE + Vector3.new(0, 0, -RISE / 4), 0.2, true)
 	end
 
 	this:endLag(0.25)

@@ -38,7 +38,11 @@ function module.new(humObj):myself
 
 
 			while humObj and humObj.isParry and tick() < endt do -- PING COMPENSATION
-				if humObj:isParry(atk) or humObj:isDodge(atk) or humObj.attacking.Value == true then
+				if humObj:isParry(atk)
+					or humObj:isDodge(atk)
+					or humObj.attacking.Value == true
+					or humObj:inTrueStun()
+				then
 					return
 				end
 				stepper:Wait()

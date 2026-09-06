@@ -16,7 +16,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	local Hold = this._model.Hold
 	Hold.inhale:Play()
 	
-	humObj.walkSpeed:SetMod("stopMoving", -100)
+	humObj.walkSpeed:SetMod("stopMoving", -10)
 	if this:feintWait(0.38) then this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving") return end
 	this:triggerCD("heavy")
 	
@@ -64,7 +64,11 @@ return function(this:wepTyp&any): wepType.atkResult
 			)
 
 			task.spawn(this.executeAttack, this, attack)
-			if attack:isHit() then hitLanded = true end
+			local isHit = attack:isHit()
+			if isHit or attack:isBlocked() or attack:isDodged() then
+				humObj.walkSpeed:RemoveMod("stopMoving")
+			end
+			if isHit then hitLanded = true end
 		end
 		if i < 5 then
 			this:atkWait(0.09)

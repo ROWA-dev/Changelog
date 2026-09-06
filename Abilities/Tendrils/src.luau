@@ -66,7 +66,7 @@ local TENDRIL_CONE = table.freeze({ distWeight = 10, maxAngle = 0.8 })
 local CAST_TIME   = 0.52
 local REACH_TIME  = 0.22
 --- also the victim's TrueStun below: the caster is released as it ends.
-local HOLD_TIME   = 1.1
+local HOLD_TIME   = 1
 local RANGE       = 60
 local SLOW_KEY    = "tendrils"
 
@@ -144,12 +144,8 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 	fireVFX("bldtendrils", 2, eroot, movePos)
 
-	--[[ TRUE stun for the hoist: this IS a grab and the victim spends HOLD_TIME
-		anchored by the client tween, but an ordinary :Stun is refused under
-		hyper armour. rowa1's `blodgrab` asks for truestun 1.4 outright.
-		GUARDED: TrueStun is not in the Combatant contract. ]]
 	if target.TrueStun then
-		target:TrueStun(HOLD_TIME)
+		target:TrueStun(HOLD_TIME + 0.2)
 	end
 
 	local cancelled = this:feintWait(HOLD_TIME)

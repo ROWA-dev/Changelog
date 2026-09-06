@@ -33,6 +33,9 @@ local function newItemUI(containerItem:any)
 	if toName then
 		itemName = toName
 	end
+	if containerItem.stack then
+		itemName = itemName.." x"..containerItem.stack
+	end
 	newItmUI.Frame.TextButton.Text = itemName
 	return newItmUI
 end

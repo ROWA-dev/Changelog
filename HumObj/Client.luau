@@ -16,6 +16,8 @@ local boolVal   = require(valueBase.boolValue)
 local cooldownsClass = require(Classes.cooldowns)
 local limbTrails     = require(script.setupLimbTrails)
 local charAnims      = require(script:WaitForChild("CharAnims"))
+local replIds        = require(script:WaitForChild("replIds")) -- THE wire ids, S2C and C2S. HumObj reads the same table.
+local S2C, C2S       = replIds.S2C, replIds.C2S
 
 export type myself = baseClass.entity & {
 	parryWindow: numVal.NumberValue,
@@ -561,7 +563,6 @@ function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 	end
 
 	local cooldowns = self.cooldowns
-	local dashCD = cooldowns:get("dash")
 	
 
 	local timeScale = self.timeScale.Value
@@ -607,12 +608,12 @@ function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 		end
 	end
 
-	local dashCooldown = dashCD.Value * iTimeScale -- default
+	local dashCooldown = (cooldowns:duration("dash") or 0) * iTimeScale -- default
 	local rDir = rootpart.CFrame:VectorToObjectSpace(dir)
 	if hum.FloorMaterial == Enum.Material.Air and self:isSwimming() == false then
 		dashTime = 0.2 * iTimeScale
 		dashPower += 10
-		dashCD:Trigger(dashCooldown + 0.4)
+		cooldowns:trigger("dash", dashCooldown + 0.4)
 		cooldowns:trigger("dashCancel")
 	end
 
@@ -621,7 +622,7 @@ function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 		dashCooldown += 0.7
 	end
 
-	dashCD:Trigger(dashCooldown)
+	cooldowns:trigger("dash", dashCooldown)
 
 	if fromServer == true and game["Run Service"]:IsServer() then
 		game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("dash", rootpart, rDir)
@@ -686,7 +687,7 @@ function module.DashCancel(self:myself, dir:Vector3, fromServer:boolean?): boole
 	local cooldowns = self.cooldowns
 	cooldowns:trigger("dashCancel")
 	cooldowns:Reset("dash")
-	cooldowns:get("dash").lastUsed = 0
+	cooldowns:clearLastUsed("dash")
 	self.onDashCancel:Fire(dir)
 
 	return true
@@ -750,45 +751,44 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 		onCombatChanged:Fire(model, joined)
 	end
 
-	self.maxPosture:initReplicateClient(5, remoteEvent)
-	self.walkSpeed:initReplicateClient(6, remoteEvent)
-	self.sprintSpeed:initReplicateClient(15, remoteEvent)
-	self.dashPower:initReplicateClient(16, remoteEvent)
-	self.postureHeal:initReplicateClient(17, remoteEvent)
-	self.slideSpeed:initReplicateClient(18, remoteEvent)
-	self.charSize:initReplicateClient(19, remoteEvent)
-	self.timeScale:initReplicateClient(21, remoteEvent)
-	self.maxMana:initReplicateClient(22, remoteEvent)
+	self.maxPosture:initReplicateClient(S2C.maxPosture, remoteEvent)
+	self.walkSpeed:initReplicateClient(S2C.walkSpeed, remoteEvent)
+	self.sprintSpeed:initReplicateClient(S2C.sprintSpeed, remoteEvent)
+	self.dashPower:initReplicateClient(S2C.dashPower, remoteEvent)
+	self.postureHeal:initReplicateClient(S2C.postureHeal, remoteEvent)
+	self.slideSpeed:initReplicateClient(S2C.slideSpeed, remoteEvent)
+	self.charSize:initReplicateClient(S2C.charSize, remoteEvent)
+	self.timeScale:initReplicateClient(S2C.timeScale, remoteEvent)
+	self.maxMana:initReplicateClient(S2C.maxMana, remoteEvent)
 
 	
 	local rcon = remoteEvent.OnClientEvent:Connect(function(id:number, value:any, ...) 
-		--print("from HUMOBJCLI", id, value)
-		if id == 1 then
+		if id == S2C.stun then
 			--self.stun.Value = value
 			if value == 0 then
 				self.timeStunned = 0
 				self.stun.Value = 0
 			end
 			self:Stun(value)
-		elseif id == 2 then
+		elseif id == S2C.attacking then
 			self.attacking.Value = value
-		elseif id == 3 then
+		elseif id == S2C.blocking then
 			self.blocking.Value = value
-		elseif id == 4 then
+		elseif id == S2C.posture then
 			self.posture.Value = value
-		elseif id == 7 then
+		elseif id == S2C.parryWindow then
 			self.parryWindow.Value = value
-		elseif id == 8 then
+		elseif id == S2C.onDash then
 			self:Dash(getDashDir(self), true)
-		elseif id == 9 then
+		elseif id == S2C.onDashCancel then
 			self:DashCancel(getDashDir(self), true)
-		elseif id == 10 then
+		elseif id == S2C.cdChanged then
 			local newCd = ...
 			self.cooldowns:setCooldown(value, newCd)
-		elseif id == 11 then
+		elseif id == S2C.cdTriggered then
 			local cooldownName = value
 			local newCd = ...
-			if newCd and self.cooldowns:get(cooldownName) == nil then
+			if newCd and self.cooldowns:duration(cooldownName) == nil then
 				self.cooldowns:setCooldown(cooldownName, newCd)
 			end
 			if newCd == 0 then
@@ -805,19 +805,17 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 			else
 				self.cooldowns:trigger(cooldownName, newCd)
 			end
-		elseif id == 12 then
+		elseif id == S2C.floating then
 			self.floating.Value = value
-			-- 13 is taken by _lastJumped stateChange
-		elseif id == 14 then
-			-- duration on the wire, absolute timestamp locally, 0 = clear. Written straight to the field, since :TrueStun would re-route through :Stun and double up id 1.
+		elseif id == S2C.trueStun then
+			-- duration on the wire, absolute timestamp locally, 0 = clear. Written straight to the field, since :TrueStun would re-route through :Stun and double up S2C.stun.
 			self.trueStun.Value = if value > 0 then tick() + value else 0
-		elseif id == 20 then
+		elseif id == S2C.targetFloatY then
 			self.targetFloatY.Value = value
-			-- 21 is taken by timescale
-		elseif id == 23 then
-			-- anchor on the wire, stamped locally on receipt. same as id 14.
+		elseif id == S2C.mana then
+			-- anchor on the wire, stamped locally on receipt. same as trueStun.
 			self:setMana(value)
-		elseif id == 24 then
+		elseif id == S2C.combatEdge then
 			-- (enemyModel, joined, remaining?). Edge, not a snapshot.
 			local joined, remaining = ...
 			setCombatant(value, joined, remaining)
@@ -828,7 +826,7 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 	self:AddConnection(
 		self.Hum.StateChanged:Connect(function(old: Enum.HumanoidStateType, new: Enum.HumanoidStateType) 
 			if new == Enum.HumanoidStateType.Jumping then
-				remoteEvent:FireServer(13)
+				remoteEvent:FireServer(C2S.jumped)
 				self._lastJumped = tick()
 			end
 		end),
@@ -836,11 +834,11 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 	)
 
 	self:AddConnection(self.sprinting.Changed:Connect(function(boolean: boolean)
-		remoteEvent:FireServer(1, boolean)
-	end), "repl_c2s_1_sprinting")
+		remoteEvent:FireServer(C2S.sprinting, boolean)
+	end), "repl_c2s_sprinting")
 	self:AddConnection(self.sliding.Changed:Connect(function(boolean: boolean) 
-		remoteEvent:FireServer(14, boolean)
-	end), "repl_c2s_14_sliding")
+		remoteEvent:FireServer(C2S.sliding, boolean)
+	end), "repl_c2s_sliding")
 end
 
 return table.freeze(module)

@@ -10,6 +10,8 @@ local numVal        = require(packages.valueBase.numberValue)
 
 local weaponBase = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 local baseClass  = require(classes.HumObjClient)
+local replIds    = require(classes.HumObjClient.replIds) -- THE wire ids. SINGLE SOURCE, shared with the client, same deal as KNOCK_HP.
+local S2C, C2S   = replIds.S2C, replIds.C2S
 
 local DmgUtils      = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgRecord     = require(script.damageRecord)
@@ -20,7 +22,8 @@ local grabClass     = require(script.Grab)
 local dragBody      = require(script.dragBody)
 
 local knockForce = require(game.ServerScriptService.Knockback)
-local emoteBase = require(game.ServerStorage.ROWA.Emotes.EmoteBase)
+--local emoteBase = require(game.ServerStorage.ROWA.Emotes.EmoteBase)
+
 type atkTyp = DmgUtils.atkTyp
 type abilityTyp = any
 
@@ -109,7 +112,7 @@ export type myself = baseClass.myself & {
 
 	SubscribedEventCB: ((id:number, value: any)->())?,
 
-	_emoteInstance: emoteBase.myself?,
+	_emoteInstance: any?,--emoteBase.myself?,
 	StopEmote: (self: myself) -> (),
 	destroy: (self: myself) -> (),
 	--new:     (hum: Humanoid) -> myself,
@@ -252,7 +255,7 @@ function module.new(hum: Humanoid): myself
 		local enemyhum = enemyEntity.Hum
 
 		-- continue air combo
-		if enemyEntity.floating and enemyhum.FloorMaterial == Enum.Material.Air and myEntity.Hum.FloorMaterial == Enum.Material.Air and myEntity:isSwimming() == false and enemyEntity:isSwimming() == false then
+		if enemyEntity.floating and enemyhum.FloorMaterial == Enum.Material.Air and myEntity.Hum and myEntity.Hum.FloorMaterial == Enum.Material.Air and myEntity:isSwimming() == false and enemyEntity:isSwimming() == false then
 			local keepfloating = 0.2 + attack.dmgTbl.stun
 
 			-- maybe seperate this int oa module or uppercut class? cuz im using this in here and uppercut attack too...
@@ -551,7 +554,7 @@ end
 
 --
 
-function module.Die(self:myself)
+function module.Die(self)
 	if self.isActive ~= true then return end
 	self.Hum.Health = 0
 	onDied(self, nil)
@@ -663,7 +666,7 @@ end
 
 -- COMMIT: `req`-gated; defaults to the held weapon, which is how M1 promotes it.
 function module.WieldWeapon(self:myself&any, wep: weaponBase.myself?): (boolean, string?)
-	local target = wep or self.heldWeapon
+	local target:weaponBase.myself = wep or self.heldWeapon
 	if target == nil then return false, "nothing held" end
 	if self.wielding_weapon == target then return true end
 
@@ -851,7 +854,7 @@ function module.Stun(self:myself, stunTime:number, bypassArmour:boolean?)
 	if self.isActive ~= true then return end
 	-- hooked here, not in baseClass, because statusEffects is server-only; via activeEffects because a raw _hyperUntil write has no effect object.
 	if not bypassArmour and tick() < self._hyperUntil then
-		local armour = self.statusEffects.activeEffects
+		local armour:statusEffects.anyEffect = self.statusEffects.activeEffects
 			and self.statusEffects.activeEffects.HyperArmour
 		if armour then
 			armour:onTrigger()
@@ -883,7 +886,7 @@ function module.GuardBreak(self:myself)
 		while self.isActive and self:inTrueStun() and gbreakTrack do
 			local now = tick()
 			if tick() > bleed then bleed = now + 0.1
-				local char = self.Hum.Parent::any
+				local char = self.Model::any
 				local myTorso:BasePart = char:FindFirstChild("Torso")::any
 				local bfx:ParticleEmitter = myTorso:FindFirstChild("BD")::any
 				local bfx2:ParticleEmitter = myTorso:FindFirstChild("BD2")::any
@@ -925,7 +928,7 @@ function module.feint(self:myself): boolean
 end
 
 function module.Heal(self:myself, amt:number): number
-	self.Hum.Health += amt
+	if self.Hum then self.Hum.Health += amt end
 	return amt
 end
 
@@ -1030,7 +1033,7 @@ function module.Dash(self:myself, dir:Vector3, fromSS:boolean?): boolean
 	if canDash == false then return false end
 	
 	self.dodgeThreshold = tick() + self.dodgeWindow
-	self.cooldowns:get("parry").lastUsed = 0 -- parry is cancelled on dash
+	self.cooldowns:clearLastUsed("parry") -- parry is cancelled on dash
 	
 	self.ragdoll:unragdoll()
 	if self:isBlock() == true then
@@ -1140,7 +1143,7 @@ function module.ChangeState(self:myself, state:Enum.HumanoidStateType)
 		if plr then
 			game.ReplicatedStorage.RemoteEvents.VFX:FireClient(plr, "cstate", state)
 		end
-	else
+	elseif self.Hum then
 		self.Hum:ChangeState(state)
 	end
 end
@@ -1160,13 +1163,15 @@ function module.bodyForce(self:myself, forceVector:Vector3, t: number, isRootRel
 end
 
 function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Player)
-	self.maxPosture:initReplicateServer(5, remoteEvent, plr)
-	self.walkSpeed:initReplicateServer(6, remoteEvent, plr)
-	self.sprintSpeed:initReplicateServer(15, remoteEvent, plr)
-	self.dashPower:initReplicateServer(16, remoteEvent, plr)
-	self.postureHeal:initReplicateServer(17, remoteEvent, plr)
-	self.slideSpeed:initReplicateServer(18, remoteEvent, plr)
-	self.charSize:initReplicateServer(19, remoteEvent, plr)
+	self.maxPosture:initReplicateServer(S2C.maxPosture, remoteEvent, plr)
+	self.walkSpeed:initReplicateServer(S2C.walkSpeed, remoteEvent, plr)
+	self.sprintSpeed:initReplicateServer(S2C.sprintSpeed, remoteEvent, plr)
+	self.dashPower:initReplicateServer(S2C.dashPower, remoteEvent, plr)
+	self.postureHeal:initReplicateServer(S2C.postureHeal, remoteEvent, plr)
+	self.slideSpeed:initReplicateServer(S2C.slideSpeed, remoteEvent, plr)
+	self.charSize:initReplicateServer(S2C.charSize, remoteEvent, plr)
+	self.timeScale:initReplicateServer(S2C.timeScale, remoteEvent, plr)
+	self.maxMana:initReplicateServer(S2C.maxMana, remoteEvent, plr)
 
 	self:AddConnection(self.stun.Changed:Connect(function(number: number) 
 		local duration = self.timeStunned--number-tick()
@@ -1174,26 +1179,29 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 			duration = 0
 		end
 		--print("STUN duration:",duration, number)
-		remoteEvent:FireClient(plr, 1, duration)
-	end), "repl_1_stun")
+		remoteEvent:FireClient(plr, S2C.stun, duration)
+	end), "repl_stun")
 
-	-- !! TRUE STUN IS NOT DERIVABLE FROM ID 1: :TrueStun routes through :Stun, so a guard break and a jab look identical on the wire, leaving client-side `trueStun` at 0 forever and killing both its readers.
-	-- duration on the wire, not the timestamp, matching id 1. 0 = clear.
+	-- !! TRUE STUN IS NOT DERIVABLE FROM S2C.stun: :TrueStun routes through :Stun, so a guard break and a jab look identical on the wire, leaving client-side `trueStun` at 0 forever and killing both its readers.
+	-- duration on the wire, not the timestamp, matching S2C.stun. 0 = clear.
 	self:AddConnection(self.trueStun.Changed:Connect(function(number: number) 
 		local duration = number - tick()
 		if number == 0 or duration <= 0 then
 			duration = 0
 		end
-		remoteEvent:FireClient(plr, 14, duration)
-	end), "repl_14_trueStun")
+		remoteEvent:FireClient(plr, S2C.trueStun, duration)
+	end), "repl_trueStun")
 -- the plain "signal fired -> forward its value under an id" cases, tabled so the id/field pairing is readable in one place. onDash/onDashCancel deliberately forward NO payload.
--- !! the two lists are NOT interchangeable: valueRepl holds VALUE OBJECTS whose signal is `x.Changed`, simpleRepl holds RAW Signals that forward no payload.
+-- !! the two lists are NOT interchangeable: valueRepl holds VALUE OBJECTS whose signal is `x.Changed`, pingRepl holds RAW Signals that forward no payload.
 -- do not merge them with `entry.signal.Changed or entry.signal` -- Signal's __index THROWS on an unknown member rather than returning nil, so it would take out initReplicateServer for every player.
-	local valueRepl = {
-		{ value = self.attacking,   id = 2 },
-		{ value = self.blocking,    id = 3 },
-		{ value = self.posture,     id = 4 },
-		{ value = self.parryWindow, id = 7 },
+	local valueRepl:{{ value: numVal.NumberValue|any, id: number}} = {
+		{ value = self.attacking,    id = S2C.attacking },
+		{ value = self.blocking,     id = S2C.blocking },
+		{ value = self.posture,      id = S2C.posture },
+		{ value = self.parryWindow,  id = S2C.parryWindow },
+		{ value = self.floating,     id = S2C.floating },
+		{ value = self.targetFloatY, id = S2C.targetFloatY },
+		{ value = self.mana,         id = S2C.mana },
 	}
 	for _, entry in valueRepl do
 		local id = entry.id
@@ -1203,8 +1211,8 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 	end
 
 	local pingRepl = {
-		{ signal = self.onDash,       id = 8 },
-		{ signal = self.onDashCancel, id = 9 },
+		{ signal = self.onDash,       id = S2C.onDash },
+		{ signal = self.onDashCancel, id = S2C.onDashCancel },
 	}
 	for _, entry in pingRepl do
 		local id = entry.id
@@ -1213,40 +1221,29 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		end), "repl_" .. id)
 	end
 
-	-- bespoke: these two send an id AND a value, so they are not part of the simpleRepl table above.
+	-- bespoke: these two send an id AND a value, so they are not rows in valueRepl above.
 	self:AddConnection(self.cooldowns.CooldownChanged:Connect(function(id: string, value: number) 
-		remoteEvent:FireClient(plr, 10, id, value)
-	end), "repl_10_cdChanged")
+		remoteEvent:FireClient(plr, S2C.cdChanged, id, value)
+	end), "repl_cdChanged")
 	self:AddConnection(self.cooldowns.CooldownTriggered:Connect(function(id: string, value: number) 
-		remoteEvent:FireClient(plr, 11, id, value)
-	end), "repl_11_cdTriggered")
-	self:AddConnection(self.floating.Changed:Connect(function(number: number)
-		remoteEvent:FireClient(plr, 12, number)
-	end), "repl_12_floating")
-	self:AddConnection(self.targetFloatY.Changed:Connect(function(value: any?) 
-		remoteEvent:FireClient(plr, 20, value)
-	end), "repl_20_targetFloatY")
-	self.timeScale:initReplicateServer(21, remoteEvent, plr)
-	self.maxMana:initReplicateServer(22, remoteEvent, plr)
-	self:AddConnection(self.mana.Changed:Connect(function(number: number) 
-		remoteEvent:FireClient(plr, 23, number)
-	end), "repl_23_mana")
+		remoteEvent:FireClient(plr, S2C.cdTriggered, id, value)
+	end), "repl_cdTriggered")
 
-	-- id 24 -- WHO am I fighting and how long is left: (enemyModel, joined, remaining?). Membership only changes on an edge, so this is never a stream.
+	-- combatEdge -- WHO am I fighting and how long is left: (enemyModel, joined, remaining?). Membership only changes on an edge, so this is never a stream.
 	-- !! the enemy's Model is already replicated, so health, posture and name must NOT go on this wire. Being inside initReplicateServer IS the player gate, so an NPC keeps onEdge nil.
 	-- not AddConnection'd because it is a field, not a connection: destroy() clears it for a LIVE entity, onDeath does it for a dead one.
 	self.dmgRecord.onEdge = function(enemyModel: Instance, joined: boolean, remaining: number?)
-		remoteEvent:FireClient(plr, 24, enemyModel, joined, remaining)
+		remoteEvent:FireClient(plr, S2C.combatEdge, enemyModel, joined, remaining)
 	end
 
 
+	-- C2S: its OWN id space, see replIds.
 	self.SubscribedEventCB = function(id:number, value: any)
-		--print("im working!", id, value)
-		if id == 1 then
+		if id == C2S.sprinting then
 			self.sprinting.Value = value
-		elseif id == 13 then
+		elseif id == C2S.jumped then
 			self._lastJumped = tick()
-		elseif id == 14 then
+		elseif id == C2S.sliding then
 			self.sliding.Value = value
 		end
 	end

@@ -1,8 +1,6 @@
 --!strict
 --- DropKick - hop up, then dive at the ground on a diagonal, riding the kick
---- until you hit something or the floor. rowa1 port: README.md/PORT_DropKick.
---- NO GRAB, whatever the doc says: rowa1 requires CharAtkWeld and never calls
---- it. The dive just sweeps a box.
+--- until you hit something or the floor.
 --- It ends on the FIRST of: a collidable surface ahead, entering stun, or an
 --- entity in the swept volume -- and which one decides if the landing carves.
 local baseClass = require(script.Parent.AbilityBase)
@@ -28,7 +26,6 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---- rowa1 "dropKick": Heavy, magic+blunt, 40 dmg, truestun 0.2 / stun 0.5.
 local DROP_KICK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blunt),
@@ -41,15 +38,8 @@ local DROP_KICK = {
 	end,
 }
 
---[[ rowa1 drove the dive through a CLIENT mover at 90 studs/s -> /5 gives 18.
-	The "sustained movers want two thirds" rule does NOT apply: that is for a
-	fixed long hold like StoneBall's roll. This ends the moment it hits
-	something, so it behaves like an impulse and wants near the full value. ]]
 local DIVE_FORCE = 16
 local MAX_DIVE   = 2
---[[ the hop only has to get you off the ground -- the dive is the move.
-	rowa1's MiniDash(.., 40) converts to 8, but it held for 0.3s and read as
-	a long hang before anything happened. Shorter and softer. ]]
 local HOP_FORCE  = 8
 local HOP_TIME   = 0.1
 
@@ -98,7 +88,7 @@ local function useFunc(this:myself)
 	end
 
 	this:useMana()
-	this:triggerCD(cooldownID, 10, true)
+	this:triggerCD(cooldownID, 14, true)
 
 	if first then first:Stop() end
 	local loopAnim = this:PlayAnim(script.loop, 0, 1, 1)
