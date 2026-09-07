@@ -3,6 +3,22 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.15.1 - Banana
+
+### Added ✅
+- Banana
+- Items can now stack in inventory
+
+### Changes 🛠️
+- Increased Drop Kick cooldown (10s -> 14s)
+- Increased Huozai tick damage (5 -> 6)
+- Decreased Storm Up force duration or something like that
+- Decreased Tendrils hold duration (1.1s -> 1s)
+- Increased Tendrils true stun (1.1s -> 1.2s)
+- Adjusted ping compensation
+- Adjusted Rapier heavy attack movement
+- Cleaned code or something
+
 ## 1.15.0 - Evil Air Strike Back
 
 ### Added ✅
