@@ -92,6 +92,9 @@ local interface = require(class:WaitForChild("ItemFrameInterface"))
 local infoFrame:Frame = script.Parent:WaitForChild("info")
 local prevFrame:interface.itemFrame? = nil
 local isOpen = false
+local progressionSlot:any? = nil
+local progressionCon:RBXScriptConnection? = nil
+local refreshInvestmentPrompt: () -> () = function() end
 
 -- while the bag is open SHIFT belongs to shift-click, not to the camera
 local shiftLock = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("ShiftLock"))
@@ -123,7 +126,99 @@ function triggerbackpack()
 	bagIcon:setActive(isOpen)
 	shiftLock.block("inventory", isOpen) -- restores whatever it was on close
 	infoFrame.Visible = isOpen
+	refreshInvestmentPrompt()
 	inventoryRemote:FireServer(inventoryEnums.openInventory, isOpen)
+end
+
+-- Persistent CTA while a point pair is blocking the next draft. The actual
+-- investment coaching lives inside charInfoUI once this opens the inventory.
+local ACCENT = Color3.fromRGB(255, 217, 103) -- the draft LevelButton's gold
+local investPrompt = Instance.new("Frame")
+investPrompt.Name = "SpendPointsPrompt"
+investPrompt.AnchorPoint = Vector2.new(1, 0)
+investPrompt.Position = UDim2.new(1, -40, 0, 20)
+investPrompt.Size = UDim2.fromOffset(270, 62)
+investPrompt.BackgroundColor3 = Color3.new(0, 0, 0)
+investPrompt.BackgroundTransparency = 0.6
+investPrompt.BorderSizePixel = 0
+investPrompt.ZIndex = 40
+investPrompt.Visible = false
+investPrompt.Parent = script.Parent
+
+local promptTitle = Instance.new("TextLabel")
+promptTitle.Name = "Title"
+promptTitle.Position = UDim2.fromOffset(10, 8)
+promptTitle.Size = UDim2.new(1, -20, 0, 20)
+promptTitle.BackgroundTransparency = 1
+promptTitle.Font = Enum.Font.SourceSans
+promptTitle.Text = "points ready"
+promptTitle.TextColor3 = ACCENT
+promptTitle.TextSize = 16
+promptTitle.TextXAlignment = Enum.TextXAlignment.Left
+promptTitle.ZIndex = 41
+promptTitle.Parent = investPrompt
+
+local promptBody = Instance.new("TextLabel")
+promptBody.Name = "Body"
+promptBody.Position = UDim2.fromOffset(10, 28)
+promptBody.Size = UDim2.new(1, -20, 0, 26)
+promptBody.BackgroundTransparency = 1
+promptBody.Font = Enum.Font.SourceSans
+promptBody.Text = "open stats to unlock your next draft."
+promptBody.TextColor3 = Color3.new(0.87, 0.87, 0.87)
+promptBody.TextSize = 14
+promptBody.TextWrapped = true
+promptBody.TextXAlignment = Enum.TextXAlignment.Left
+promptBody.TextYAlignment = Enum.TextYAlignment.Top
+promptBody.ZIndex = 41
+promptBody.Parent = investPrompt
+
+local promptButton = Instance.new("TextButton")
+promptButton.Name = "OpenStats"
+promptButton.Size = UDim2.fromScale(1, 1)
+promptButton.BackgroundTransparency = 1
+promptButton.Text = ""
+promptButton.ZIndex = 42
+promptButton.Parent = investPrompt
+promptButton.MouseButton1Up:Connect(function()
+	if not isOpen then triggerbackpack() end
+end)
+
+refreshInvestmentPrompt = function()
+	local needed = if progressionSlot then progressionSlot:pointsToNextProg() else 0
+	investPrompt.Visible = not isOpen and needed > 0
+	if needed <= 0 or progressionSlot == nil then return end
+	local available = progressionSlot.allocPts
+	promptTitle.Text = if available == 1 then "1 point left" else tostring(available) .. " points ready"
+	promptBody.Text = if needed == 1
+		then "spend 1 more point to unlock your next draft."
+		else "open stats and spend " .. tostring(needed) .. " to unlock your next draft."
+end
+
+local function bindProgression(slotData:any)
+	if progressionCon then progressionCon:Disconnect() end
+	progressionSlot = slotData
+	refreshInvestmentPrompt()
+	progressionCon = slotData.onStatChange:Connect(function(patch)
+		if patch.lvl or patch.allocPts or patch.prog then refreshInvestmentPrompt() end
+	end)
+
+	-- The starter pair teaches the loop once. Later levels use the click-to-open CTA
+	-- so gaining XP never forces a combat-blocking window onto the player.
+	if slotData.lvl == 1 and slotData.prog == 0 and slotData:pointsToNextProg() > 0
+		and not slotData._starterInvestmentOpened
+	then
+		slotData._starterInvestmentOpened = true
+		task.defer(function()
+			if progressionSlot == slotData and not isOpen then triggerbackpack() end
+		end)
+	end
+end
+
+plrObj.slotLoaded:Connect(bindProgression)
+if plrObj:IsSlotLoaded() and plrObj.Data then
+	local existing = plrObj.Data.slots[plrObj.loadedSlotId]
+	if existing then bindProgression(existing) end
 end
 
 local function openOutsideContainer(newContainer:container.myself, name:string?)

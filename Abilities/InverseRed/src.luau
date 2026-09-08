@@ -121,6 +121,8 @@ local ORB_CFG = table.freeze({
 		-- stamps EVERY body the sweep touches, hit or not, so a blocked or i-framed contact still puts the blast on the person. See detonate.
 		local enemy = attack.enemyEntity
 		proj.victimRoot = enemy and enemy.HRootPart or nil
+		-- !! ends it here itself: resolveHits no longer spends the pierce on an i-framed contact, and this orb blasts the body it touched either way.
+		Projectile.kill(proj)
 	end,
 })
 

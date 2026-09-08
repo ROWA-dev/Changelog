@@ -1,15 +1,5 @@
 --!strict
---[[
-	AbilityHaste — makes the wielder's abilities wind up faster.
-
-	This card is the proof that a card can buff an ABILITY's speed, not just a
-	weapon's. It only works because AbilityBase's atkRate / atkRateOffset /
-	knockbackMult are AdditiveValues: plain numbers have no mod list to target,
-	so a card could only clobber the raw value and hope nothing else wanted a say.
-
-	Mirrors SpeedOnParry's shape: SetMod on apply, RemoveMod on cleanup, keyed
-	by a card-specific string so it stacks correctly with anything else.
-]]
+-- dev test card
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {}

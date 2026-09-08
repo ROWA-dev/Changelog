@@ -80,7 +80,25 @@ table.freeze(idList)
 -- req: Modules/Requirements ({} is free). tier: Modules/DraftTiers (nil == default).
 local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
 local DraftTiers = require(game.ReplicatedStorage.Modules.DraftTiers) -- might remove this - air
-export type meta = { desc: string, req: Requirements.req, tier: string? }
+-- replaces: claiming this DROPS that ability id from the slot, i.e. it is an upgrade
+-- of it. Pair it with `req = { ability = <same id> }` or the upgrade can be drafted
+-- without ever owning the base move.
+-- excludes: PICK ONE. Owning any listed id hides this from the draft, and the rule is
+-- made symmetric at load, so declare it on ONE side only.
+export type meta = {
+	desc: string,
+	req: Requirements.req,
+	tier: string?,
+	replaces: number?,
+	excludes: {number}?,
+}
+
+-- ids referenced by other entries' req/replaces/excludes. IDS ARE PERSISTED: these are
+-- the same numbers as the lists above, named once. SIX_EYES is a CARD id, raw like
+-- loadChar's, so Abilities gains no require on Cards.
+local SIX_EYES    = 13
+local STRONG_LEFT = 1
+local LION_FALL   = 30
 
 -- these descriptions and reqs are ai generated TODO human write them?
 -- THESE REQS ARE LOW (reason: not enough content) will scale them accordingly in the future - air
@@ -101,6 +119,8 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.ToshiCounter] = {
 		desc = "A counter stance answering with a two-hit reply.",
 		req = { dexterity = 4 },
+		-- both are dexterity counters; a build picks its answer, not both.
+		excludes = { LION_FALL },
 	},
 	[manifold.Barrage] = {
 		desc = "A rapid flurry of punches.",
@@ -140,7 +160,9 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.StrongerLeft] = {
 		desc = "Three shockwave rings and terrain destruction.",
-		req = { strength = 6 },
+		-- the UPGRADE shape: gated on owning the base move, and it eats it on claim.
+		req = { strength = 6, ability = STRONG_LEFT },
+		replaces = STRONG_LEFT,
 		tier = DraftTiers.RARE,
 	},
 	[manifold.IceBeam] = {
@@ -253,12 +275,12 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.InverseRed] = {
 		desc = "A red orb fired flat. All the damage is in the blast.",
-		req = { mind = 3 },
+		req = { card = SIX_EYES },
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.FullBlue] = {
 		desc = "A gravity well that drags everything into orbit.",
-		req = { mind = 5 },
+		req = { card = SIX_EYES },
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.BoulderKick] = {
@@ -267,7 +289,8 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.HollowPurple] = {
 		desc = "A 4.25s charge, then a beam that ignores geometry.",
-		req = { mind = 10 },
+		-- one flat table is AND: the card AND the old capstone investment.
+		req = { card = SIX_EYES, mind = 10 },
 		tier = DraftTiers.ULTIMATE,
 	},
 }
@@ -293,6 +316,38 @@ end
 function module.getMeta(id:number): meta?
 	local mod = abilityList[id]
 	return if mod then abilityMeta[mod] else nil
+end
+
+-- reverse of meta.replaces, built once from the metadata. Requires NOTHING, same as idList.
+local supersededBy: {[number]: number} = {}
+-- exclusions, made SYMMETRIC here so a pair is declared once and neither side can drift.
+local conflicts: {[number]: {number}} = {}
+local function addConflict(a: number, b: number)
+	local list = conflicts[a]
+	if list == nil then list = {} conflicts[a] = list end
+	if not table.find(list, b) then table.insert(list, b) end
+end
+for id, mod in abilityList do
+	local m = abilityMeta[mod]
+	if m == nil then continue end
+	if m.replaces then supersededBy[m.replaces] = id end
+	for _, other in ipairs(m.excludes or {}) do
+		addConflict(id, other)
+		addConflict(other, id)
+	end
+end
+table.freeze(supersededBy)
+table.freeze(conflicts)
+
+-- which upgrade eats this ability, if any. The draft asks so it never re-offers a
+-- base move to someone who already upgraded past it (dropping it frees hasAbility).
+function module.supersededBy(id:number): number?
+	return supersededBy[id]
+end
+
+-- ids that CANNOT be owned alongside this one. Symmetric, so asking either side works.
+function module.conflictsOf(id:number): {number}?
+	return conflicts[id]
 end
 
 -- display name without an instance: one require, and callers cache. ablityItem.getName routes here.
@@ -321,5 +376,9 @@ function module.newAbility(id:number, ...): anyAbility
 	local itmInst = abilityClass.new(...)
 	return itmInst
 end
+
+-- `req = { ability = id }` prints a name instead of a number. Costs one ability
+-- require, and only when a gate is actually described.
+Requirements.setNamer("ability", module.nameOf)
 
 return module

@@ -10,6 +10,14 @@
 
 	    req = { hvy = 2 }
 	    req = { Or = { {hvy = 2}, {strength = 6} } }
+	    req = { card = 13 }     -- owns that CARD
+	    req = { ability = 1 }   -- owns that ABILITY, i.e. an upgrade's base move
+	                            -- Both OWNERSHIP gates read the slot's own
+	                            -- containers, so they are server-side only.
+	    req = { sum = { weaponStats = 4 } }
+	                            -- TOTAL invested across a whole track, for gates
+	                            -- that want spread rather than one deep stat.
+	                            -- Tracks: baseStats, weaponStats, elements.
 	    req = {}    -- FREE. `nil` is NOT free: class statics inherit through
 	                -- __index, so nil picks up the family's req.
 
@@ -23,6 +31,9 @@ export type req = {
 	[string]: number,
 	minLevel: number?,
 	maxLevel: number?,
+	card: number?,
+	ability: number?,
+	sum: {[string]: number}?,
 	-- Luau types an array literal from its FIRST element, so a mixed
 	-- {{hvy=2},{med=2}} needs `:: {Requirements.req}` at the authoring site.
 	And: {req}?,
@@ -32,8 +43,33 @@ export type req = {
 local module = {}
 
 -- registry values: string = which track owns it, false = operator key, nil = unknown.
-local OPS = {minLevel = false, maxLevel = false, And = false, Or = false}
+local OPS = {minLevel = false, maxLevel = false, And = false, Or = false, card = false, ability = false, sum = false}
 local TRACK: {[string]: any}? = nil
+
+--- id -> display name, PUSHED by each registry at load: Requirements is shared code
+--- and both registries are ServerStorage, so nothing here requires them.
+local namers: {[string]: (number) -> string} = {}
+function module.setNamer(kind: string, fn: (number) -> string)
+	namers[kind] = fn
+end
+
+local function nameOf(kind: string, id: number): string
+	local fn = namers[kind]
+	if fn == nil then return kind .. " #" .. tostring(id) end
+	local ok, name = pcall(fn, id)
+	return if ok and typeof(name) == "string" then name else kind .. " #" .. tostring(id)
+end
+
+--- OWNERSHIP gates. Cards are a SparseBitSet on the slot, abilities are items in its
+--- containers; a client slot has neither, which is what makes these server-side only.
+local function ownsCard(slot: any, id: number): boolean
+	local cards = slot and slot.cards
+	return cards ~= nil and cards:getIndex(id) == true
+end
+
+local function ownsAbility(slot: any, id: number): boolean
+	return slot ~= nil and slot.hasAbility ~= nil and slot:hasAbility(id) == true
+end
 
 --- name -> track, DERIVED from the stat classes so a new stat teaches this for free.
 --  Built on FIRST USE, not at load: Requirements loads on every HumObj.
@@ -87,6 +123,29 @@ local function suffix(track: any): string
 	return if track == "elements" then " element" else ""
 end
 
+--- TRACK TOTALS for the `sum` op. An unknown track name sums to nothing and the gate
+--- never opens, same rule as an unknown stat name.
+local TRACK_LABEL = {baseStats = "base stats", weaponStats = "weapon stats", elements = "elements"}
+
+--- sums the track's REGISTERED stats through statOf, rather than reading the slot a
+--- second way: one place knows how a track is stored, and a stat class that grows a
+--- non-stat number cannot silently inflate a gate.
+local function trackSum(slot: any, track: string): number
+	if slot == nil or TRACK_LABEL[track] == nil then return 0 end
+	local total = 0
+	for name, owner in pairs(tracks()) do
+		if owner == track then total += statOf(slot, track, name) end
+	end
+	return total
+end
+
+local function sumUnmet(slot: any, sums: {[string]: number}): boolean
+	for track, amount in pairs(sums) do
+		if trackSum(slot, track) < amount then return true end
+	end
+	return false
+end
+
 --- hoisted eachLeaf bodies, so check allocates no closure per call.
 local function unmet(name: string, amount: number, track: any, slot: any): boolean
 	if track == nil then return true end
@@ -105,6 +164,9 @@ function module.check(slot: any, req: req?): boolean
 	local lvl = (slot and slot.lvl) or 0
 	if req.minLevel and lvl < req.minLevel then return false end
 	if req.maxLevel and lvl > req.maxLevel then return false end
+	if req.card and not ownsCard(slot, req.card) then return false end
+	if req.ability and not ownsAbility(slot, req.ability) then return false end
+	if req.sum and sumUnmet(slot, req.sum) then return false end
 
 	if req.And then
 		for _, sub in ipairs(req.And) do
@@ -130,6 +192,13 @@ function module.describe(req: req?): string
 
 	if req.minLevel then table.insert(parts, "lvl " .. req.minLevel .. "+") end
 	if req.maxLevel then table.insert(parts, "lvl " .. req.maxLevel .. "-") end
+	if req.card then table.insert(parts, nameOf("card", req.card)) end
+	if req.ability then table.insert(parts, nameOf("ability", req.ability)) end
+	if req.sum then
+		for track, amount in pairs(req.sum) do
+			table.insert(parts, amount .. " across " .. (TRACK_LABEL[track] or track))
+		end
+	end
 
 	if req.And then
 		for _, sub in ipairs(req.And) do
@@ -168,6 +237,25 @@ function module.missing(slot: any, req: req?): string?
 	if req.minLevel and lvl < req.minLevel then
 		table.insert(parts, "lvl " .. lvl .. " -> " .. req.minLevel)
 	end
+	-- maxLevel was checked by `check` but never REPORTED here, so an over-levelled
+	-- gate fell through to quoting itself. Same shape as the line above.
+	if req.maxLevel and lvl > req.maxLevel then
+		table.insert(parts, "lvl " .. lvl .. " -> " .. req.maxLevel .. " max")
+	end
+	if req.card and not ownsCard(slot, req.card) then
+		table.insert(parts, "the " .. nameOf("card", req.card) .. " card")
+	end
+	if req.ability and not ownsAbility(slot, req.ability) then
+		table.insert(parts, "the " .. nameOf("ability", req.ability) .. " ability")
+	end
+	if req.sum then
+		for track, amount in pairs(req.sum) do
+			local have = trackSum(slot, track)
+			if have < amount then
+				table.insert(parts, (TRACK_LABEL[track] or track) .. " " .. have .. " -> " .. amount)
+			end
+		end
+	end
 	if req.And then
 		for _, sub in ipairs(req.And) do
 			local s = module.missing(slot, sub)
@@ -191,6 +279,12 @@ function module.validate(req: req?, label: string?): boolean
 			ok = false
 		end
 	end)
+	for track in pairs(req.sum or {}) do
+		if TRACK_LABEL[track] == nil then
+			warn("[Requirements] unknown track '" .. track .. "' in " .. tostring(label))
+			ok = false
+		end
+	end
 	for _, key in ipairs({"And", "Or"}) do
 		for _, sub in ipairs((req :: any)[key] or {}) do
 			if not module.validate(sub, label) then ok = false end

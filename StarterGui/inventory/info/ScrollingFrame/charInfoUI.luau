@@ -3,6 +3,7 @@ local clientData = require(game.ReplicatedFirst:WaitForChild("ClientData"))
 local ElementRegistry = require(game.ReplicatedStorage.Modules.ElementRegistry)
 local MAX_STAT = require(game.ReplicatedStorage.Class.plrObjClient.slot).MAX_STAT
 local plrObj = clientData.plrObj
+local TweenService = game:GetService("TweenService")
 
 local frame = script.Parent
 
@@ -19,6 +20,7 @@ local wepContainer   = wepSection:WaitForChild("container")
 local elemContainer  = elemSection:WaitForChild("container")
 
 local allocPtsLabel = frame:WaitForChild("allocPts")
+local ACCENT = Color3.fromRGB(255, 217, 103) -- the draft LevelButton's gold, the only progression accent
 
 local BASE_STAT_COLORS = {
 	strength  = Color3.new(0.800, 0.282, 0.282),
@@ -51,6 +53,63 @@ local function clearContainer(container: Frame)
 end
 
 local loadedSlot -- the click guard needs allocPts at CLICK time, not at build time.
+local slotCon:RBXScriptConnection? = nil
+local guideTweens:{Tween} = {}
+
+local function clearInvestmentGuide()
+	for _, tween in ipairs(guideTweens) do tween:Cancel() end
+	table.clear(guideTweens)
+	allocPtsLabel.TextColor3 = Color3.new(1, 1, 1)
+	for _, root in ipairs({allocPtsLabel, statsContainer, wepContainer, elemContainer}) do
+		for _, child in ipairs(root:GetDescendants()) do
+			if child:IsA("UIStroke") and child.Name == "InvestmentGuideStroke" then child:Destroy() end
+		end
+	end
+end
+
+-- fade only; a thickness swell reads as neon against the flat panels.
+local function pulse(target: GuiObject)
+	local stroke = Instance.new("UIStroke")
+	stroke.Name = "InvestmentGuideStroke"
+	stroke.Color = Color3.new(1, 1, 1)
+	stroke.Transparency = 0.8
+	stroke.Parent = target
+	local tween = TweenService:Create(stroke,
+		TweenInfo.new(0.9, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Transparency = 0.95 })
+	table.insert(guideTweens, tween)
+	tween:Play()
+end
+
+local function pulseSpendable(container: Frame, valueOf: (string) -> number)
+	for _, statFrame in ipairs(container:GetChildren()) do
+		if not statFrame:IsA("Frame") then continue end
+		if valueOf(statFrame.Name) >= MAX_STAT then continue end
+		local clickBar = statFrame:FindFirstChild("bar")
+		if clickBar and clickBar:IsA("GuiObject") then pulse(clickBar) end
+	end
+end
+
+-- The points line IS the coach; a floating panel would cover the stats it points at.
+local function refreshInvestmentGuide()
+	clearInvestmentGuide()
+	if loadedSlot == nil then return end
+	local needed = loadedSlot:pointsToNextProg()
+	local points = "Points: " .. tostring(loadedSlot.allocPts)
+	-- kept short: the row shares its width with characterName.
+	-- the stalled case is why a draft can be owed with no badge showing.
+	allocPtsLabel.Text = if needed > 0
+		then points .. "  ·  invest " .. tostring(needed) .. " more"
+		elseif loadedSlot:pendingProg() > 0 and not loadedSlot.draftable
+		then points .. "  ·  no draft options yet"
+		else points
+	if needed <= 0 then return end
+
+	allocPtsLabel.TextColor3 = ACCENT -- tint the count, don't outline the glyphs
+	pulseSpendable(statsContainer, function(name) return loadedSlot.baseStats[name] or MAX_STAT end)
+	pulseSpendable(wepContainer, function(name) return loadedSlot.weaponStats[name] or MAX_STAT end)
+	pulseSpendable(elemContainer, function(name) return loadedSlot.elements:Get(name) end)
+end
 
 local function makeStatBar(container: Frame, name: string, value: number, color: Color3?, onClickFn: () -> ())
 	local stat = script.stat:Clone()
@@ -69,15 +128,12 @@ local function makeStatBar(container: Frame, name: string, value: number, color:
 end
 
 plrObj.slotLoaded:Connect(function(slotData, _serialData)
+	if slotCon then slotCon:Disconnect() end
 	loadedSlot = slotData
 
 	local function updateExpUI()
 		lvlLabel.Text = "LVL " .. slotData.lvl .. "   PROG " .. slotData:earnedProg()
 		xpBar.Size = UDim2.new(slotData.exp / slotData:nextLevelXp(), 0, 1, 0)
-	end
-
-	local function updateAllocPtsUI()
-		allocPtsLabel.Text = "Points: " .. tostring(slotData.allocPts)
 	end
 
 	local function updateBaseStatsUI()
@@ -109,7 +165,6 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 
 	frame.characterName.Text = slotData.name
 	updateExpUI()
-	updateAllocPtsUI()
 
 	clearContainer(statsContainer)
 	for k, v in pairs(slotData.baseStats) do
@@ -131,13 +186,11 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 			plrObj:allocateElement(name)
 		end)
 	end
+	refreshInvestmentGuide()
 
-	slotData.onStatChange:Connect(function(patch)
+	slotCon = slotData.onStatChange:Connect(function(patch)
 		if patch.exp or patch.lvl or patch.allocPts then
 			updateExpUI() -- earnedProg moves with allocPts, not just lvl
-		end
-		if patch.allocPts then
-			updateAllocPtsUI()
 		end
 		if patch.baseStats then
 			updateBaseStatsUI()
@@ -147,6 +200,10 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 		end
 		if patch.elements then
 			updateElementsUI()
+		end
+		if patch.lvl or patch.allocPts or patch.prog or patch.baseStats or patch.weaponStats or patch.elements
+			or patch.draftable ~= nil then
+			refreshInvestmentGuide()
 		end
 	end)
 end)

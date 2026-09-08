@@ -74,10 +74,7 @@ local CRESCENT = table.freeze({
 			--- rowa1's "ice2" row carries onHit = ragdtillground: a 60s CAP
 			--- that stopOnGround ends when they land.
 			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 8)
-			--[[ the crescent's own Hit/Shatter sounds live on the client fx,
-				and the client only sees WALLS -- so a crescent that connected
-				with a PLAYER broke silently. Fired at the victim instead. ]]
-			fireVFX("iceShatter", attack.enemyEntity.HRootPart)
+			--- NO iceShatter here: the death carries `hitBody` now, so iceSlashProj plays that same shatter itself, where the server stopped.
 
 		elseif attack:isParried() then
 			--- PARRIED CRESCENTS GO HOME. rowa1 killed it silently, which is a

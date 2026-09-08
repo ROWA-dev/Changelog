@@ -807,6 +807,8 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 			end
 		elseif id == S2C.floating then
 			self.floating.Value = value
+		elseif id == S2C.locomotionProfile then
+			self.charAnims:setLocomotionProfile(value)
 		elseif id == S2C.trueStun then
 			-- duration on the wire, absolute timestamp locally, 0 = clear. Written straight to the field, since :TrueStun would re-route through :Stun and double up S2C.stun.
 			self.trueStun.Value = if value > 0 then tick() + value else 0

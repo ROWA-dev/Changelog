@@ -70,8 +70,15 @@ local function pending(): number
 	return if slot then slot:pendingProg() else 0
 end
 
-local function refreshBadge()
-	lvlButton.Visible = pending() > 0
+local function refreshBadge(announce: boolean?)
+	local wasVisible = lvlButton.Visible
+	-- pending alone is not enough: an empty pool would open a panel with no cards.
+	local shouldShow = pending() > 0 and (slot == nil or slot.draftable)
+	lvlButton.Visible = shouldShow
+	if announce and shouldShow and not wasVisible then
+		play(SoundService.lvlUp :: any, 1)
+		burst(40)
+	end
 end
 
 local function setOpen(on: boolean)
@@ -166,6 +173,7 @@ end)
 
 plrObj.draftOfferRecieved:Connect(function(rows)
 	if not open then return end
+	if #rows == 0 then setOpen(false) refreshBadge(false) return end -- pool emptied under us
 	clearCards()
 	for i, row in ipairs(rows) do
 		makeCard(row, i)
@@ -175,17 +183,14 @@ end)
 local function bind(slotData: any)
 	slot = slotData
 	setOpen(false)
-	refreshBadge()
+	refreshBadge(false)
 
 	slotData.onStatChange:Connect(function(patch)
-		if patch.lvl then
-			play(SoundService.lvlUp :: any, 1)
-			burst(40)
-		end
-		-- pendingProg moves with all three, so all three refresh the badge.
-		if patch.lvl or patch.allocPts or patch.prog then
-			refreshBadge()
-			if pending() <= 0 then setOpen(false) end
+		-- This is draft-ready feedback, not raw level-up feedback.
+		-- pendingProg moves with the first three; draftable is the server's pool answer.
+		if patch.lvl or patch.allocPts or patch.prog or patch.draftable ~= nil then
+			refreshBadge(true)
+			if pending() <= 0 or not slotData.draftable then setOpen(false) end
 		end
 	end)
 end

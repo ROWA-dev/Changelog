@@ -1,7 +1,8 @@
-# i just added a banana
-Update 1.5.4
+# ported over more content
+Update 1.6.0
 
-banana
-cleanup on the code
+ported more
+new sidewep base class maybe will be used more in the future
+along with a new bind for using side weps
 
 and more

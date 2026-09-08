@@ -12,6 +12,7 @@ local weaponBase = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 local baseClass  = require(classes.HumObjClient)
 local replIds    = require(classes.HumObjClient.replIds) -- THE wire ids. SINGLE SOURCE, shared with the client, same deal as KNOCK_HP.
 local S2C, C2S   = replIds.S2C, replIds.C2S
+local locomotionProfiles = require(game.ReplicatedStorage.Modules.LocomotionProfiles)
 
 local DmgUtils      = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgRecord     = require(script.damageRecord)
@@ -77,6 +78,9 @@ export type myself = baseClass.myself & {
 
 	parryAnim: AnimationTrack?,
 	blockAnim: AnimationTrack?,
+	blockAnimOverride: AnimationTrack?,
+	getBlockAnim: (self:myself) -> AnimationTrack?,
+	setBlockAnimOverride: (self:myself, track:AnimationTrack?) -> (),
 	lastAbilityAnim: AnimationTrack?,
 
 	inCombat: (self:myself) -> boolean,
@@ -86,10 +90,17 @@ export type myself = baseClass.myself & {
 	equippedWeapons: {weaponBase.myself},
 	-- how many may be in that set at once; AdditiveValue so a card can raise it. NOT dual wielding, only one is ever `wielding_weapon`.
 	maxWeapons: AdditiveValue.myself,
+	weaponCap: (self: myself) -> number,
 	-- outgoing BASIC-attack damage multiplier. AdditiveValue so a card stacks without touching AttackClass.
 	wepDmgMult: AdditiveValue.myself,
+	-- UPRIGHT health regen multiplier. Server-only (health regen is), so unlike postureHeal it never replicates.
+	healthHeal: AdditiveValue.myself,
 	-- drawn but NOT committed: in the right hand, roblox-Tool style, unusable.
 	heldWeapon: weaponBase.myself?,
+	-- THE OFF HAND. One left arm, so one side weapon; not part of the wielded set.
+	sideWep: any?,
+	EquipSideWep: (self: myself, sideWep: any?) -> (),
+	useSideWep:   (self: myself) -> boolean,
 
 	EquipWeapon:   (self: myself, newWeapon: weaponBase.myself) -> boolean,
 	WieldWeapon:   (self: myself, wep: weaponBase.myself?) -> (boolean, string?),
@@ -109,6 +120,8 @@ export type myself = baseClass.myself & {
 
 	onAttackWindup: Signal.Signal<number>,
 	onStunned: Signal.Signal<number>,
+	wieldChanged: (self:myself) -> Signal.Signal<any?>,
+	setWieldingWeapon: (self:myself, weapon:weaponBase.myself?) -> (),
 
 	SubscribedEventCB: ((id:number, value: any)->())?,
 
@@ -234,11 +247,14 @@ function module.new(hum: Humanoid): myself
 	self.attackAt        = 0
 
 	self.equippedWeapons = {}
-	self.maxWeapons      = AdditiveValue.new(2)
+	self.maxWeapons      = AdditiveValue.new(1) -- ONE committed weapon by default; Many-Handed is the card that raises it
 	self.wepDmgMult      = AdditiveValue.new(1) -- TODO might be redundant?
+	self.healthHeal      = AdditiveValue.new(1)
 	self.heldWeapon      = nil
+	self.sideWep         = nil
 	self.wielding_weapon = nil
 	self.using_ability  = nil
+	self.blockAnimOverride = nil
 
 	self.onAttackWindup = Signal.new()
 	self.onStunned      = Signal.new()
@@ -451,7 +467,8 @@ function module.new(hum: Humanoid): myself
 		local knocked = self:isKnocked()
 		-- BEING DRAGGED PAUSES THE CLOCK. Getting up IS health crossing KNOCK_HP, so freezing regen freezes the getup; no separate "cannot stand" flag exists or is needed.
 		if not (knocked and self.draggedBy) then
-			hum.Health = math.min(hum.Health + dt * (if knocked then KNOCKED_REGEN else HEALTH_REGEN), hum.MaxHealth)
+			-- healthHeal scales the UPRIGHT rate only: KNOCKED_REGEN is the getup clock, and a heal card must not shorten a knockdown.
+			hum.Health = math.min(hum.Health + dt * (if knocked then KNOCKED_REGEN else HEALTH_REGEN * self.healthHeal.Value), hum.MaxHealth)
 		end
 		-- upright entities pay one nil check a second and stop here.
 		if self.knockedHp then
@@ -527,22 +544,30 @@ function module.destroy(self:myself&any)
 	end
 	self:StopEmote()
 	-- already released by _clearWieldedWeapon at the top; same ownership rule.
-	releaseWep(self.wielding_weapon)	self.wielding_weapon = nil
+	releaseWep(self.wielding_weapon)
+	self:setWieldingWeapon(nil)
 	if self.plrObj then
 		self.plrObj.HumObj = nil
 	end
 	self.onAttackWindup:Destroy()
 	self.onStunned:Destroy()
+	local wieldChanged = rawget(self, "_wieldChanged")
+	if wieldChanged then wieldChanged:Destroy() end
 	self.cooldowns:Destroy()
 
+	-- !! CARDS FIRST. Their destroy RemoveMods the AdditiveValues below and releases
+	-- the side weapon; a destroyed AdditiveValue has no metatable, so :RemoveMod on
+	-- one is a nil call that would abort the rest of this teardown.
+	self.cards:destroy()
 	self.hurtboxSize:destroy()
 	self.maxWeapons:destroy()
 	self.wepDmgMult:destroy()
+	self.healthHeal:destroy()
 	self.dmgRecord:destroy()
-	self.cards:destroy()
 	self.ragdoll:destroy()
 	self.statusEffects:destroy()
 	self.grab:destroy()
+	if self.sideWep then self.sideWep:destroy() self.sideWep = nil end
 	-- BOTH directions: drop whoever I am hauling, and make whoever is hauling ME let go. Otherwise the survivor keeps a dangling AlignPosition and the victim's parts stay owned by a player who no longer exists.
 	self:stopDrag()
 	if self.draggedBy then
@@ -596,6 +621,39 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 end
 
 
+--- ONE off-hand: equipping replaces whatever was there. nil just clears it.
+function module.EquipSideWep(self:myself&any, sideWep: any?)
+	local old = self.sideWep
+	if old == sideWep then return end
+	self.sideWep = sideWep
+	if old then old:destroy() end
+	if sideWep then sideWep:attach() end
+end
+
+--- the `sideWep` bind lands here. Inert without one, so the bind is always safe to press.
+function module.useSideWep(self:myself&any): boolean
+	local sideWep = self.sideWep
+	if sideWep == nil or sideWep.use == nil then return false end
+	return sideWep:use()
+end
+
+function module.wieldChanged(self:myself&any): Signal.Signal<any?>
+	local signal = rawget(self, "_wieldChanged")
+	if signal then return signal end
+	signal = Signal.new()
+	rawset(self, "_wieldChanged", signal)
+	return signal
+end
+
+function module.setWieldingWeapon(self:myself&any, weapon:weaponBase.myself?)
+	if self.wielding_weapon == weapon then return end
+	self.wielding_weapon = weapon
+	-- forwarded, not subscribed: the hook dies with the side weapon for free.
+	if self.sideWep then self.sideWep:onWieldChanged(weapon) end
+	local signal = rawget(self, "_wieldChanged")
+	if signal then signal:Fire(weapon) end
+end
+
 function _clearWieldedWeapon(self:myself)
 	local wielding = self.wielding_weapon
 	if wielding then
@@ -603,7 +661,7 @@ function _clearWieldedWeapon(self:myself)
 			--wielding:unequip()
 			pcall(wielding.unequip, wielding)
 		end
-		self.wielding_weapon = nil
+		self:setWieldingWeapon(nil)
 		return true
 	end
 	return false
@@ -624,6 +682,13 @@ function module.reholster(self:myself&any)
 			pcall(w.holsterAt, w, i)
 		end
 	end
+end
+
+--- THE wielded-set cap, floored at 1. Read it, never re-derive it: WieldWeapon evicts
+--- down to this and loadChar's commitFrom stops at it, and those two disagreeing is
+--- how a shrunk cap quietly deletes a saved weapon.
+function module.weaponCap(self:myself&any): number
+	return math.max(1, math.floor(self.maxWeapons.Value))
 end
 
 -- may this entity COMMIT to `wep`? NPCs have no slot and are never gated.
@@ -680,7 +745,7 @@ function module.WieldWeapon(self:myself&any, wep: weaponBase.myself?): (boolean,
 		table.remove(self.equippedWeapons, already) -- re-queue as newest
 	else
 		-- evict oldest first; maxWeapons is an AdditiveValue, so a card raises the cap without touching this line.
-		local cap = math.max(1, math.floor(self.maxWeapons.Value))
+		local cap = self:weaponCap()
 		while #self.equippedWeapons >= cap do
 			local evicted = table.remove(self.equippedWeapons, 1)
 			if evicted then evicted.committed = nil end
@@ -1077,6 +1142,24 @@ function module.canBlock(self:myself&any)
 	)
 end
 
+function module.getBlockAnim(self:myself): AnimationTrack?
+	return self.blockAnimOverride or self.blockAnim
+end
+
+-- One central pose override: weapons still own the default; Shield owns only its replacement track.
+function module.setBlockAnimOverride(self:myself&any, track:AnimationTrack?)
+	local old = self:getBlockAnim()
+	if old == track then return end
+	if old and old.IsPlaying then old:Stop(0.1) end
+	self.blockAnimOverride = track
+	if self.isActive ~= true then return end
+	local parry = self.parryAnim
+	if self.blocking.Value and self.wielding_weapon and not (parry and parry.IsPlaying) then
+		local resolved = self:getBlockAnim()
+		if resolved then self:PlayTrack(resolved) end
+	end
+end
+
 -- returns true if it was a parry
 function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean																																															-- A I R Z Y was here and made every script
 	self._wantblock = setTo
@@ -1103,13 +1186,15 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 	end
 
 	local wep:weaponBase.myself = self.wielding_weapon
+	local blockAnim = self:getBlockAnim()
 	if setTo == true and isProperParry(self) and self.cooldowns:canTrigger("parry") then self.cooldowns:trigger("parry")
-		if wep and self.blockAnim and self.parryAnim then
-			self.blockAnim:Stop()
+		if wep and blockAnim and self.parryAnim then
+			blockAnim:Stop()
 			self:PlayTrack(self.parryAnim)
-			self:AddConnection(self.parryAnim.Stopped:Once(function()  -- field upvalue from table field 'parryAnim'
+			self:AddConnection(self.parryAnim.Stopped:Once(function()
 				if self.blocking.Value == true then
-					self:PlayTrack(self.blockAnim)
+					local resolved = self:getBlockAnim()
+					if resolved then self:PlayTrack(resolved) end
 					self:RemConnection("onParryStop")
 				end
 			end), "onParryStop")
@@ -1117,11 +1202,11 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 		return true
 	end
 
-	if wep and self.blockAnim --[[and self.parryAnim]] then
+	if wep and blockAnim then
 		if setTo == true then
-			self:PlayTrack(self.blockAnim)
+			self:PlayTrack(blockAnim)
 		else
-			self.blockAnim:Stop()
+			blockAnim:Stop()
 		end
 	end
 	return false
@@ -1220,6 +1305,25 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 			remoteEvent:FireClient(plr, id)
 		end), "repl_" .. id)
 	end
+
+	-- Wield switches can emit nil -> weapon in one thread. Defer once and send
+	-- only the final inherited profile, so heavy -> heavy costs no packet.
+	local lastLocomotionProfile = locomotionProfiles.DEFAULT
+	local locomotionQueued = false
+	self:AddConnection(self:wieldChanged():Connect(function()
+		if locomotionQueued then return end
+		locomotionQueued = true
+		task.defer(function()
+			locomotionQueued = false
+			if self.isActive ~= true then return end
+			local weapon = self.wielding_weapon
+			local wanted = if weapon then weapon.locomotionProfile else locomotionProfiles.DEFAULT
+			local profile = locomotionProfiles.resolveId(wanted)
+			if profile == lastLocomotionProfile then return end
+			lastLocomotionProfile = profile
+			remoteEvent:FireClient(plr, S2C.locomotionProfile, profile)
+		end)
+	end), "repl_locomotionProfile")
 
 	-- bespoke: these two send an id AND a value, so they are not rows in valueRepl above.
 	self:AddConnection(self.cooldowns.CooldownChanged:Connect(function(id: string, value: number) 
