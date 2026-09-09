@@ -20,6 +20,8 @@ local wepContainer   = wepSection:WaitForChild("container")
 local elemContainer  = elemSection:WaitForChild("container")
 
 local allocPtsLabel = frame:WaitForChild("allocPts")
+-- the sheet's own visibility: inventoryUI sets it from isOpen. Nothing here should run while off.
+local panel = frame.Parent :: GuiObject
 local ACCENT = Color3.fromRGB(255, 217, 103) -- the draft LevelButton's gold, the only progression accent
 
 local BASE_STAT_COLORS = {
@@ -193,6 +195,8 @@ local function refreshInvestmentGuide()
 		then points .. "  ·  no draft options yet"
 		else points
 	if needed <= 0 then return end
+	-- the pulse is a looping tween per spendable row; do not run it at a closed panel.
+	if not panel.Visible then return end
 
 	allocPtsLabel.TextColor3 = ACCENT -- tint the count, don't outline the glyphs
 	pulseSpendable(statsContainer, function(name) return loadedSlot.baseStats[name] or MAX_STAT end)
@@ -408,7 +412,6 @@ infoSec.contentH = #INFO_ROWS * (OTHER_ROW_H + ROW_PAD)
 	shock and every dash, so a permanent listener burns cpu for a panel nobody is looking at.
 	The sheet is `info.Visible` (inventoryUI sets it from isOpen), and this section starts
 	collapsed -- so by default there is NOTHING connected here at all. ]]
-local panel = frame.Parent :: GuiObject
 local liveHumObj: any = nil
 local infoCons: {RBXScriptConnection} = {}
 
@@ -448,7 +451,10 @@ local function syncInfoBinding()
 end
 
 infoSec.onToggle = syncInfoBinding
-panel:GetPropertyChangedSignal("Visible"):Connect(syncInfoBinding)
+panel:GetPropertyChangedSignal("Visible"):Connect(function()
+	syncInfoBinding()
+	refreshInvestmentGuide() -- picks the pulses back up on open, drops them on close
+end)
 clientData.onHumObjSetup:Connect(function(humObj)
 	liveHumObj = humObj
 	unbindInfo() -- the dead character's signals are gone, the list holding them is not

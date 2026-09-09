@@ -94,9 +94,13 @@ local function buildWheel(): boolean
 		}
 	end
 
-	-- ONE web call for every slot, after the rigs exist.
+	-- ONE web call for every slot, after the rigs exist. pcall'd: it is a web request, and a
+	-- throw here would kill the thread and leave every rig on the template look.
 	task.spawn(function()
-		local desc = game.Players:GetHumanoidDescriptionFromUserId(plr.UserId) -- TODO pcall this
+		local ok, desc = pcall(function()
+			return game.Players:GetHumanoidDescriptionFromUserId(plr.UserId)
+		end)
+		if ok == false then return end
 		for _, e in pairs(emoteSlots) do
 			e.button.ViewportFrame.WorldModel.Humanoid:ApplyDescription(desc)
 		end
@@ -317,24 +321,31 @@ function emoteWheelStuff()
 	
 	if isOpen == false then isOpen = true
 		emoteIcon:setActive(true)
+		EmoteWheel.Visible = true
 		ts:Create(EmoteWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Position = UDim2.new(0.5, 0, 0.5, 0)
 		}):Play()
 	else isOpen = false
 		emoteIcon:setActive(false)
-		ts:Create(EmoteWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+		local tween = ts:Create(EmoteWheel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
 			Position = UDim2.new(0.5, 0, 1.5, 0)
-		}):Play()
+		})
+		-- offscreen is not hidden: the viewports stay alive. isOpen re-checked, a reopen beats the tween.
+		tween.Completed:Connect(function()
+			if isOpen == false then EmoteWheel.Visible = false end
+		end)
+		tween:Play()
 	end
 end
 
 
 local UIS = game:GetService("UserInputService")
+local guiService = game:GetService("GuiService")
 local function isMouseOverGui(guiObject)
 	local mousePos = UIS:GetMouseLocation()
 
-	-- Roblox adds a topbar offset, so adjust:
-	mousePos -= Vector2.new(0, 36)
+	-- ASK for the inset, never 36: it differs on mobile/console and with the topbar hidden.
+	mousePos -= Vector2.new(0, guiService:GetGuiInset().Y)
 
 	local pos = guiObject.AbsolutePosition
 	local size = guiObject.AbsoluteSize

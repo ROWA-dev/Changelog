@@ -1,7 +1,4 @@
-# better UI UX on the "character sheet"
-Update 1.6.1
+# fixed this plugin not pushing some cards....
+Update 1.6.2
 
-more talents
-better ui ux on char sheet
-
-and more
+not even an update just fixed this plugin pushing cards
