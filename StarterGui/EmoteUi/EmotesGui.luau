@@ -34,7 +34,7 @@ local center = UDim2.fromScale(0.5, 0.5)
 local pi2 = math.pi*2
 local pihalf = math.pi/2
 
-local openPicker, requestAnims, closePicker
+local openPicker, requestAnims, closePicker, togglePicker, retargetPicker
 
 -- Built on FIRST OPEN, not at init: a viewport rig per slot is real memory, and
 -- a player who never opens the wheel should not pay for one. Also means the
@@ -79,6 +79,9 @@ local function buildWheel(): boolean
 		slot.MouseButton1Up:Connect(function()
 			if holdThread == nil then return end -- the hold already opened the picker
 			cancelHold()
+			-- picker open IS edit mode: a tap retargets it instead of playing the emote,
+			-- so the button path can pick a slot without knowing the hold gesture.
+			if retargetPicker(i) then return end
 			playEmote(emoteSlots[i].id)
 		end)
 		slot.MouseLeave:Connect(cancelHold)
@@ -166,6 +169,17 @@ local rowTemp = script:WaitForChild("emote")
 local pickerFrame:ScrollingFrame?, pickerRows:{[number]:TextButton}?, editingSlot:number?
 local pickerBuilding = false
 
+-- HOLD IS UNDISCOVERABLE, so the same picker opens from a button. Row template, so it
+-- matches the list it opens; parented to the wheel, so it tweens away with it.
+local editBtn = rowTemp:Clone()
+editBtn.Name = "editEmotes"
+editBtn.Size = UDim2.fromScale(0.55, 0.08)
+editBtn.Position = UDim2.fromScale(1.02, 0.05)
+editBtn.Text = "edit emotes"
+editBtn.Visible = true
+editBtn.Parent = EmoteWheel
+editBtn.MouseButton1Click:Connect(function() togglePicker() end)
+
 local function saveSlots()
 	local ids = table.create(#emoteSlots)
 	for i, e in pairs(emoteSlots) do
@@ -176,6 +190,7 @@ end
 
 function closePicker()
 	editingSlot = nil
+	editBtn.Text = "edit emotes"
 	if pickerFrame then
 		pickerFrame.Visible = false
 	end
@@ -194,8 +209,8 @@ local function buildPicker()
 
 	local frame = Instance.new("ScrollingFrame")
 	frame.Name = "picker"
-	frame.Size = UDim2.fromScale(0.55, 0.9)
-	frame.Position = UDim2.fromScale(1.02, 0.05)
+	frame.Size = UDim2.fromScale(0.55, 0.8)
+	frame.Position = UDim2.fromScale(1.02, 0.15) -- under the edit button
 	frame.BackgroundColor3 = Color3.new(0, 0, 0)
 	frame.BackgroundTransparency = 0.6
 	frame.BorderSizePixel = 0
@@ -244,8 +259,27 @@ function openPicker(slotIndex:number)
 		end
 	end
 	editingSlot = slotIndex
+	editBtn.Text = "slot " .. tostring(slotIndex) .. "  (tap a slot)"
 	paintRows();
 	(pickerFrame::ScrollingFrame).Visible = true
+end
+
+-- the button has no slot in mind: reopen on the one last edited, else the first.
+local lastEdited = 1
+function togglePicker()
+	if editingSlot ~= nil then
+		lastEdited = editingSlot
+		return closePicker()
+	end
+	openPicker(lastEdited)
+end
+
+-- true == "I handled that tap". Only while the picker is already open.
+function retargetPicker(slotIndex:number): boolean
+	if editingSlot == nil then return false end
+	lastEdited = slotIndex
+	openPicker(slotIndex)
+	return true
 end
 
 

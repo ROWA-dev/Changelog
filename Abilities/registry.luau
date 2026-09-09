@@ -132,7 +132,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Fulminate] = {
 		desc = "A close-range lightning discharge.",
-		req = { wind = 1, flame = 2 },
+		req = { lightning = 3 },
 	},
 	[manifold.PowerStrike] = {
 		desc = "Two-stage weapon flourish; the second slash launches.",
@@ -144,7 +144,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.BoltPunch] = {
 		desc = "A lunging lightning straight; the dash leads the windup.",
-		req = { wind = 1, flame = 2 },
+		req = { lightning = 2 },
 	},
 	[manifold.PiercingStab] = {
 		desc = "A rooted 0.65s telegraph. The slowest single hit.",
@@ -175,7 +175,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.JoltKick] = {
 		desc = "A lightning roundhouse that chains a second jolt.",
-		req = { wind = 2, flame = 3 },
+		req = { lightning = 4 },
 	},
 	[manifold.FlameDance] = {
 		desc = "A 2s spinning fire aura that ignites its outer band.",
@@ -183,7 +183,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.StormUp] = {
 		desc = "A rising spin that launches you both. Air-combo opener.",
-		req = { wind = 3, flame = 1 },
+		req = { lightning = 8 },
 	},
 	[manifold.Cero] = {
 		desc = "A wide beam cannon that carves a tunnel.",
@@ -197,7 +197,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Lightning] = {
 		desc = "Call a bolt down on a target's position.",
-		req = { wind = 2, flame = 1 },
+		req = { lightning = 6 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Tendrils] = {

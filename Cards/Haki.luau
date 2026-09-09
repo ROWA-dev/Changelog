@@ -7,8 +7,8 @@ export type myself = baseClass.myself & {
 	_hardened: {[Instance]: {any}},
 }
 
-local WEAPON_DAMAGE = 0.15
-local WEAPON_POSTURE = 0.10
+local WEAPON_DAMAGE = 0.1
+local WEAPON_POSTURE = 0.1
 local MAX_POSTURE = 20
 local MAX_HEALTH = 10
 

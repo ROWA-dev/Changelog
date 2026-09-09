@@ -6,8 +6,8 @@ export type myself = baseClass.myself & {
 	_cape: BasePart?,
 }
 
-local CRIT_CHANCE = 0.2 -- rowa1 rolled math.random(1,5) == 1 per hit
-local CRIT_BONUS  = 1   -- on top of the seeded 1x, so a crit is rowa1's 2x
+local CRIT_CHANCE = 0.2 -- math.random(1,5) == 1 per hit
+local CRIT_BONUS  = 0.5 -- on top of the seeded 1x
 local OTHER_CUT   = 0.15
 
 local module = {}
@@ -31,7 +31,6 @@ function module.new(humObj):myself
 	end), "frontliner")
 
 	-- feedback waits for resolution: a parried or blocked crit never landed.
-	-- rowa1's own bstreak/Crit, cloned onto the victim: inline VFX, no quiver id.
 	self:addConnection(humObj.onAttack:Connect(function(attack)
 		if not (attack.frontlinerCrit and attack:isHit()) then return end
 		local victim = attack.enemyEntity
@@ -40,7 +39,7 @@ function module.new(humObj):myself
 
 		local streak = script.bstreak:Clone()
 		streak.Parent = at
-		streak:Emit(math.floor(attack:CalculateDamage())) -- rowa1 emitted one per point of damage
+		streak:Emit(math.floor(attack:CalculateDamage())) -- dmg scales emit count
 		Debris:AddItem(streak, 4)
 
 		local sound = script.Crit:Clone()

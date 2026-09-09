@@ -47,6 +47,8 @@ export type myself = baseClass.myself & {
 	isDead: boolean?,
 	-- the KNOCKED-DOWN pool. nil until you are first knocked, nil again once you get up, so an entity that never goes down holds nothing.
 	knockedHp: number?,
+	-- scales the parrier's half of the posture trade in resolveParry. nil unless a card (Counterweight) sets it.
+	parryPostureMult: number?,
 	canAtkThreshold: number,
 	dodgeThreshold: number,
 

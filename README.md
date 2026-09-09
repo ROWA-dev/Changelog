@@ -1,8 +1,7 @@
-# ported over more content
-Update 1.6.0
+# better UI UX on the "character sheet"
+Update 1.6.1
 
-ported more
-new sidewep base class maybe will be used more in the future
-along with a new bind for using side weps
+more talents
+better ui ux on char sheet
 
 and more
