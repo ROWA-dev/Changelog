@@ -85,12 +85,15 @@ local DraftTiers = require(game.ReplicatedStorage.Modules.DraftTiers) -- might r
 -- without ever owning the base move.
 -- excludes: PICK ONE. Owning any listed id hides this from the draft, and the rule is
 -- made symmetric at load, so declare it on ONE side only.
+-- notWepClass: a weapon FAMILY module you may not be wielding, for the draft AND for the
+-- swing. Stamped onto the instance by newAbility, enforced in AbilityBase.use.
 export type meta = {
 	desc: string,
 	req: Requirements.req,
 	tier: string?,
 	replaces: number?,
 	excludes: {number}?,
+	notWepClass: ModuleScript?,
 }
 
 -- ids referenced by other entries' req/replaces/excludes. IDS ARE PERSISTED: these are
@@ -99,6 +102,8 @@ export type meta = {
 local SIX_EYES    = 13
 local STRONG_LEFT = 1
 local LION_FALL   = 30
+-- weapon FAMILY, not an id: the instance path, so this gains no require on Weps.
+local FISTS = game.ServerStorage.ROWA.Weps.Light.Fists
 
 -- these descriptions and reqs are ai generated TODO human write them?
 -- THESE REQS ARE LOW (reason: not enough content) will scale them accordingly in the future - air
@@ -149,6 +154,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.PiercingStab] = {
 		desc = "A rooted 0.65s telegraph. The slowest single hit.",
 		req = { med = 2 },
+		notWepClass = FISTS, -- nothing to stab with
 	},
 	[manifold.Rend] = {
 		desc = "Two ground slams, the second higher than the first.",
@@ -257,6 +263,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Streak] = {
 		desc = "Blink-slash a 40-stud lane, dragging everyone to its end.",
 		req = { med = 4 },
+		notWepClass = FISTS, -- a blink-SLASH needs a blade
 	},
 	[manifold.Prediction] = {
 		desc = "Attacks are turned back on whoever threw them.",
@@ -374,6 +381,10 @@ end
 function module.newAbility(id:number, ...): anyAbility
 	local abilityClass = module.getAbilityClass(id)
 	local itmInst = abilityClass.new(...)
+	-- carry the wielded-weapon gate onto the instance, so AbilityBase.use needs no id
+	-- and no require back into this registry.
+	local meta = module.getMeta(id)
+	itmInst.notWepClass = meta and meta.notWepClass
 	return itmInst
 end
 

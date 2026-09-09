@@ -1,4 +1,4 @@
-# fixed this plugin not pushing some cards....
-Update 1.6.2
+# including card registry into push
+Update 1.6.3
 
-not even an update just fixed this plugin pushing cards
+and more

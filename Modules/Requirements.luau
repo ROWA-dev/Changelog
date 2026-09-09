@@ -268,6 +268,79 @@ function module.missing(slot: any, req: req?): string?
 	return table.concat(parts, ", ")
 end
 
+--- STRUCTURED `missing`, for a UI that draws bars instead of a sentence.
+--- One row per leaf. `stat` is the name to colour by, nil on rows that are not a stat.
+--- `have` is nil EXACTLY when the caller cannot evaluate the row: ownership reads the
+--- slot's own containers, which a client slot does not have, so a client must render
+--- those neutrally rather than as unmet.
+export type gateRow = {
+	label: string,
+	stat: string?,
+	have: number?,
+	need: number,
+	met: boolean,
+}
+
+local function pushGate(name: string, amount: number, track: any, ctx: any)
+	-- unknown stat is unsatisfiable, same rule as check
+	local have = if track == nil then 0 else statOf(ctx.slot, track, name)
+	table.insert(ctx.out, {
+		label = name .. suffix(track),
+		stat = if track == nil then nil else name,
+		have = have,
+		need = amount,
+		met = have >= amount,
+	})
+end
+
+function module.breakdown(slot: any, req: req?): {gateRow}
+	local out: {gateRow} = {}
+	if req == nil then return out end
+
+	eachLeaf(req, pushGate, { slot = slot, out = out })
+
+	local lvl = (slot and slot.lvl) or 0
+	if req.minLevel then
+		table.insert(out, {label = "level", have = lvl, need = req.minLevel, met = lvl >= req.minLevel})
+	end
+	if req.maxLevel then
+		table.insert(out, {label = "level at most", have = lvl, need = req.maxLevel, met = lvl <= req.maxLevel})
+	end
+	-- have stays nil: ownership is server-side only
+	if req.card then
+		table.insert(out, {label = nameOf("card", req.card), need = 1, met = ownsCard(slot, req.card)})
+	end
+	if req.ability then
+		table.insert(out, {label = nameOf("ability", req.ability), need = 1, met = ownsAbility(slot, req.ability)})
+	end
+	if req.sum then
+		for track, amount in pairs(req.sum) do
+			local have = trackSum(slot, track)
+			table.insert(out, {
+				label = "across " .. (TRACK_LABEL[track] or track),
+				have = have, need = amount, met = have >= amount,
+			})
+		end
+	end
+	if req.And then
+		for _, sub in ipairs(req.And) do
+			for _, row in ipairs(module.breakdown(slot, sub)) do table.insert(out, row) end
+		end
+	end
+	-- an Or has no single leaf to point a bar at, so it stays ONE row quoting itself,
+	-- same call describe makes. It IS evaluable though, so it carries a have: leaving
+	-- that nil reads as an ownership row and renders as "cannot check here".
+	if req.Or then
+		local hit = false
+		for _, sub in ipairs(req.Or) do
+			if module.check(slot, sub) then hit = true break end
+		end
+		table.insert(out, {label = module.describe({Or = req.Or} :: any), have = if hit then 1 else 0, need = 1, met = hit})
+	end
+
+	return out
+end
+
 --- authoring guard: a typo'd stat name is a req that can never pass, silently.
 --  Call it from a test after adding reqs; nothing in prod calls it.
 function module.validate(req: req?, label: string?): boolean

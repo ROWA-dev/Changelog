@@ -51,4 +51,21 @@ function module.newWep(id:number): anyWep
 	return itmInst
 end
 
+--[[ Is `wep` of `classModule`'s class, at ANY depth? Weapons carry no class id, so this
+	walks the metatable chain, which IS the class chain: an instance's metatable is its
+	leaf class, and each class's __index is its parent (WepBase -> weight -> family -> wep).
+	Pass a FAMILY module (script.Light.Fists) to catch every weapon under it. ]]
+function module.isClass(wep: any, classModule: ModuleScript): boolean
+	if wep == nil then return false end
+	local sreq: any = require
+	local target = sreq(classModule)
+	local class: any = getmetatable(wep)
+	while type(class) == "table" do
+		if class == target then return true end
+		local mt = getmetatable(class)
+		class = mt and mt.__index
+	end
+	return false
+end
+
 return module

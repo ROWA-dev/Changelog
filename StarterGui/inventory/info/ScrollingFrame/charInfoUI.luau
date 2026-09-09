@@ -1,6 +1,7 @@
 --!strict
 local clientData = require(game.ReplicatedFirst:WaitForChild("ClientData"))
 local ElementRegistry = require(game.ReplicatedStorage.Modules.ElementRegistry)
+local StatColors = require(game.ReplicatedStorage.Modules.StatColors)
 local MAX_STAT = require(game.ReplicatedStorage.Class.plrObjClient.slot).MAX_STAT
 local plrObj = clientData.plrObj
 local TweenService = game:GetService("TweenService")
@@ -23,31 +24,6 @@ local allocPtsLabel = frame:WaitForChild("allocPts")
 -- the sheet's own visibility: inventoryUI sets it from isOpen. Nothing here should run while off.
 local panel = frame.Parent :: GuiObject
 local ACCENT = Color3.fromRGB(255, 217, 103) -- the draft LevelButton's gold, the only progression accent
-
-local BASE_STAT_COLORS = {
-	strength  = Color3.new(0.800, 0.282, 0.282),
-	fortitude = Color3.new(0.776, 0.772, 0.756),
-	dexterity = Color3.new(0.564, 0.847, 0.513),
-	mind      = Color3.new(0.564, 0.682, 0.870),
-}
-
-local WEP_STAT_COLORS = {
-	hvy = Color3.new(0.776, 0.772, 0.756),
-	med = Color3.new(0.776, 0.772, 0.756),
-	lht = Color3.new(0.776, 0.772, 0.756),
-}
-
-local ELEM_COLORS = {
-	flame    = Color3.new(1.000, 0.350, 0.100),
-	ice      = Color3.new(0.550, 0.850, 1.000),
-	earth    = Color3.new(0.500, 0.750, 0.300),
-	wind     = Color3.new(0.750, 0.950, 0.700),
-	blood    = Color3.new(0.750, 0.100, 0.150),
-	creation = Color3.new(1.000, 0.900, 0.400),
-	light    = Color3.new(1.000, 1.000, 0.800),
-	dark     = Color3.new(0.350, 0.200, 0.550),
-	lightning = Color3.new(1.000, 0.950, 0.250),
-}
 
 -- GuiObject, not Frame: the compact element rows are TextButtons. UIListLayout survives.
 local function clearContainer(container: Frame)
@@ -286,7 +262,7 @@ local function buildElementsUI()
 		if value > 0 then
 			order += 1
 			bars += 1
-			makeStatBar(elemContainer, name, value, ELEM_COLORS[name], function()
+			makeStatBar(elemContainer, name, value, StatColors[name], function()
 				plrObj:allocateElement(name)
 			end, order)
 		else
@@ -312,7 +288,7 @@ local function buildElementsUI()
 		if elemOtherOpen then
 			for _, name in ipairs(others) do
 				order += 1
-				makeRow(elemContainer, name, ELEM_COLORS[name], order, function()
+				makeRow(elemContainer, name, StatColors[name], order, function()
 					if loadedSlot == nil or loadedSlot.allocPts <= 0 then return end
 					plrObj:allocateElement(name) -- the point moves it out to a bar on the next patch
 				end)
@@ -359,7 +335,7 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 	local rows = 0
 	for k, v in pairs(slotData.baseStats) do
 		rows += 1
-		makeStatBar(statsContainer, k, v, BASE_STAT_COLORS[k], function()
+		makeStatBar(statsContainer, k, v, StatColors[k], function()
 			plrObj:allocateStat(k)
 		end)
 	end
@@ -369,7 +345,7 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 	rows = 0
 	for k, v in pairs(slotData.weaponStats) do
 		rows += 1
-		makeStatBar(wepContainer, k, v, WEP_STAT_COLORS[k], function()
+		makeStatBar(wepContainer, k, v, StatColors[k], function()
 			plrObj:allocateWeaponStat(k)
 		end)
 	end

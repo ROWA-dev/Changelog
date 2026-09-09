@@ -10,7 +10,7 @@ export type myself = baseClass.myself & {
 
 local MAX_POSTURE_CUT = 10
 -- share of the damage dealt that ALSO comes off the victim's guard.
-local POSTURE_PER_DMG = 0.2 -- 20%... half was too good?
+local POSTURE_PER_DMG = 1
 
 local module = {}
 module.__index = module
