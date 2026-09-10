@@ -20,7 +20,7 @@ local module = {
 	PELLETS     = 1,
 	SPREAD      = 0,
 
-	DMG = DMGS.new(DMGS.weighEnum.Light, DMGS.dmgFlag.blunt, 12, 0.4, 1),
+	DMG = DMGS.new(DMGS.weighEnum.Light, DMGS.dmgFlag.blunt, 11, 0.4, 1),
 	PROJ = table.freeze({
 		speed       = 300,
 		lifetime    = 1,
@@ -28,7 +28,7 @@ local module = {
 		size        = Vector3.new(1, 1, 2),
 		stopOnWorld = true,
 		fxId        = "sgunProj",
-		dmgTbl      = DMGS.new(DMGS.weighEnum.Light, DMGS.dmgFlag.blunt, 10, 0.2, 1),
+		dmgTbl      = DMGS.new(DMGS.weighEnum.Light, DMGS.dmgFlag.blunt, 9, 0.2, 1),
 		onHit       = baseClass.onBulletHit,
 	}),
 }

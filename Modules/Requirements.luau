@@ -89,8 +89,17 @@ local function tracks(): {[string]: any}
 	for name in pairs(sreq(slotDir.baseStats).new()) do add(name, "baseStats") end
 	for _, name in ipairs(ElementRegistry) do add(name, "elements") end
 	for k, v in pairs(OPS) do t[k] = v end
-	TRACK = t
-	return t
+	-- frozen because statTracks hands this exact table out; nothing has ever written
+	-- to it after the build, and a caller that starts would corrupt every gate.
+	TRACK = table.freeze(t)
+	return TRACK
+end
+
+--- name -> track for every registered stat, `false` for an operator key, nil unknown.
+--- The SAME map check reads, exposed because a UI listing every stat (the codex's
+--- coverage grid) would otherwise re-derive it off the three stat classes itself.
+function module.statTracks(): {[string]: any}
+	return tracks()
 end
 
 --- fn(name, amount, track, ctx) over this level's stat leaves; truthy fn stops and returns it.
@@ -339,6 +348,19 @@ function module.breakdown(slot: any, req: req?): {gateRow}
 	end
 
 	return out
+end
+
+--- EVERY stat leaf in the tree: fn(name, amount, track). Return nothing, the walk
+--- has no early out. Ops, level and ownership gates are not stats and never arrive.
+--- Recurses And AND Or, which is what separates it from the other two walkers:
+--- eachLeaf is one level, and breakdown collapses an Or into a single quoted row
+--- because a bar cannot point at two branches. A coverage grid wants BOTH branches
+--- of an Or marked -- either one is a real way to earn the entry.
+function module.eachStat(req: req?, fn: (string, number, any) -> ())
+	if req == nil then return end
+	eachLeaf(req, fn :: any)
+	for _, sub in ipairs(req.And or {}) do module.eachStat(sub, fn) end
+	for _, sub in ipairs(req.Or or {}) do module.eachStat(sub, fn) end
 end
 
 --- authoring guard: a typo'd stat name is a req that can never pass, silently.

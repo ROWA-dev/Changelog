@@ -15,8 +15,7 @@ local abilityList:list = {
 	[5] = manifold.Barrage,
 	[6] = manifold.FireStab,
 	[7] = manifold.Fulminate,
-	-- rowa1 port, wave 1 (no prerequisites). See
-	-- ServerStorage/rowa1OldPlanToPort/README.md/PORT_00_INDEX for the plan.
+	-- rowa1 port, wave 1 (no prerequisites), plan in rowa1OldPlanToPort PORT_00_INDEX.
 	-- IDS ARE PERSISTED: append only, never renumber, never reuse.
 	[8]  = manifold.PowerStrike,
 	[9]  = manifold.IceBash,
@@ -63,10 +62,8 @@ local abilityList:list = {
 }
 table.freeze(abilityList)
 
--- registered ids, ascending. Built once from the keys, so reading it requires
--- NOTHING: no ability module is loaded to ask "what exists". Anything wanting
--- to enumerate abilities (random grants, admin listings) uses this instead of
--- probing getAbilityClass in a loop, which would require all 44 modules.
+-- registered ids, ascending. Built off the KEYS, so asking what exists requires nothing.
+-- Enumerate with this, never by probing getAbilityClass (that loads all 44 modules).
 local idList:{number} = {}
 for id in abilityList do
 	table.insert(idList, id)
@@ -74,34 +71,20 @@ end
 table.sort(idList)
 table.freeze(idList)
 
--- draft metadata. KEYED BY MODULE so the id is written once (in abilityList) and every line names itself;
--- a misspelt key is a nil index that dies at load. No entry == not draftable, which is what keeps ProjTest out.
--- OUT of the classes so filtering never requires them (see idList). name is class.Name, via nameOf.
--- req: Modules/Requirements ({} is free). tier: Modules/DraftTiers (nil == default).
+-- draft metadata, KEYED BY MODULE so the id is written once and a misspelt key dies at load.
+-- No entry == not draftable (keeps ProjTest out). Out of the classes, so filtering requires none.
 local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
 local DraftTiers = require(game.ReplicatedStorage.Modules.DraftTiers) -- might remove this - air
--- replaces: claiming this DROPS that ability id from the slot, i.e. it is an upgrade
--- of it. Pair it with `req = { ability = <same id> }` or the upgrade can be drafted
--- without ever owning the base move.
--- excludes: PICK ONE. Owning any listed id hides this from the draft, and the rule is
--- made symmetric at load, so declare it on ONE side only.
--- notWepClass: a weapon FAMILY module you may not be wielding, for the draft AND for the
--- swing. Stamped onto the instance by newAbility, enforced in AbilityBase.use.
 export type meta = {
 	desc: string,
-	req: Requirements.req,
-	tier: string?,
-	replaces: number?,
-	excludes: {number}?,
-	notWepClass: ModuleScript?,
+	req: Requirements.req,          -- Modules/Requirements, {} is FREE and nil inherits
+	tier: string?,                  -- Modules/DraftTiers, nil is the default colour
+	replaces: number?,              -- claiming DROPS this id. Pair with req.ability or it drafts without the base
+	reoffersBase: boolean?,         -- ...and then it returns to the pool, so both can be held
+	excludes: {number}?,            -- PICK ONE. Made symmetric at load, so declare one side
+	notWepClass: ModuleScript?,     -- weapon FAMILY you may not wield. Draft AND AbilityBase.use
 }
 
--- ids referenced by other entries' req/replaces/excludes. IDS ARE PERSISTED: these are
--- the same numbers as the lists above, named once. SIX_EYES is a CARD id, raw like
--- loadChar's, so Abilities gains no require on Cards.
-local SIX_EYES    = 13
-local STRONG_LEFT = 1
-local LION_FALL   = 30
 -- weapon FAMILY, not an id: the instance path, so this gains no require on Weps.
 local FISTS = game.ServerStorage.ROWA.Weps.Light.Fists
 
@@ -112,11 +95,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		desc = "A charged left hook. Long windup, heavy launch.",
 		req = { strength = 1 },
 	},
-	-- move is wip
-	-- [manifold.Blaze] = {
-	-- 	desc = "A burst of flame that shoves you back as it erupts.",
-	-- 	req = { flame = 1 },
-	-- },
+	-- Blaze [2] is WIP
 	[manifold.Clap] = {
 		desc = "Clap shut on the nearest target within 40 studs.",
 		req = { strength = 5 },
@@ -125,7 +104,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		desc = "A counter stance answering with a two-hit reply.",
 		req = { dexterity = 4 },
 		-- both are dexterity counters; a build picks its answer, not both.
-		excludes = { LION_FALL },
+		excludes = { 30 }, -- LionFall
 	},
 	[manifold.Barrage] = {
 		desc = "A rapid flurry of punches.",
@@ -166,9 +145,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.StrongerLeft] = {
 		desc = "Three shockwave rings and terrain destruction.",
-		-- the UPGRADE shape: gated on owning the base move, and it eats it on claim.
-		req = { strength = 6, ability = STRONG_LEFT },
-		replaces = STRONG_LEFT,
+		req = { strength = 6, ability = 1 }, -- StrongLeft
+		replaces = 1, -- same id as req.ability above, or it drafts without the base
+		-- a PAIR, not a ladder: the quick hook still earns a slot next to the committed one.
+		reoffersBase = true,
 		tier = DraftTiers.RARE,
 	},
 	[manifold.IceBeam] = {
@@ -282,12 +262,13 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.InverseRed] = {
 		desc = "A red orb fired flat. All the damage is in the blast.",
-		req = { card = SIX_EYES },
+		-- CARD id raw, like loadChar's, so Abilities gains no require on Cards. NOT ability 13.
+		req = { card = 13 }, -- Six Eyes
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.FullBlue] = {
 		desc = "A gravity well that drags everything into orbit.",
-		req = { card = SIX_EYES },
+		req = { card = 13 }, -- Six Eyes card
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.BoulderKick] = {
@@ -296,8 +277,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.HollowPurple] = {
 		desc = "A 4.25s charge, then a beam that ignores geometry.",
-		-- one flat table is AND: the card AND the old capstone investment.
-		req = { card = SIX_EYES, mind = 10 },
+		req = { card = 13, mind = 10 }, -- Six Eyes card
 		tier = DraftTiers.ULTIMATE,
 	},
 }
@@ -346,8 +326,8 @@ end
 table.freeze(supersededBy)
 table.freeze(conflicts)
 
--- which upgrade eats this ability, if any. The draft asks so it never re-offers a
--- base move to someone who already upgraded past it (dropping it frees hasAbility).
+-- which upgrade eats this ability, if any. The draft hides the base behind it, unless
+-- that upgrade sets reoffersBase.
 function module.supersededBy(id:number): number?
 	return supersededBy[id]
 end
@@ -363,11 +343,8 @@ function module.nameOf(id:number): string
 	return (ok and class and class.Name) or ("ability_"..tostring(id))
 end
 
--- returns nil for abilities that exist on disk but are not in abilityList
--- (scratch abilities: EarthShot, HitSelf, StrongKick, StrongShove).
--- PowerStrike used to be on that list and is NOT any more -- it shipped as id 8.
--- That is NOT a fault, so it warns and returns instead of erroring — callers
--- must handle nil.
+-- nil for a module on disk but not in abilityList (EarthShot, HitSelf, StrongKick,
+-- StrongShove). NOT a fault, so it warns rather than errors: callers must handle nil.
 function module.moduleToID(module:ModuleScript): number?
 	for i, v in abilityList do
 		if v == module then
@@ -386,6 +363,37 @@ function module.newAbility(id:number, ...): anyAbility
 	local meta = module.getMeta(id)
 	itmInst.notWepClass = meta and meta.notWepClass
 	return itmInst
+end
+
+-- ModuleScript name, NOT nameOf: nameOf reads class.Name, so naming a whole catalogue
+-- through it would require all 44 modules. They agree, every class is Name = script.Name.
+local function listName(id: number): string
+	local mod = abilityList[id]
+	return if mod then mod.Name else "ability_" .. tostring(id)
+end
+
+-- ARRAY, never KEYED by id: ids gap here too. Cards.catalogue's COLUMNS exactly, because
+-- the codex draws one page for both.
+local catalogue: {{any}}
+function module.catalogue(): {{any}}
+	if catalogue == nil then
+		local built = {}
+		for _, id in ipairs(idList) do
+			local meta = abilityMeta[abilityList[id]]
+			if meta == nil then continue end
+			-- replaces/excludes are NOT part of `req`, so describe never mentions them; the draft does.
+			local drops = if meta.replaces then listName(meta.replaces) else ""
+			local picks = {}
+			for _, other in ipairs(conflicts[id] or {}) do
+				table.insert(picks, listName(other))
+			end
+			-- DENSE: "" and {} never nil -- a nil gaps the row, and a nil req means INHERIT.
+			table.insert(built, {id, listName(id), meta.desc or "", Requirements.describe(meta.req),
+				meta.req or {}, drops, table.concat(picks, ", ")})
+		end
+		catalogue = table.freeze(built)
+	end
+	return catalogue
 end
 
 -- `req = { ability = id }` prints a name instead of a number. Costs one ability

@@ -8,9 +8,9 @@ export type myself = baseClass.myself & {
 	_modKey: string,
 }
 
-local MAX_POSTURE_CUT = 10
+local MAX_POSTURE_CUT = 15
 -- share of the damage dealt that ALSO comes off the victim's guard.
-local POSTURE_PER_DMG = 1
+local POSTURE_PER_DMG = 0.5
 
 local module = {}
 module.__index = module

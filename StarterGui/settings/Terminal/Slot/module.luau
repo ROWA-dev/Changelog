@@ -10,6 +10,9 @@ local plrObj = clientData.plrObj
 
 local frame = script.Parent
 local list  = frame:WaitForChild("ScrollingFrame")
+-- lives IN the list, not floating over it: reaching it means scrolling past every
+-- row on the page, which is most of the confirmation.
+local wipeBtn = list:WaitForChild("wipe")
 
 local rowTemplate    = script:WaitForChild("row")
 local headerTemplate = script:WaitForChild("header")
@@ -31,9 +34,12 @@ local order = 0
 
 local function clear()
 	order = 0
+	-- wipeBtn is the one GuiObject in here that is NOT a per-render clone, so it is
+	-- skipped and re-ordered at the end of render instead of being rebuilt.
+	wipeBtn.Visible = false
 	for _, v in pairs(list:GetChildren()) do
 		-- UIListLayout / UIPadding are not GuiObjects, so they survive this
-		if v:IsA("GuiObject") then game.Debris:AddItem(v, 0) end
+		if v:IsA("GuiObject") and v ~= wipeBtn then game.Debris:AddItem(v, 0) end
 	end
 end
 
@@ -208,12 +214,38 @@ local function render(info: any)
 	for _, f in ipairs(info.flags or {}) do
 		addRow(f[1], if f[2] then "yes" else "no")
 	end
+
+	-- last in the layout, so it only exists at the bottom of a full scroll
+	addHeader("DANGER")
+	wipeBtn.LayoutOrder = order
+	order += 1
+	wipeBtn.Visible = true
 end
 
 -- ONE persistent connection, made at require time. Connecting inside open() is
 -- what makes a page stack a listener per open.
 plrObj.slotInfoRecieved:Connect(function(info)
 	if isOpen then render(info) end
+end)
+
+-- Wipe is irreversible, so it arms before it fires: one float, nothing ticks. Second
+-- click inside the window sends; anything later just re-arms. Same connect-once rule.
+local WIPE_ARM_WINDOW = 3
+local wipeArmedUntil = 0
+
+local function disarmWipe()
+	wipeArmedUntil = 0
+	wipeBtn.Text = "Wipe Slot"
+end
+
+wipeBtn.MouseButton1Up:Connect(function()
+	if os.clock() < wipeArmedUntil then
+		disarmWipe()
+		plrObj:wipeSlot() -- server re-checks; the S2C.PlrData reply is what redraws
+		return
+	end
+	wipeArmedUntil = os.clock() + WIPE_ARM_WINDOW
+	wipeBtn.Text = "Sure?"
 end)
 
 return {
@@ -239,6 +271,7 @@ return {
 
 	close = function()
 		isOpen = false
+		disarmWipe() -- never reopen still armed
 		clear() -- don't hold ~40 frames alive while the page is shut
 	end,
 }

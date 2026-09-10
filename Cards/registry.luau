@@ -78,7 +78,6 @@ local cardList:clType = {
 		name = "Strength",
 		desc = "your basic attacks deal 5% more damage",
 		module = manifold.Strength,
-		-- 6 strength AND 2 in ANY weapon weight
 		req = {
 			strength = 6,
 			Or = {
@@ -120,11 +119,11 @@ local cardList:clType = {
 		name = "Quick Step",
 		desc = "dodging grants a second dodge window, if you keep off the attack",
 		module = manifold.QuickStep,
-		req = { dexterity = 6 },
+		req = { dexterity = 8 },
 	},
 	[16] = {
 		name = "Many-Handed",
-		desc = "commit to a second weapon at once",
+		desc = "+1 equippable weapons",
 		module = manifold.ManyHanded,
 		-- spread, not depth: 4 TOTAL across hvy/med/lht, however it is split.
 		req = { dexterity = 2, mind = 2, sum = { weaponStats = 4 } },
@@ -139,19 +138,18 @@ local cardList:clType = {
 		name = "Side Shotgun",
 		desc = "a sawn-off on your off hand. 3 shells, wider and meaner up close",
 		module = manifold.SideShotgun,
-		-- the UPGRADE shape: gated on owning the flintlock, and it eats it on claim.
 		req = { lht = 4, card = 17 }, -- Side Gun
 		replaces = 17,
 	},
 	[19] = {
 		name = "Mana Pores",
-		desc = "no matter how impenetrable your defense may be, there will always be holes. regain mana upon blocking an attack",
+		desc = "regain mana upon blocking an attack",
 		module = manifold.ManaPores,
 		req = { mind = 4 },
 	},
 	[20] = {
 		name = "Frenzied Form",
-		desc = "you crave aggression, oppressing all defenses at the cost of your own. dealing damage lowers posture, and 10% less max posture",
+		desc = "dealing damage will damage their posture, downside -15 less max posture",
 		module = manifold.FrenziedForm,
 		req = { strength = 4 },
 	},
@@ -169,7 +167,7 @@ local cardList:clType = {
 	},
 	[23] = {
 		name = "Rending Blow",
-		desc = "breaking a guard makes them bleed, 1 damage a second for 10 seconds",
+		desc = "breaking a guard makes them bleed, 1 DPS for 10 seconds",
 		module = manifold.RendingBlow,
 		req = { strength = 8 },
 	},
@@ -222,9 +220,7 @@ local cardList:clType = {
 }
 table.freeze(cardList)
 
-local module = {
-	--cardList = cardList
-}
+local module = {}
 
 function module.getCardClass(id:number)
 	local sreq:any = require
@@ -256,7 +252,6 @@ function module.getCardReq(id:number): Requirements.req?
 	return card and card.req
 end
 
--- what claiming `id` DROPS, if it is an upgrade.
 function module.getCardReplaces(id:number): number?
 	local card = cardList[id]
 	return card and card.replaces
@@ -288,7 +283,7 @@ end
 table.freeze(supersededBy)
 table.freeze(conflicts)
 
--- card ids that CANNOT be owned alongside this one. Symmetric, so asking either side works.
+-- symmetric at load, so asking either side of a pair works.
 function module.getCardConflicts(id:number): {number}?
 	return conflicts[id]
 end
@@ -326,30 +321,22 @@ function module.getInnateCardIds(): {number}
 	return ids
 end
 
--- ARRAY of {id, name, desc, reqText, req, replaces, excludes}, sorted, NEVER keyed by
--- id: card ids are gapped
--- (26 cards, max id 30) and a gapped numeric table does not survive a remote intact,
--- same rule as Emotes.catalogue. desc falls back to "" because a nil mid-row would
--- gap the ROW the same way. describe() runs HERE, where the card namer is registered:
--- the client has none and would print "card #17" instead of "Side Gun".
--- Draftable only -- innate ones arrive at load, unObtainable ones are gifts.
--- Built once, shared, and lazily: nothing pays for it until a Grimoire opens.
--- The RAW req rides along so the client can draw a bar per gate leaf through
--- Requirements.breakdown; `{}` not nil, because a nil would gap the row AND nil
--- means "inherit" to Requirements while {} means FREE.
+-- ARRAY of {id, name, desc, reqText, req, replaces, excludes}, never KEYED by id: they
+-- are gapped, and a gapped numeric table does not survive a remote intact.
 local catalogue:{{any}}
 function module.catalogue(): {{any}}
 	if catalogue == nil then
 		local built = {}
 		for _, id in ipairs(module.getDraftableCardIds()) do
 			local card = cardList[id]
-			-- replaces/excludes are NOT part of `req`, so describe never mentions them,
-			-- yet eligible() enforces both. "" not nil, or the row gaps.
+			-- replaces/excludes are NOT part of `req`, so describe never mentions them; eligible() does.
 			local drops = card.replaces and module.getCardName(card.replaces) or ""
 			local picks = {}
 			for _, other in ipairs(conflicts[id] or {}) do
 				table.insert(picks, module.getCardName(other))
 			end
+			-- describe() runs HERE, where the namer is; a client prints "card #17" instead.
+			-- DENSE: "" and {} never nil -- a nil gaps the row, and a nil req means INHERIT.
 			table.insert(built, {id, card.name, card.desc or "", Requirements.describe(card.req),
 				card.req or {}, drops, table.concat(picks, ", ")})
 		end
