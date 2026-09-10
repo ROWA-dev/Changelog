@@ -3,6 +3,71 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.17.2 - Second Baby Patch
+
+### Changes 🛠️
+- Piano now has encyclopedia
+- Piano uses different notes per note by the way
+- Decreased Frenzied Form posture relief percentage (100% -> 50%)
+- Increased Frenzied Form max posture relief (10 -> 15)
+- Quick Step requirement changed (6 dex -> 8 dex)
+- Updated card descriptions
+
+<br><sub>2026-09-10</sub>
+
+## 1.17.1 - Tiny Little Baby Patch
+
+### Changes 🛠️
+- Increased Frenzied Form posture relief percentage (20% -> 100%)
+
+<br><sub>2026-09-09</sub>
+
+## 1.17.0 - Lightninja
+
+### Added ✅
+- New stat: Lightning
+- New card: Adrenaline
+- New card: Bloodletting
+- New card: Composure
+- New card: Counterweight
+- New card: Deep Wound
+- New card: First Instinct
+- New card: Piercing Chill
+- New card: Rending Blow
+- New card: Second Wind
+- New side weapon: Shield
+- New side weapon: Side Gun
+- New side weapon: Side Shotgun
+- Added edit emotes button to emote menu
+- Refined character menu
+
+### Changes 🛠️
+- Decreased Frontliner damage multiplier (2x -> 1.5x)
+- Decreased Haki damage buff (+0.15x -> +0.1x)
+
+<br><sub>2026-09-08</sub>
+
+## 1.16.0 - Cardcardcardcardcardcardcardcardcard
+
+### Added ✅
+- New card: Fortitude
+- New card: Frenzied Form
+- New card: Frontliner
+- New card: Haki
+- New card: Mana Pores
+- New card: Many Handed
+- New card: Quick Step
+- New card: Six Eyes
+- New card: Splinter Guard
+- Added more level up indicators
+
+### Changes 🛠️
+- Toshi Counter and Lion Fall are now mutually exclusive
+- Stronger left now replaces Strong Left
+- Inverse Red, Full Blue, and Hollow Purple now all require Six Eyes
+
+<br><sub>2026-09-08</sub>
+
 ## 1.15.1 - Banana
 
 ### Added ✅
@@ -18,6 +83,8 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Adjusted ping compensation
 - Adjusted Rapier heavy attack movement
 - Cleaned code or something
+
+<br><sub>2026-09-06</sub>
 
 ## 1.15.0 - Evil Air Strike Back
 
