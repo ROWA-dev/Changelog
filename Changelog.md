@@ -3,6 +3,26 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.17.3 - Multi-hit Patch
+
+### Added ✅
+- Multi-hit moves are now easier to parry after being stunned by them
+  - Decreased Barrage parry cooldown multiplier (1x -> 0.5x)
+  - Decreased Bo Staff parry cooldown multiplier (1x -> 0.5x)
+  - Decreased Katana parry cooldown multiplier (1x -> 0.5x)
+- Side guns now have an attack indicator
+
+### Changes 🛠️
+- Changed Power Strike requirement (2 med -> 2 med OR 2 lht)
+- Changed Piercing Stab requirement (2 med -> 4 med OR 2 lht)
+- Changed Rend requirement (5 str -> 4 hvy)
+- Changed Blight requirement (2 crt, 2 flm -> 2 crt, 1 flm)
+- Changed Divide requirement (4 str -> 2 str, 2 mnd)
+- Adjusted Oblitar VFX
+- Fixed Nick's Amplifier
+
+<br><sub>2026-09-12</sub>
+
 ## 1.17.2 - Second Baby Patch
 
 ### Changes 🛠️
@@ -10,7 +30,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Piano uses different notes per note by the way
 - Decreased Frenzied Form posture relief percentage (100% -> 50%)
 - Increased Frenzied Form max posture relief (10 -> 15)
-- Quick Step requirement changed (6 dex -> 8 dex)
+- Changed Quick Step requirement (6 dex -> 8 dex)
 - Updated card descriptions
 
 <br><sub>2026-09-10</sub>
