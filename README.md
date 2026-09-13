@@ -1,9 +1,7 @@
-# ui ux
-Update 1.6.5
+# ez parry
+Update 1.6.6
 
-sideguns has the shine indicator
-number value of stat now shows up on its bar in the stats ui
-the thing that makes it harder to parry attacks while your stunned doesnt apply to multihits now
+fixed legacy issue on parrying
+which made it impossible to parry < 0.2s after being stunned
 
-sum balancing
 and more

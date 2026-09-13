@@ -33,6 +33,7 @@ export type myself = baseClass.entity & {
 	sprintSpeed: AdditiveValue.myself,
 	maxPosture:  AdditiveValue.myself,
 	maxMana:     AdditiveValue.myself,
+	manaRegenMult: number,
 	dashPower:   AdditiveValue.myself,
 	postureHeal: AdditiveValue.myself,
 	charSize:    AdditiveValue.myself,
@@ -74,6 +75,7 @@ export type myself = baseClass.entity & {
 
 	manaNow: (self: myself) -> number,
 	setMana: (self: myself, v: number) -> (),
+	setManaRegenMult: (self: myself, mult: number) -> boolean,
 
 	Stun:       (self: myself, stunTime: number, bypassArmour: boolean?) -> (),
 	inStun:     (self: myself, timeOffset:number?) -> boolean,
@@ -115,6 +117,9 @@ local module = {
 
 	-- studs of HipHeight the current slide owes back, 0 when upright; class-level default so stopSlideState can never read nil on an entity that skipped new().
 	_slideHipDrop = 0,
+
+	-- class default: only Saringan holders pay a field.
+	manaRegenMult = 1,
 
 	-- same, plus: EntityBase.destroy leaves the metatable, so a dead humObj falls through to these class defaults and a stale holder reads 0 rather than nil.
 	combatDeadline = 0,
@@ -254,10 +259,10 @@ end
 local MANA_K = 3
 
 -- pure and module-level: one closure total, not one per entity.
-local function manaCurve(a: number, t: number, m: number, now: number): number
+local function manaCurve(a: number, t: number, m: number, now: number, rate: number): number
 	local u = 1 - a / m
 	if u <= 0 then return m end -- at/over ceiling; u<=0 also breaks the sqrt
-	return m * (1 - u / math.sqrt(1 + (2 * MANA_K / m) * u * u * (now - t)))
+	return m * (1 - u / math.sqrt(1 + (2 * MANA_K / m) * u * u * (now - t) * rate))
 end
 
 function module.manaNow(self:myself): number
@@ -267,10 +272,10 @@ function module.manaNow(self:myself): number
 
 	-- maxMana moved: settle under the OLD ceiling, then re-anchor on the new. Lazy rather than a hook, which would cost 2 Signal connections per HumObj forever.
 	if mana.m ~= liveMax then
-		self:setMana(manaCurve(mana.a, mana.t, mana.m, now))
+		self:setMana(manaCurve(mana.a, mana.t, mana.m, now, self.manaRegenMult))
 	end
 
-	return manaCurve(mana.a, mana.t, mana.m, now)
+	return manaCurve(mana.a, mana.t, mana.m, now, self.manaRegenMult)
 end
 
 -- the ONLY way mana is written: re-anchors, then fires Changed (= replicate).
@@ -282,6 +287,15 @@ function module.setMana(self:myself, v: number)
 	rawset(mana, "t", tick())
 	rawset(mana, "m", m)
 	mana.Value = newV
+end
+
+function module.setManaRegenMult(self:myself, mult: number): boolean
+	mult = math.max(mult, 0)
+	if mult == self.manaRegenMult then return false end
+	local current = self:manaNow()
+	rawset(self, "manaRegenMult", if mult == 1 then nil else mult)
+	self:setMana(current)
+	return true
 end
 
 
@@ -817,6 +831,8 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 		elseif id == S2C.mana then
 			-- anchor on the wire, stamped locally on receipt. same as trueStun.
 			self:setMana(value)
+		elseif id == S2C.manaRegenMult then
+			self:setManaRegenMult(value)
 		elseif id == S2C.combatEdge then
 			-- (enemyModel, joined, remaining?). Edge, not a snapshot.
 			local joined, remaining = ...

@@ -54,7 +54,7 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 
 	fireVFX("rocketBoom", pos)
 	-- r8 is the inscribed sphere of the 16^3 cut; velo is studs/SECOND, since proj.dir is only a unit heading
-	Destruction.Sphere(nil, pos, 8, 4.8, proj.dir * 90)
+	Destruction.Sphere(nil, pos + Vector3.new(0,4,0), 8, 4, proj.dir * 90)
 
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
@@ -73,7 +73,11 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 		local dir = if offset.Magnitude > 0 then offset.Unit else proj.dir
 		local attack = action:makeAtk(ROCKET, enemy, dir)
 		attack.knockback = action:knockback(
-			dir * 18 + Vector3.new(0, 4.8, 0), 0.2, false, -1)
+			dir * 18 + Vector3.new(0, 8, 0),
+			0.1,
+			false,
+			-1
+		)
 		action:executeAttack(attack)
 
 		if attack:isHit() then
@@ -99,7 +103,7 @@ local ROCKET_CFG = table.freeze({
 	-- == TARGET_RANGE on purpose: never acquire what it cannot reach, and never fly past what it was allowed to acquire.
 	maxDistance = TARGET_RANGE,
 	-- cut hard: a rocket still circling half a minute later is a bug report waiting to happen.
-	lifetime    = 6,
+	lifetime    = 10,
 	size        = Vector3.new(4, 4, 12),
 	-- a RATE, not a per-frame nudge, so it flies the same at 30 and 144fps.
 	steer       = 3.75,

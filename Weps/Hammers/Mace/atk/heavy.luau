@@ -69,6 +69,9 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 	task.spawn(cannonFxShot, this)
 	
 	if this:feintWait(0.42) then
+		humObj.Hum.WalkSpeed = 150
+		humObj.Hum.Sit = true
+		
 		if humObj:inStun() then
 			humObj.HRootPart.AssemblyLinearVelocity = Vector3.zero
 			force:destroy()

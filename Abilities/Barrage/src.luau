@@ -68,7 +68,6 @@ local function useFunc(this:myself)
 		posMult  = 0.5,
 		parryH   = 0.1,
 		stunMeOnParried = 0,
-		parryCdMult = 0.5,
 		onHit    = require(script.punch),
 	}
 

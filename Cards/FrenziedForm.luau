@@ -2,13 +2,14 @@
 -- reduces ur max posture by 10
 -- but every successful hit also drains the enemys posture by a percentage of the damage dealt.
 
+-- TODO give this card a visual.. maybe ur posture bar becomes orange instead of red?
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
 	_modKey: string,
 }
 
-local MAX_POSTURE_CUT = 15
+local MAX_POSTURE_CUT = 20
 -- share of the damage dealt that ALSO comes off the victim's guard.
 local POSTURE_PER_DMG = 0.5
 

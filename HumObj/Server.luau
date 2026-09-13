@@ -286,11 +286,6 @@ function module.new(hum: Humanoid): myself
 	end
 
 	self:AddConnection(self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
-		-- !! a multi-hit that got through pulls your parry cd in, so one missed read is not the whole move. HIT only banks it (stun refresh holds isProperParry false); BLOCKED is where it gets spent.
-		local parryCdMult = attack.dmgTbl.parryCdMult
-		if parryCdMult and (attack:isHit() or attack:isBlocked()) then
-			self.cooldowns:shortenTo("parry", (self.cooldowns:duration("parry") or 0) * parryCdMult)
-		end
 		if attack:isBlocked() then
 			-- _lastBlocked means "my guard last DID something", not "blocking.Value last flipped", since ChangeBlocking only stamps the EDGES. Sole reader is ToshiCounter.
 			self._lastBlocked = tick()
@@ -823,11 +818,9 @@ end
 --
 
 function module.isParry(self:myself, atk:atkTyp?)
-	local ogWindow = self.parryWindow.Value/self.timeScale.Value
-	local window = ogWindow
+	local window = self.parryWindow.Value/self.timeScale.Value
 
-	local inStun = self:inStun()
-	if inStun then
+	if self:inStun() then
 		-- harder to parry in stun
 		window -= 0.08 
 	end
@@ -850,10 +843,6 @@ function module.isParry(self:myself, atk:atkTyp?)
 			if facingDot < 0 then -- is behind via position
 				window -= 0.06
 			end
-		end
-		
-		if atk.dmgTbl.parryCdMult ~= nil then -- IS A MULTIHIT ATK
-			window = ogWindow -- so make it easy to parry..
 		end
 	end
 	
@@ -1004,8 +993,35 @@ function module.feint(self:myself): boolean
 	return wepFeint or ablFeint
 end
 
-function module.Heal(self:myself, amt:number): number
-	if self.Hum then self.Hum.Health += amt end
+function module.Heal(self: myself, amt: number): number
+	if not self.Hum then
+		return 0
+	end
+
+	local myTorso: BasePart = self.Hum.Parent:FindFirstChild("Torso") :: any
+	local cloud: ParticleEmitter = myTorso:FindFirstChild("healCloud") :: any or script.HealFx.healCloud:Clone()
+	local cross: ParticleEmitter = myTorso:FindFirstChild("healCross") :: any or script.HealFx.healCross:Clone()
+
+	cloud.Parent = myTorso
+	cross.Parent = myTorso
+
+	local remaining = amt
+
+	while remaining > 0 do
+		local healAmount = math.min(remaining, 10)
+
+		self.Hum.Health += healAmount
+
+		cloud:Emit(math.ceil(healAmount * 0.5))
+		cross:Emit(math.ceil(healAmount * 0.3))
+
+		remaining -= healAmount
+
+		if remaining > 0 then
+			task.wait(0.3)
+		end
+	end
+
 	return amt
 end
 
@@ -1139,10 +1155,6 @@ function module.stopAbilityAnims(self:myself)
 	end
 end
 
-local function isProperParry(self:myself)
-	return tick() + self.timeStunned > self.stun.Value + 0.2
-end
-
 function module.canBlock(self:myself&any)
 	local now = tick()
 	return (
@@ -1199,7 +1211,7 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 
 	local wep:weaponBase.myself = self.wielding_weapon
 	local blockAnim = self:getBlockAnim()
-	if setTo == true and isProperParry(self) and self.cooldowns:canTrigger("parry") then self.cooldowns:trigger("parry")
+	if setTo == true and self.cooldowns:canTrigger("parry") then self.cooldowns:trigger("parry")
 		if wep and blockAnim and self.parryAnim then
 			blockAnim:Stop()
 			self:PlayTrack(self.parryAnim)

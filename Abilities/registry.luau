@@ -59,11 +59,12 @@ local abilityList:list = {
 	--- rowa1 EmptyPurple, renamed after its own assets. See its header and
 	--- PORT_00_INDEX; the ledger still files it under the old tool name.
 	[44] = manifold.HollowPurple,
+	[45] = manifold.Saringan,
 }
 table.freeze(abilityList)
 
 -- registered ids, ascending. Built off the KEYS, so asking what exists requires nothing.
--- Enumerate with this, never by probing getAbilityClass (that loads all 44 modules).
+-- Enumerate with this, never by probing getAbilityClass (that loads every module).
 local idList:{number} = {}
 for id in abilityList do
 	table.insert(idList, id)
@@ -82,6 +83,7 @@ export type meta = {
 	replaces: number?,              -- claiming DROPS this id. Pair with req.ability or it drafts without the base
 	reoffersBase: boolean?,         -- ...and then it returns to the pool, so both can be held
 	excludes: {number}?,            -- PICK ONE. Made symmetric at load, so declare one side
+	excludesCards: {number}?,       -- cross-kind PICK ONE; reverse map hides this ability's card too
 	notWepClass: ModuleScript?,     -- weapon FAMILY you may not wield. Draft AND AbilityBase.use
 }
 
@@ -288,6 +290,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { card = 13, mind = 10 }, -- Six Eyes card
 		tier = DraftTiers.ULTIMATE,
 	},
+	[manifold.Saringan] = {
+		desc = "Double mana recovery, empower weapons and copy abilities used by recent victims. Exclusive with Six Eyes.",
+		req = { mind = 8 },
+		excludesCards = { 13 }, -- Six Eyes
+	},
 }
 table.freeze(abilityMeta)
 
@@ -317,6 +324,7 @@ end
 local supersededBy: {[number]: number} = {}
 -- exclusions, made SYMMETRIC here so a pair is declared once and neither side can drift.
 local conflicts: {[number]: {number}} = {}
+local conflictsWithCard: {[number]: {number}} = {}
 local function addConflict(a: number, b: number)
 	local list = conflicts[a]
 	if list == nil then list = {} conflicts[a] = list end
@@ -330,9 +338,15 @@ for id, mod in abilityList do
 		addConflict(id, other)
 		addConflict(other, id)
 	end
+	for _, cardId in ipairs(m.excludesCards or {}) do
+		local list = conflictsWithCard[cardId]
+		if list == nil then list = {} conflictsWithCard[cardId] = list end
+		table.insert(list, id)
+	end
 end
 table.freeze(supersededBy)
 table.freeze(conflicts)
+table.freeze(conflictsWithCard)
 
 -- which upgrade eats this ability, if any. The draft hides the base behind it, unless
 -- that upgrade sets reoffersBase.
@@ -343,6 +357,10 @@ end
 -- ids that CANNOT be owned alongside this one. Symmetric, so asking either side works.
 function module.conflictsOf(id:number): {number}?
 	return conflicts[id]
+end
+
+function module.conflictsWithCard(id:number): {number}?
+	return conflictsWithCard[id]
 end
 
 -- display name without an instance: one require, and callers cache. ablityItem.getName routes here.
@@ -374,7 +392,7 @@ function module.newAbility(id:number, ...): anyAbility
 end
 
 -- ModuleScript name, NOT nameOf: nameOf reads class.Name, so naming a whole catalogue
--- through it would require all 44 modules. They agree, every class is Name = script.Name.
+-- through it would require every module. They agree, every class is Name = script.Name.
 local function listName(id: number): string
 	local mod = abilityList[id]
 	return if mod then mod.Name else "ability_" .. tostring(id)

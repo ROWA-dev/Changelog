@@ -1,17 +1,4 @@
 --!strict
---- Oblitar heavy - TWO BEATS ON ONE PRESS, the second of which executes.
---- rowa1 Main `typ == 2`, gated on `tick() > lastHeavy + 5`. Not a charge; see
---- attack.luau for why there is no heavyEnd.
---- !! the first feintWait is the WINDUP (rowa1's 0.6), the second is a plain
---- beat between hits (0.2 + 0.2). Both sit 0.08 under rowa1 -- that is the old
---- feintWait lead, preserved by the migration rather than retuned here.
---- !! rowa1 is inconsistent about AtkRate inside this one move (beat one
---- unscaled, beat two scaled). rowa2 scales everything, so beat one runs ~3%
---- longer. Left alone: 0.018s is under perception and matching it would mean
---- dividing the windup by atkRate, which reads as a typo.
---- !! the anim is speed 1.05, NOT 1 -- PlayAnim divides by atkRate, so 1.05
---- lands on rowa1's 1.0. Passing 1 plays the swing at 0.952 and feels slow.
---- The 5s gate is set AFTER the second beat, so the real gap is 5s from the END.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 
@@ -46,11 +33,6 @@ local function swing(this:wepTyp&any, dmgTbl, offset:number): boolean
 		local attack = this:makeAtk(dmgTbl, enemy, hurtbox.CFrame.LookVector)
 		attack.hitbox = hitbox
 
-		--[[ rowa1 knocks back on the SECOND beat only (Damage(9)), LookVector
-			*30 -> force *0.6 = 18. The first beat has none, which is what
-			keeps the victim inside the second beat's hitbox. Adding one to
-			beat 1 knocks them out of the finisher -- the same mistake
-			PORT_Rend documents. ]]
 		if dmgTbl == dmgConfig.heavy2 then
 			attack.knockback = this:knockback(hurtbox.CFrame.LookVector*18, 0.3)
 		end
@@ -79,12 +61,6 @@ return function(this:wepTyp&any): wepType.atkResult
 	if sharp and sharp:IsA("ParticleEmitter") then sharp:Emit(1) end
 	playSound(hold, "HeavySwing")
 
-	--[[ the trail/slash body. rowa1 parked this in ServerStorage.Effects and
-		reached for it by path; rowa2 keeps fx assets as CHILDREN of the thing
-		that uses them (README S2), so it is cloned off this module.
-		Emitters are fired SERVER-side exactly as rowa1 did -- Emit replicates,
-		and the part is welded to a root that every nearby client already has,
-		so the streaming rule (S5 7i) does not bite here. ]]
 	local fx = script.OblitarFX:Clone()
 	local weld = fx:FindFirstChild("Weld")
 	if weld and weld:IsA("Weld") then
@@ -126,9 +102,9 @@ return function(this:wepTyp&any): wepType.atkResult
 		landed = true
 	end
 
-	--[[ NO ENDLAG, and that is not an oversight: rowa1 has none -- after
-		Damage(9) it sets `Attacking.Value = false` and the move is over.
-		If it needs a whiff punish later, add it on the `not landed` branch
-		ONLY, and keep it well under 0.4. ]]
+	-- 0.4 endlag on miss
+	if landed == false then
+		this:atkWait(0.4)
+	end
 	return landed
 end

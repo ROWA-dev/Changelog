@@ -105,7 +105,7 @@ local cardList:clType = {
 	},
 	[13] = {
 		name = "Six Eyes",
-		desc = "+10 max health and 20% faster healing, quadrupled while nearly dead",
+		desc = "+10 max health and 20% faster healing, quadrupled while nearly dead. Exclusive with Saringan",
 		module = manifold.SixEye,
 		req = { mind = 6 },
 	},
@@ -216,6 +216,12 @@ local cardList:clType = {
 		module = manifold.Composure,
 		req = { fortitude = 4 },
 		excludes = { 29 }, -- Second Wind
+	},
+	[31] = {
+		name = "Emperor Flame",
+		desc = "Strong knockback burns both fighters and detonates on the victim.",
+		module = manifold.EmperorFlame,
+		req = { flame = 8 },
 	},
 }
 table.freeze(cardList)
