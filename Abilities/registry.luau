@@ -120,7 +120,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.PowerStrike] = {
 		desc = "Two-stage weapon flourish; the second slash launches.",
-		req = { med = 2 },
+		req = {
+			Or = {
+				{med = 2}, {lht = 2}
+			} :: {Requirements.req}
+		},
 	},
 	[manifold.IceBash] = {
 		desc = "A committed overhead ice smash. Long reach.",
@@ -132,16 +136,20 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.PiercingStab] = {
 		desc = "A rooted 0.65s telegraph. The slowest single hit.",
-		req = { med = 2 },
+		req = {
+			Or = {
+				{med = 4}, {lht = 2}
+			} :: {Requirements.req}
+		},
 		notWepClass = FISTS, -- nothing to stab with
 	},
 	[manifold.Rend] = {
 		desc = "Two ground slams, the second higher than the first.",
-		req = { strength = 5 },
+		req = { hvy = 4 },
 	},
 	[manifold.Blight] = {
 		desc = "A blinding orb that detonates in a 20-stud sphere.",
-		req = { creation = 2, flame = 2 },
+		req = { creation = 2, flame = 1 },
 	},
 	[manifold.StrongerLeft] = {
 		desc = "Three shockwave rings and terrain destruction.",
@@ -225,7 +233,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Divide] = {
 		desc = "Uppercut, drag them in, two committed strikes.",
-		req = { strength = 4 },
+		req = { strength = 2, mind = 2 },
 	},
 	[manifold.Smash] = {
 		desc = "Uppercut, flash-step up, drive them back down.",

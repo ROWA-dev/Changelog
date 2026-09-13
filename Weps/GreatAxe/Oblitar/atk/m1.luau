@@ -51,7 +51,7 @@ local function flourish(this:wepBase.myself&any)
 		if this:flourishHook() == true then return end
 	end
 
-	humObj.limbTrails:indicatorRightLeg()
+	humObj.limbTrails:indicatorLeftLeg()
 
 	--[[ rowa1 plays arrowwoosh (from 0.2s in) at the START of the flourish,
 		not partway through like the normal m1. ]]

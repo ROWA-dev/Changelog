@@ -286,6 +286,11 @@ function module.new(hum: Humanoid): myself
 	end
 
 	self:AddConnection(self.onAttacked:Connect(function(attack: DmgUtils.atkTyp, returnValue: number, atkSource: any?) 
+		-- !! a multi-hit that got through pulls your parry cd in, so one missed read is not the whole move. HIT only banks it (stun refresh holds isProperParry false); BLOCKED is where it gets spent.
+		local parryCdMult = attack.dmgTbl.parryCdMult
+		if parryCdMult and (attack:isHit() or attack:isBlocked()) then
+			self.cooldowns:shortenTo("parry", (self.cooldowns:duration("parry") or 0) * parryCdMult)
+		end
 		if attack:isBlocked() then
 			-- _lastBlocked means "my guard last DID something", not "blocking.Value last flipped", since ChangeBlocking only stamps the EDGES. Sole reader is ToshiCounter.
 			self._lastBlocked = tick()
@@ -846,7 +851,12 @@ function module.isParry(self:myself, atk:atkTyp?)
 				window -= 0.06
 			end
 		end
+		
+		if atk.dmgTbl.parryCdMult ~= nil then -- IS A MULTIHIT ATK
+			window = ogWindow -- so make it easy to parry..
+		end
 	end
+	
 	-- TODO maybe clamp parrywindow...
 	return tick() <= self.cooldowns:lastUsedAt("parry") + window
 end

@@ -144,6 +144,15 @@ function module.fire(self: any)
 	sound(self, "shot", math.random(90, 120) / 100)
 end
 
+local function indicateAtk(self)
+	local model = self._model
+	local top = model and model:FindFirstChild("Model")
+	top = top and top:FindFirstChild("Blade2")
+	top = top and top:FindFirstChild("Top")
+	if top == nil or not top:IsA("Attachment") then return nil end
+	top:FindFirstChild("sharp"):Emit(1)
+	return nil
+end
 --- THE bind entry. use() owns the attacking lock; this owns what happens inside it.
 function module.use(self: any): boolean
 	return baseClass.use(self, function()
@@ -155,6 +164,7 @@ function module.use(self: any): boolean
 		sound(self, "load")
 		-- rowa1 alternated the draw pose off the shot count
 		self:PlayAnim(if self.shots == 2 then self.Draw2 else self.Draw, 0.8)
+		indicateAtk(self)
 
 		-- a stun during the draw cancels the whole thing, and the shot is NOT spent
 		if not self:windup(self.WINDUP) then
@@ -165,6 +175,7 @@ function module.use(self: any): boolean
 
 		self:fire()
 		if self.END_LAG > 0 then self:endLag(self.END_LAG) end
+		return nil
 	end)
 end
 

@@ -8,7 +8,6 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "Armor",
-	-- 40% of a bar against the 100 maxMana pool.
 	manaUse = 40,
 }
 module.__tostring = baseClass.__tostring

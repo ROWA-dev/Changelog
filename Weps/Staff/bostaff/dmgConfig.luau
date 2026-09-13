@@ -23,8 +23,8 @@ local config:configs = {
 		stun     = 0.2,
 		posMult  = 1,
 		onHit    = require(script.hit),
-		stunMeOnParried = 0
-		--parryH   = 0.4
+		stunMeOnParried = 0,
+		parryCdMult = 0.5
 	},
 	flourish = {
 		weight   = weighEnum.Medium,

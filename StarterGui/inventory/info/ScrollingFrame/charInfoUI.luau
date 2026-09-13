@@ -24,6 +24,8 @@ local allocPtsLabel = frame:WaitForChild("allocPts")
 -- the sheet's own visibility: inventoryUI sets it from isOpen. Nothing here should run while off.
 local panel = frame.Parent :: GuiObject
 local ACCENT = Color3.fromRGB(255, 217, 103) -- the draft LevelButton's gold, the only progression accent
+-- Montserrat is FontFace-only, there is no Enum.Font entry for it. Built once, shared by every bar.
+local NUM_FONT = Font.fromName("Montserrat", Enum.FontWeight.Regular)
 
 -- GuiObject, not Frame: the compact element rows are TextButtons. UIListLayout survives.
 local function clearContainer(container: Frame)
@@ -39,6 +41,11 @@ local BAR_ROW_H, OTHER_ROW_H, ROW_PAD, ELEM_TOP_PAD = 30, 18, 5, 15
 -- one has to restack the rest. reflow owns every section Y from here on.
 local SECTION_TOP, SECTION_GAP, HEADER_H = baseSection.Position.Y.Offset, 10, 20
 
+-- every section is some bar rows plus some compact rows; all four measure themselves with this.
+local function stackH(barRows: number, otherRows: number): number
+	return barRows * (BAR_ROW_H + ROW_PAD) + otherRows * (OTHER_ROW_H + ROW_PAD)
+end
+
 local loadedSlot -- the click guard needs allocPts at CLICK time, not at build time.
 local elemOtherOpen = false
 local otherToggle: TextButton? = nil
@@ -46,9 +53,7 @@ local otherToggle: TextButton? = nil
 type section = {
 	frame: Frame,
 	container: Frame,
-	label: TextLabel,
 	sign: TextLabel,
-	title: string,
 	collapsed: boolean,
 	contentH: number,
 	-- fired on collapse AND expand: a section with live readouts binds/unbinds off this
@@ -66,6 +71,9 @@ local function reflow()
 		s.sign.Text = if s.collapsed then "+" else "-"
 		y += h + SECTION_GAP
 	end
+	-- the sections are the last children, so the stack reflow just built IS the content height.
+	-- The trailing SECTION_GAP doubles as bottom padding.
+	frame.CanvasSize = UDim2.fromOffset(0, y)
 end
 
 -- the header IS the toggle: a transparent button over the label, so no authored art changes.
@@ -83,9 +91,7 @@ local function addSection(sectionFrame: Frame, collapsed: boolean): section
 	local s: section = {
 		frame = sectionFrame,
 		container = sectionFrame:WaitForChild("container") :: Frame,
-		label = label,
 		sign = sign,
-		title = label.Text,
 		collapsed = collapsed,
 		contentH = 0,
 	}
@@ -138,6 +144,9 @@ end
 local function pulse(target: GuiObject)
 	local stroke = Instance.new("UIStroke")
 	stroke.Name = "InvestmentGuideStroke"
+	-- Border, NOT the default Contextual: every target here is a TextButton with empty Text, and
+	-- Contextual strokes the text on a text object -- so the guide was drawing nothing at all.
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	stroke.Color = Color3.new(1, 1, 1)
 	stroke.Transparency = 0.8
 	stroke.Parent = target
@@ -183,6 +192,36 @@ local function refreshInvestmentGuide()
 	if otherToggle then pulse(otherToggle) end
 end
 
+-- fill width and the number on it are one readout: both move here, nowhere else.
+-- 0 draws no fill, so there is nothing to sit in -- hide the number rather than float it.
+local function setBar(stat: Frame, value: number)
+	local fill = stat:WaitForChild("bar"):WaitForChild("bar")
+	fill.Size = UDim2.new(value / MAX_STAT, 0, 1, 0)
+	local num = fill:WaitForChild("value")
+	num.Text = tostring(value)
+	num.Visible = value > 0
+end
+
+-- the number is its own fill's colour one step off in tone: deeper on bright fills, lighter
+-- on the two dark ones (blood, dark). Deliberately a near miss -- push it further and the
+-- glyphs stop reading as the bar's colour and just look black or white at this size.
+local function numColor(fill: Color3): Color3
+	local h, s, v = fill:ToHSV()
+	if 0.2126 * fill.R + 0.7152 * fill.G + 0.0722 * fill.B < 0.3 then
+		return Color3.fromHSV(h, s * 0.7, math.min(v * 1.45, 1))
+	end
+	return Color3.fromHSV(h, math.min(s * 1.15, 1), v * 0.55)
+end
+
+-- one patch handler for both bar tracks; neither closes over the slot. `stats` is any because
+-- the stat tables carry their own methods, so no indexer type accepts them.
+local function updateStatsUI(container: Frame, stats: any)
+	for k, v in pairs(stats) do
+		local statFrame = container:FindFirstChild(k)
+		if statFrame then setBar(statFrame :: Frame, v) end
+	end
+end
+
 local function makeStatBar(container: Frame, name: string, value: number, color: Color3?, onClickFn: () -> (), order: number?)
 	local stat = script.stat:Clone()
 	stat.Name = name
@@ -191,13 +230,38 @@ local function makeStatBar(container: Frame, name: string, value: number, color:
 	local statBar = mainBarFrame:WaitForChild("bar")
 	if color then statBar.BackgroundColor3 = color end
 	stat.label.Text = name
-	statBar.Size = UDim2.new(value / MAX_STAT, 0, 1, 0)
+
+	-- parented to the FILL, not the track, so it centres on the solid part and slides with it.
+	-- Z+1: the fill is a same-ZIndex child of the track (Sibling behavior) and would cover it.
+	local num = Instance.new("TextLabel")
+	num.Name = "value"
+	num.Size = UDim2.fromScale(1, 1)
+	num.BackgroundTransparency = 1
+	num.FontFace = NUM_FONT
+	num.TextSize = 10
+	num.TextColor3 = numColor(statBar.BackgroundColor3)
+	num.ZIndex = statBar.ZIndex + 1
+	num.Parent = statBar
+
+	setBar(stat, value)
 	stat.Visible = true
 	stat.Parent = container
 	mainBarFrame.MouseButton1Click:Connect(function()
 		if loadedSlot == nil or loadedSlot.allocPts <= 0 then return end
 		onClickFn()
 	end)
+end
+
+-- base and weapon stats build the same way off the same shape; only the container and the
+-- allocate call differ. Rows are COUNTED, not hardcoded 4 and 3.
+local function buildBars(container: Frame, stats: any, alloc: (string) -> ()): number
+	clearContainer(container)
+	local rows = 0
+	for name, value in pairs(stats) do
+		rows += 1
+		makeStatBar(container, name, value, StatColors[name], function() alloc(name) end)
+	end
+	return stackH(rows, 0)
 end
 
 -- ONE compact row for both jobs: optional colour chip, name left, value right. No bar,
@@ -296,7 +360,7 @@ local function buildElementsUI()
 		end
 	end
 
-	elemSec.contentH = bars * (BAR_ROW_H + ROW_PAD) + (order - bars) * (OTHER_ROW_H + ROW_PAD)
+	elemSec.contentH = stackH(bars, order - bars)
 	reflow()
 end
 
@@ -309,47 +373,11 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 		xpBar.Size = UDim2.new(slotData.exp / slotData:nextLevelXp(), 0, 1, 0)
 	end
 
-	local function updateBaseStatsUI()
-		for k, v:number in pairs(slotData.baseStats) do
-			local statFrame = statsContainer:FindFirstChild(k)
-			if statFrame then
-				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(v / MAX_STAT, 0, 1, 0)
-			end
-		end
-	end
-
-	local function updateWeaponStatsUI()
-		for k, v:number in pairs(slotData.weaponStats) do
-			local statFrame = wepContainer:FindFirstChild(k)
-			if statFrame then
-				statFrame:WaitForChild("bar"):WaitForChild("bar").Size = UDim2.new(v / MAX_STAT, 0, 1, 0)
-			end
-		end
-	end
-
 	frame.characterName.Text = slotData.name
 	updateExpUI()
 
-	-- both counted, not hardcoded 4 and 3: reflow sizes each section off its own rows.
-	clearContainer(statsContainer)
-	local rows = 0
-	for k, v in pairs(slotData.baseStats) do
-		rows += 1
-		makeStatBar(statsContainer, k, v, StatColors[k], function()
-			plrObj:allocateStat(k)
-		end)
-	end
-	baseSec.contentH = rows * (BAR_ROW_H + ROW_PAD)
-
-	clearContainer(wepContainer)
-	rows = 0
-	for k, v in pairs(slotData.weaponStats) do
-		rows += 1
-		makeStatBar(wepContainer, k, v, StatColors[k], function()
-			plrObj:allocateWeaponStat(k)
-		end)
-	end
-	wepSec.contentH = rows * (BAR_ROW_H + ROW_PAD)
+	baseSec.contentH = buildBars(statsContainer, slotData.baseStats, function(k) plrObj:allocateStat(k) end)
+	wepSec.contentH  = buildBars(wepContainer, slotData.weaponStats, function(k) plrObj:allocateWeaponStat(k) end)
 
 	buildElementsUI() -- clears the container, sets elemSec.contentH, and reflows
 	refreshInvestmentGuide()
@@ -359,10 +387,10 @@ plrObj.slotLoaded:Connect(function(slotData, _serialData)
 			updateExpUI() -- earnedProg moves with allocPts, not just lvl
 		end
 		if patch.baseStats then
-			updateBaseStatsUI()
+			updateStatsUI(statsContainer, slotData.baseStats)
 		end
 		if patch.weaponStats then
-			updateWeaponStatsUI()
+			updateStatsUI(wepContainer, slotData.weaponStats)
 		end
 		if patch.elements then
 			-- REBUILD, not resize: a first point moves an element out of `other` into a bar.
@@ -382,7 +410,7 @@ for i, title in ipairs(INFO_ROWS) do
 	local _, value = makeRow(infoContainer, title, nil, i, nil)
 	infoValues[title] = value
 end
-infoSec.contentH = #INFO_ROWS * (OTHER_ROW_H + ROW_PAD)
+infoSec.contentH = stackH(0, #INFO_ROWS)
 
 --[[ CONNECTED ONLY WHILE WATCHED. walkSpeed alone fires on sprint, block, attack, land-hit,
 	shock and every dash, so a permanent listener burns cpu for a panel nobody is looking at.
