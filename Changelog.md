@@ -3,6 +3,34 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.18.1 - Mini Emperor Flame Patch
+
+### Changes 🛠️
+- Reduced Emperor Flame damage (12 -> 6)
+
+<br><sub>2026-09-13</sub>
+
+## 1.18.0 - One Of THE WORST Additions To ROWA 2
+
+### Added ✅
+- New card: Saringan
+- New card: Emperor Flame
+- Oblitar heavy attack now has a 0.4s endlag on miss
+- Feinting Mace heavy attack during the attack sits player
+
+### Changes 🛠️
+- Adjusted RPG knockback
+- Increased Frontliner max posture cut (15 -> 20)
+- Fixed legacy parry issue
+- Reduced Oblitar heavy attack damage (34 -> 30)
+
+### Removed ❌
+- Reverted Barrage parry cooldown multiplier (0.5x -> 1x)
+- Reverted Bo Staff parry cooldown multiplier (0.5x -> 1x)
+- Reverted Katana parry cooldown multiplier (0.5x -> 1x)
+
+<br><sub>2026-09-13</sub>
+
 ## 1.17.3 - Multi-hit Patch
 
 ### Added ✅
