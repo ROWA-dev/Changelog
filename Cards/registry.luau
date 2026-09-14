@@ -221,7 +221,7 @@ local cardList:clType = {
 		name = "Emperor Flame",
 		desc = "Strong knockback burns both fighters and detonates on the victim.",
 		module = manifold.EmperorFlame,
-		req = { flame = 8 },
+		req = { flame = 10 },
 	},
 }
 table.freeze(cardList)

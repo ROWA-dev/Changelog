@@ -1,7 +1,6 @@
-# ez parry
-Update 1.6.6
+# merge
+Update 1.6.7
 
-fixed legacy issue on parrying
-which made it impossible to parry < 0.2s after being stunned
+emperorflame dmg nerf
 
 and more
