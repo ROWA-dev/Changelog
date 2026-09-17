@@ -23,7 +23,6 @@ local destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 local function useFunc(this:myself, targetPos:Vector3)
 	local cooldownID = "earthShot"
 	if not this:canTriggerCD(cooldownID) then return end
-	print("USE ABILITY!")
 
 	local root = this._humObj.HurtBox
 

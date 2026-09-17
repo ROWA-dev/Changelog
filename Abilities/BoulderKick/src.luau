@@ -84,7 +84,8 @@ local function useFunc(this:myself)
 	)
 
 	if chunks == nil or #chunks == 0 then
-		-- the whiff: 2s, not the full cd, and no mana spent
+		-- the fizzle tier: 2s, no mana spent. The full price below must not pass
+		-- dontOverwrite or this pins the id at 2s for the session. See triggerCD.
 		if anim then anim:Stop(0.1) end
 		this:triggerCD(cooldownID, 2, true)
 		this:endLag(0.2)
@@ -111,7 +112,7 @@ local function useFunc(this:myself)
 	end
 
 	this:useMana()
-	this:triggerCD(cooldownID, 12, true)
+	this:triggerCD(cooldownID, 12)
 
 	local snd = script.kicksound:Clone()
 	snd.Parent = humObj.HRootPart

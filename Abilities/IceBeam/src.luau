@@ -1,11 +1,11 @@
 --!strict
 --- IceBeam - a sustained freezing beam down a 4x4x40 lane. 19 ticks of tiny
---- damage. rowa1 port: README.md/PORT_IceBeam.
---- THE BEAM DOES NOT STUN, IT FREEZES. rowa1 stunned every tick and then needed
---- four resolver exemptions to stop it being an unbreakable lock. Here each
---- tick pours into the Freeze meter: ~7 connected ticks fill it, the victim
---- freezes ONCE, and a 4s refractory blocks the rest of the beam from refilling
---- it. That is the entire reason StatusEffects/Freeze exists.
+--- damage.
+--- THE BEAM DOES NOT STUN, IT FREEZES. Stunning every tick needs exemptions all
+--- over the resolver to stop it being an unbreakable lock. Here each tick pours
+--- into the Freeze meter: ~7 connected ticks fill it, the victim freezes ONCE,
+--- and a 4s refractory blocks the rest of the beam from refilling it. That is
+--- the entire reason StatusEffects/Freeze exists.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -29,13 +29,11 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 "ice": Light, ice, 1.5 dmg, truestun 0.1 / stun 0.3, posMult 2.
-	stun cut to 0.1 -- see the header. Shipping the meter AND a 0.3s stun
-	gives you both problems at once.
+--[[ stun is 0.1 -- see the header. Shipping the meter AND a real stun gives you
+	both problems at once.
 
-	stunMeOnParried 0 is the one-field replacement for rowa1's `noparrystun`
-	set: at 19 ticks, parrying one should not stun the caster for the other
-	eighteen. ]]
+	stunMeOnParried 0: at 19 ticks, parrying one should not stun the caster for
+	the other eighteen. ]]
 local ICE = {
 	weight   = dmgUtils.weighEnum.Light,
 	type     = dmgFlag.ice,
@@ -70,7 +68,6 @@ local function useFunc(this:myself)
 		fireVFX("icelst", leftArm, 0.9)
 	end
 
-	-- rowa1 was 0.5 + 0.2 + 0.2 with a re-check between each. One call.
 	if this:feintWait(0.82) then
 		if anim then anim:Stop(0.1) end
 		--- the hand must stop charging a cast that is not coming
@@ -92,19 +89,16 @@ local function useFunc(this:myself)
 		fireVFX("icelasers", hurtbox, 0)
 	end
 
-	--[[ fixed-rhythm channel, so this uses the BARRAGE PATTERN for its
+	--[[ fixed-rhythm channel, so this uses :channelBreak for its
 		interrupt checks rather than feintWait -- feintWait would fight the
-		0.1s cadence. See README S6.2. ]]
+		0.1s cadence. ]]
 	for _ = 1, TICKS do
-		--[[ HurtBox-LOCAL, so the beam sweeps as the player turns. rowa1
-			recomputed Dir from the root every iteration to get the same
-			effect. ]]
+		--- HurtBox-LOCAL, so the beam sweeps as the player turns.
 		local _, hits = this:hitbox(CFrame.new(0, 0, -20), Vector3.new(4, 4, 38))
 
 		for _, enemy in pairs(hits) do
 			task.spawn(function()
 				local attack = this:makeAtk(ICE, enemy, hurtbox.CFrame.LookVector)
-				-- rowa1 look*6, at the x0.6 ratio (README S7)
 				attack.knockback = this:knockback(attack.atkDir * 3.6, 0.1, false, -1)
 				this:executeAttack(attack)
 				if attack:isHit() then
@@ -116,17 +110,9 @@ local function useFunc(this:myself)
 
 		task.wait(TICK_RATE)
 
-		if humObj:inStun() then
+		if this:channelBreak() then
 			if anim then anim:Stop(0.1) end
 			stopBeam()
-			return
-		end
-		if this.isFeinted then
-			if anim then anim:Stop(0.1) end
-			stopBeam()
-			this.isFeinted = false
-			humObj.cooldowns:trigger("feint2")
-			fireVFX("feintfx", char)
 			return
 		end
 	end

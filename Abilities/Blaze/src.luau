@@ -21,7 +21,6 @@ local dmgFlag = dmgUtils.dmgFlags
 local function useFunc(this:myself)
 	local cooldownID = "blaze"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	print("USE ABILITY!")
 	local anim = this:PlayAnim(script.anim, 0, 1, 1)
 	local root = this._humObj.HurtBox
 	
@@ -116,7 +115,7 @@ local function useFunc(this:myself)
 end
 
 function module.use(self:myself)
-	baseClass.use(self, useFunc)
+	return baseClass.use(self, useFunc)
 end
 
 

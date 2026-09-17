@@ -40,6 +40,10 @@ local DROP_KICK = {
 
 local DIVE_FORCE = 16
 local MAX_DIVE   = 2
+
+-- the ride loop below already runs every frame, so this wants the LEAD and no
+-- window: test where the dive is about to be, not where it was last frame.
+local DIVE = table.freeze({ lead = 0.0625, worldSpace = true })
 local HOP_FORCE  = 8
 local HOP_TIME   = 0.1
 
@@ -52,16 +56,6 @@ local function useFunc(this:myself)
 	if this:canTriggerCD(cooldownID) ~= true then return end
 
 	local humObj  = this._humObj
-	local now = tick()
-
-	if now < humObj.stun.Value + 0.4 then -- cant use 0.4s after stun
-		return
-	end
-
-	if now < humObj._lastBlocked + 0.4 then -- 0.4s
-		return
-	end
-	
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 	local first = this:PlayAnim(script.First, 0, 1, 1.2)
@@ -94,7 +88,7 @@ local function useFunc(this:myself)
 	local loopAnim = this:PlayAnim(script.loop, 0, 1, 1)
 
 	local root = humObj.HRootPart
-	--- down and forward: rowa1's dir was UpVector*-10 + LookVector*8
+	--- down and forward
 	local dive = this:bodyForce(Vector3.new(0, -1.2, -1).Unit * DIVE_FORCE, MAX_DIVE, true)
 
 	--- !! A BODY IS NOT THE FLOOR, and this is why the kick missed. A root is
@@ -108,17 +102,14 @@ local function useFunc(this:myself)
 	local landing = nil
 	local started = tick()
 
-	--[[ rowa1 offset the query by velocity/16 -- "blaze likes relative
-		position" -- so a fast dive tests where it is ABOUT to be, not where
-		it was one frame ago. ]]
 	local function sweepAhead(from: BasePart, dir: Vector3)
-		local rpos = from.Position + from.AssemblyLinearVelocity / 16
+		local rpos = from.Position
 		local cf = CFrame.new(rpos + dir.Unit * 3, rpos + dir.Unit * 6)
-		local _, found = this:hitbox(cf, Vector3.new(7,7,7), nil, true)
+		local _, found = this:sweep(cf, Vector3.new(7,7,7), DIVE)
 		return found
 	end
 
-	--- fixed-rhythm ride -> BARRAGE PATTERN for the interrupt checks
+	--- fixed-rhythm ride -> :channelBreak for the interrupt checks
 	while tick() < started + MAX_DIVE do
 		task.wait()
 		if humObj:inStun() then break end
@@ -158,7 +149,7 @@ local function useFunc(this:myself)
 		else Vector3.new(0, -1, 0)
 
 	if landing then
-		--- rowa1 SmallBreak2 cut with a 7^3 cube; r3.5 is its inscribed sphere
+		--- r3.5 is the inscribed sphere of the 7^3 cut this replaced
 		Destruction.Sphere(nil, origin, 3.5, 2.1, dir * 40)
 	end
 	fireVFX("dropKickLand", origin, dir)
@@ -177,7 +168,6 @@ local function useFunc(this:myself)
 	if hits and not humObj:inStun() then
 		for _, enemy in pairs(hits) do
 			local attack = this:makeAtk(DROP_KICK, enemy, dir)
-			-- rowa1 dir.Unit*50, at the x0.6 knockback ratio (README S7)
 			attack.knockback = this:knockback(dir * 20, 0.2, false, -1)
 			this:executeAttack(attack)
 			if attack:isHit() then

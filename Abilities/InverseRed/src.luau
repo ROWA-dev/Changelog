@@ -31,7 +31,6 @@ local BLAST = table.freeze({
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.magic,
 	dmg      = 20,
-	truestun = 0.2,
 	stun     = 1,
 	posMult  = 1,
 })

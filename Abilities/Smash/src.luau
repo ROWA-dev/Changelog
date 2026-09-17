@@ -47,7 +47,6 @@ local SSMASH = {
 	stun     = 0.6,
 	posMult  = 3,
 	parryH   = -0.04,
-	-- sounds: HeavyHit, wet_punch2
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HeavyHit", "wet_punch2")
 	end,

@@ -114,15 +114,6 @@ local function useFunc(this:myself)
 	if this:canTriggerCD(cooldownID) ~= true then return end
 
 	local humObj  = this._humObj
-	local now = tick()
-
-	if now < humObj.stun.Value + 0.4 then -- cant use 0.4s after stun
-		return
-	end
-
-	if now < humObj._lastBlocked + 0.4 then -- 0.4s
-		return
-	end
 	
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
@@ -143,19 +134,24 @@ local function useFunc(this:myself)
 	end
 
 	this:useMana()
-	this:triggerCD(cooldownID, 12, true)
+	-- the miss tier, paid BEFORE the lock-on. Charging 12 here and "refunding"
+	-- 2 below is the no-op trigger() quietly eats -- it is monotone. See triggerCD.
+	this:triggerCD(cooldownID, 2, true)
 
 	-- aimed slightly DOWN: the chain is thrown at chest height, not along the eyeline.
 	local aimDir = (hurtbox.CFrame.LookVector + Vector3.new(0, -0.3, 0)).Unit
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, aimDir, humObj, RANGE, Targeting.TIGHT)
 
-	-- no target: refund most of the cost.
+	-- no target: it only ever cost the miss tier.
 	if target == nil or target.HRootPart == nil then
-		this:triggerCD(cooldownID, 2)
 		this:endLag(0.2)
 		return
 	end
+
+	-- locked on, so it costs the full price. No dontOverwrite: that is exactly
+	-- what stops this landing.
+	this:triggerCD(cooldownID, 12)
 
 	local myRoot = humObj.HRootPart
 	local cfg = table.clone(CHAIN_CFG)

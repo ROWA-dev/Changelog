@@ -1,12 +1,12 @@
 --!strict
 --- PaperBomb - throw four explosive kunai. They fly straight, stick in what
---- they hit, and detonate on a fuse. rowa1 port: README.md/PORT_PaperBomb.
---- !! the doc calls this an ARC and it is not -- no gravity anywhere, dead
---- straight at 200 studs/s. What makes them land around a target is the AIMING:
---- predict the target, raycast for a wall behind them or the ground beneath
---- them, aim at that with scatter. Projectile.Arcing is not involved.
---- HOLD THE HOTBAR KEY to keep them armed, let go to set them off -- a second
---- decision rowa1 never had. Tapping behaves like the original, see MIN_HOLD.
+--- they hit, and detonate on a fuse.
+--- !! NOT AN ARC -- no gravity anywhere, dead straight at 200 studs/s. What
+--- makes them land around a target is the AIMING: predict the target, raycast
+--- for a wall behind them or the ground beneath them, aim at that with scatter.
+--- Projectile.Arcing is not involved.
+--- HOLD THE HOTBAR KEY to keep them armed, let go to set them off. Tapping just
+--- throws, see MIN_HOLD.
 --- CombatAction:chargeWait is the shared half.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
@@ -42,16 +42,15 @@ local EXPLO3 = {
 
 local KUNAI_COUNT  = 4
 local BLAST_RADIUS = 16
---- rowa1 variant 4 capped at 200 studs
 local TARGET_RANGE = 200
---- variant 4 == TIGHT, but aiming at the Head
+--- TIGHT, but aiming at the Head
 local PAPERBOMB_CONE = table.freeze({
 	distWeight = 4, maxAngle = 0.8, closeRange = 20, closeBonus = 1.5,
 	requireLOS = true, useHead = true,
 })
---- replaces rowa1's fixed 0.6 fuse. The floor is required: the cast fires on
---- the same press the charge watches, so a tap has already sent endAbility by
---- the time the watcher starts and would read as an instant release.
+--- the floor is REQUIRED: the cast fires on the same press the charge watches,
+--- so a tap has already sent endAbility by the time the watcher starts and
+--- would read as an instant release.
 --- MAX_HOLD is capped by the VISUAL -- kunaiProj lingers 4s -- not by balance.
 local MIN_HOLD     = 0.6
 local MAX_HOLD     = 3
@@ -73,19 +72,21 @@ local function blast(action: any, pos: Vector3, fallbackDir: Vector3)
 
 	fireVFX("kunaiBoom", pos)
 
+	--- !! FULL EXTENT, so RADIUS * 2. A box sized to the radius is a box of
+	--- HALF it, which is why the distance test below could never reject
+	--- anything -- nothing outside the sphere was ever in the query.
 	local _, hits = action:hitbox(
-		CFrame.new(pos), Vector3.one * BLAST_RADIUS, nil, true)
+		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
 
 	for _, enemy in pairs(hits) do
 		local eroot = enemy.HRootPart
 		if eroot == nil then continue end
-		--- OBB query, spherical blast: reject the corners (rowa1 did too)
+		--- OBB query, spherical blast: reject the corners
 		local offset = eroot.Position - pos
 		if offset.Magnitude > BLAST_RADIUS then continue end
 
 		local dir = if offset.Magnitude > 0 then offset.Unit else fallbackDir
 		local attack = action:makeAtk(EXPLO3, enemy, dir)
-		-- rowa1 look*16, at the x0.6 knockback ratio (README S7)
 		attack.knockback = action:knockback(dir * 9.6, 0.2, false, -1)
 		action:executeAttack(attack)
 	end
@@ -101,7 +102,6 @@ local function makeCast(this: any)
 
 	cast.cfg = {
 		speed       = 200,
-		--- rowa1 gave it exactly one second of flight
 		lifetime    = 1,
 		maxDistance = 220,
 		size        = Vector3.new(3, 3, 4),
@@ -129,11 +129,11 @@ local function makeCast(this: any)
 	return cast
 end
 
---[[ rowa1's aim: predict where the target will be, then look for a surface
-	to pin the kunai to -- a wall BEHIND them first, the ground BENEATH them
-	second, and the prediction itself as a fallback. Scatter is applied to
-	the surface point, along the axes the surface normal does NOT occupy, so
-	the spread hugs the wall or floor instead of drifting off it. ]]
+--[[ predict where the target will be, then look for a surface to pin the kunai
+	to -- a wall BEHIND them first, the ground BENEATH them second, and the
+	prediction itself as a fallback. Scatter is applied to the surface point,
+	along the axes the surface normal does NOT occupy, so the spread hugs the
+	wall or floor instead of drifting off it. ]]
 local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number, char: Instance): Vector3
 	if target == nil or target.HRootPart == nil then
 		return baseDir
@@ -173,12 +173,8 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	--[[ !! 0.1, NOT 0.7. rowa1 DECLARES `Attacking.Time = 0.7` but then
-		waits `task.wait(0.1)` and throws. The declared value is only what
-		the trade logic reads; the real throw is basically instant, and that
-		snappiness is the move.
-		Lesson: Attacking.Time is a CLAIM, the task.wait is the TRUTH --
-		JoltKick had the same mismatch in the other direction. ]]
+	--- !! 0.1, NOT 0.7: the throw is basically instant, and that snappiness is
+	--- the move.
 	if this:feintWait(0.1) then
 		if anim then anim:Stop() end
 		return
@@ -187,11 +183,9 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)
 
-	--[[ rowa1 used GetNearestInDirection4: the TIGHT preset with useHead --
-		0.8 rad cone, close-range forgiveness, and a LINE-OF-SIGHT check, so
-		you cannot pepper someone through a wall. `useHead` is variant 4's
-		one difference from variant 5: it measures the angle to the target's
-		head rather than their root. ]]
+	--[[ TIGHT with useHead: 0.8 rad cone, close-range forgiveness, and a
+		LINE-OF-SIGHT check so you cannot pepper someone through a wall.
+		`useHead` measures the angle to the target's HEAD, not their root. ]]
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, TARGET_RANGE,
 		PAPERBOMB_CONE)

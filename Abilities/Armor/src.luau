@@ -27,13 +27,12 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 local hitSfx = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
--- pure shove: BOTH stuns are 0 on purpose, so it buys space rather than a combo.
+-- pure shove: the stun is 0 on purpose, so it buys space rather than a combo.
 local KNOCK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
 	dmg      = 13,
 	stun     = 0,
-	truestun = 0,
 	posMult  = 4,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit")

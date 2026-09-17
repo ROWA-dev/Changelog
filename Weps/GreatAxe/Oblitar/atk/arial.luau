@@ -1,6 +1,4 @@
 --!strict
---[[ Oblitar arial. rowa1 Main `typ == 4 or 5`, Anims.Arial,
-	Attacking.Time 0.5. Uses the m1 row, as rowa1 did. ]]
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 

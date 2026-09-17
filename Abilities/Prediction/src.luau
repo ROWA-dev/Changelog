@@ -1,9 +1,9 @@
 --!strict
 --- Prediction - a counter STANCE: for a short window every attack that would
 --- hit you is turned back on whoever threw it, until enough damage breaks
---- through. rowa1 port: README.md/PORT_Prediction.
+--- through.
 --- Short on purpose -- the mechanic is Class/StatusEffects/Reflect and the
---- resolver is untouched (rowa1 kept ~50 lines of it inside AttackModule).
+--- resolver is untouched.
 --- NOT LionFall/ToshiCounter's shape: those answer ONE attack with a move of
 --- their own, this reflects everything and has no follow-up, so it applies an
 --- effect and gets out of the way rather than using connect-then-abort.
@@ -28,10 +28,10 @@ end
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
---[[ rowa1's `pframes` decays from 10 at 14/sec, so the real window is about
-	0.71s. The 0.8s wait afterwards is just the ability holding itself open. ]]
+--- the real reflect window; the 0.8s wait afterwards is just the ability
+--- holding itself open.
 local WINDOW = 0.7
---- rowa1 shatters above 1000 absorbed
+--- it shatters above this much absorbed
 local ABSORB_CAP = 1000
 local SLOW_KEY = "prediction"
 
@@ -44,13 +44,8 @@ local function useFunc(this: myself)
 	local humObj = this._humObj
 	local char: any = humObj.HurtBox.Parent
 
-	--[[ the same guards ToshiCounter uses: a counter thrown out of hitstun
-		is free defence rather than a read. ]]
-	local now = tick()
-	if now < humObj.stun.Value + 0.4 then
-		return
-	end
-	if now < humObj._lastBlocked + 0.4 then
+	--- no reversal out of pressure. See HumObj:canCounter.
+	if not humObj:canCounter() then
 		return
 	end
 
@@ -59,7 +54,7 @@ local function useFunc(this: myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)
 
-	--- rowa1 locked input for the stance
+	--- rooted for the stance
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 	fireVFX("predictStance", humObj.HRootPart, WINDOW)
 	this:atkWait(0.1)

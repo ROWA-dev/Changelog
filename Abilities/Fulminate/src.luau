@@ -22,7 +22,6 @@ local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local function useFunc(this:myself)
 	local cooldownID = "fulminate"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	print("USE ABILITY!")
 	local anim = this:PlayAnim(script.Anim)
 	
 	local humObj = this._humObj

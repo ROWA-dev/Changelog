@@ -21,7 +21,6 @@ local dmgFlag = dmgUtils.dmgFlags
 local function useFunc(this:myself)
 	local cooldownID = "impale"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	print("USE ABILITY!")
 	local anim = this:PlayAnim(script.anim, 0, 1, 1)
 	local humObj = this._humObj
 	local root = humObj.HurtBox

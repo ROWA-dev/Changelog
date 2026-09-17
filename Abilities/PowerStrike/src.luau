@@ -1,7 +1,6 @@
 --!strict
 --- PowerStrike - a two-stage weapon flourish: blade shine, one committed slash,
 --- then a bigger launching slash a beat later. Needs a weapon.
---- rowa1 port: README.md/PORT_PowerStrike.
 --- THE HALF-COOLDOWN IS THE POINT: stage 1 takes half, stage 2 overwrites with
 --- the full one, so landing only the opener costs much less. That is
 --- `dontOverwrite` true then absent.
@@ -27,8 +26,8 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
--- rowa1 "gold": Medium, slash, 20 dmg, truestun 0.2 / stun 0.8, posMult 2.
--- Used by BOTH stages in the original; kept shared here for the same reason.
+--- shared by BOTH stages on purpose: the opener and the launcher are the same
+--- swing, priced once.
 local GOLD = {
 	weight   = dmgUtils.weighEnum.Medium,
 	type     = dmgFlag.slash,
@@ -49,7 +48,7 @@ local function useFunc(this:myself)
 
 	local humObj = this._humObj
 	if humObj.wielding_weapon == nil then
-		return -- weapon flourish; rowa1 gated on the Tool having a Model
+		return -- weapon flourish
 	end
 
 	local hurtbox = humObj.HurtBox
@@ -77,15 +76,13 @@ local function useFunc(this:myself)
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(GOLD, enemy, hurtbox.CFrame.LookVector)
 		attack.knockback = this:knockback(
-			-- rowa1 look*8 + (0,2,0), at the x0.6 ratio (README S7)
 			attack.atkDir * 4.8 + Vector3.new(0, 1.2, 0), 0.1, false, -1)
 		this:executeAttack(attack)
 	end
 
-	--[[ rowa1 set Attacking=false between the two slashes, which is how the
-		player could be interrupted mid-sequence. AbilityBase owns that flag
-		now, so DO NOT touch it -- feintWait restores the interruptibility
-		without lying to the rest of the system. ]]
+	--[[ the gap between the two slashes is where you can be interrupted. DO NOT
+		touch `attacking` to get that -- AbilityBase owns the flag, and feintWait
+		gives the interruptibility without lying to the rest of the system. ]]
 	if this:feintWait(0.35) then
 		if anim then anim:Stop() end
 		return
@@ -101,7 +98,6 @@ local function useFunc(this:myself)
 	for _, enemy in pairs(hits2) do
 		local attack = this:makeAtk(GOLD, enemy, hurtbox.CFrame.LookVector)
 		attack.knockback = this:knockback(
-			-- rowa1 look*16 + (0,8,0), at the x0.6 ratio (README S7)
 			attack.atkDir * 9.6 + Vector3.new(0, 4.8, 0), 0.15, false, -1)
 		this:executeAttack(attack)
 	end

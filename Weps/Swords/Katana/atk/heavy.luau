@@ -3,6 +3,10 @@ local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
+
+-- active frames: the dash slash travels, so one snapshot lands before the body
+-- arrives. `lead` is the other half if it still reads short.
+local DASH_SLASH = table.freeze({ window = 0.2 })
 local function start(this:wepTyp): wepType.atkResult
 	if this:canTriggerCD("heavy") == false then return end
 	
@@ -87,13 +91,7 @@ local function fastSlash(this:wepTyp&any, humObj):wepType.atkResult
 
 	local hitboxOffset = CFrame.new(0, 0, -3)
 	local hitboxSize   = Vector3.new(6,5,6)
-	local hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-	local endt = tick() + 0.2
-
-	while #hits == 0 and tick() < endt do
-		task.wait()
-		hitbox, hits = this:hitbox(hitboxOffset, hitboxSize)
-	end
+	local hitbox, hits = this:sweep(hitboxOffset, hitboxSize, DASH_SLASH)
 	
 	if this._humObj:inStun() == true then
 		force1:destroy() this:stopLastAnim(true) humObj.walkSpeed:RemoveMod("stopMoving")

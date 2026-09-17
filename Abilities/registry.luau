@@ -51,15 +51,11 @@ local abilityList:list = {
 	[39] = manifold.Armor,
 	[40] = manifold.InverseRed,
 	[41] = manifold.FullBlue,
-	--- unblocked by Destruction.Grab, which Armor [39] added. See its header.
 	[42] = manifold.BoulderKick,
-	--- TEST RIG, not a move. Registered only because the admin `ability`
-	--- command drops anything moduleToID cannot resolve. See its header.
 	[43] = manifold.ProjTest,
-	--- rowa1 EmptyPurple, renamed after its own assets. See its header and
-	--- PORT_00_INDEX; the ledger still files it under the old tool name.
 	[44] = manifold.HollowPurple,
 	[45] = manifold.Saringan,
+	[46] = manifold.Harvest
 }
 table.freeze(abilityList)
 
@@ -224,6 +220,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.bloodChain] = {
 		desc = "A chain that yanks both parties to the midpoint.",
 		req = { blood = 3 },
+	},
+	[manifold.Harvest] = {
+		desc = "Close range melee",
+		req = { blood = 2 },
 	},
 	[manifold.LionFall] = {
 		desc = "Cancel an incoming attack, answer with one huge punch.",

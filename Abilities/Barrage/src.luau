@@ -22,7 +22,6 @@ local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local function useFunc(this:myself)
 	local cooldownID = "Barrage"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	print("USE ABILITY!")
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1.4)
 	local humObj = this._humObj
 	local hroot = humObj.HRootPart
@@ -32,12 +31,7 @@ local function useFunc(this:myself)
 	sound2:Play()
 	game.Debris:AddItem(sound2, 4)
 
-	local st = tick()
-	local feinted = this:feintWait(0.42, function(dt: number)
-		local t = tick()-st
-		--Idle.Squash = NumberSequence.new(t-0.4)
-		--Idle:Emit(1)
-	end)
+	local feinted = this:feintWait(0.42)
 	
 	if anim then anim:AdjustSpeed(0.9) end
 
@@ -102,36 +96,20 @@ local function useFunc(this:myself)
 		end
 
 		task.wait(0.08)
-		if humObj:inStun() then
+
+		local why = this:channelBreak()
+		if why then
 			if anim then anim:Stop() end
 			if sound then sound:Stop() end
 			fireVFX("showArms", Char)
-			return true
-		end
-		local wantedFeint = this.isFeinted
-		if wantedFeint == true then
-			if anim then anim:Stop() end
-			if sound then sound:Stop() end
-			this.isFeinted = false
-			--humObj.canAtkThreshold = tick() + 0.1
-
-			humObj.cooldowns:trigger("feint2")
-
-			local now = tick()
-			if wantedFeint and now > st + 0.18 then
-				fireVFX("feintfx", this._humObj.Hum.Parent)
-			end
-			
-			fireVFX("showArms", Char)
-			
-			if hitlanded == false then
+			-- only a feint owes the recovery; being stunned out of it is punishment enough.
+			if why == "feint" and hitlanded == false then
 				this:endLag(0.2)
 			end
 			return true
 		end
 
 		if i == 14 then
-			print("SHOW ARMS!")
 			fireVFX("showArms", Char)
 		end
 	end

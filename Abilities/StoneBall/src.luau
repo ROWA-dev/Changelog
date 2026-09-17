@@ -1,7 +1,6 @@
 --!strict
 --- StoneBall - a CHARGE, not a throw: the caster vanishes inside a giant stone
 --- ball welded to their own root and rolls forward at 90 studs/s for a second.
---- rowa1 port: README.md/PORT_StoneBall (which describes BoulderKick instead).
 --- Not a projectile either -- the caster IS the projectile, so it is a dash
 --- plus a repeating hitbox and Class/Projectile is not involved.
 --- The roll ENDS EARLY on the first thing it hits, so it cannot plough a team.
@@ -27,7 +26,6 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---- rowa1 "bldr2": Heavy, blunt+earth, 40 dmg, truestun 0.4 / stun 0.6.
 local BLDR2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.earth),
@@ -42,12 +40,10 @@ local BLDR2 = {
 }
 
 local ROLL_TIME = 1
---[[ rowa1 BodyVelocity Dir*90; /5 converts to 18, which read too fast in play,
-	so this is cut to ~2/3. THAT IS A TUNING CALL FOR THIS MOVE, NOT A RULE --
-	applied as one to Burst's charge it came out a third too slow. Start from
-	the literal conversion and cut only what actually feels wrong. ]]
+--[[ the literal conversion is 18, which read too fast in play, so this is cut
+	to ~2/3. THAT IS A TUNING CALL FOR THIS MOVE, NOT A RULE -- applied as one
+	to Burst's charge it came out a third too slow. ]]
 local ROLL_SPEED = 12
---- rowa1 Attacking.Time = 0.6, and its task.wait agrees for once
 local WINDUP    = 0.6
 local SLOW_KEY  = "stoneBall"
 
@@ -60,10 +56,10 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0.1, 1, 1)
 
-	--- hshock takes a BASEPART in rowa2, not a Humanoid (README S5 step 7e)
+	--- hshock takes a BASEPART, not a Humanoid
 	fireVFX("hshock", humObj.HRootPart)
 
-	--- rowa1 froze input for the whole windup and roll
+	--- input is frozen for the whole windup AND the roll
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 
 	--[[ THE RUMBLE STARTS WITH THE CAST, not with the roll, so the wind-up has
@@ -88,12 +84,9 @@ local function useFunc(this:myself)
 	fireVFX("ststep", char, ROLL_TIME)
 	fireVFX("stoneBallRoll", 1, humObj.HRootPart, ROLL_TIME)
 
-	--[[ the launch ring. rowa1 cloned Effects.Shockwave here and the GROWTH
-		lived in FxHandler's global ChildAdded listener (README S5). One id
-		owns both halves now -- see VFXQuiver/shockRing.
-		rowa1's numbers: 6.5 x 6.5 x 0.5, transparency 0.96, stood up 2 studs
-		ahead of the root and facing down the lane. No `boom`: StoneBall is
-		the one caller that clones this asset without playing it. ]]
+	--[[ the launch ring. ONE id owns the clone AND the growth -- see
+		VFXQuiver/shockRing. No `boom`: StoneBall is the one caller that uses
+		this asset without playing its sound. ]]
 	local ringPos = humObj.HRootPart.Position + hurtbox.CFrame.LookVector * 2
 	fireVFX("shockRing",
 		CFrame.new(ringPos, ringPos + hurtbox.CFrame.LookVector * 8),
@@ -101,24 +94,18 @@ local function useFunc(this:myself)
 
 	if anim then anim:Stop(0) end
 
-	--- HRootPart for physics, HurtBox for hitboxes (README S5 step 7d)
+	--- HRootPart for physics, HurtBox for hitboxes
 	local dash = this:bodyForce(Vector3.new(0, 0, -ROLL_SPEED), ROLL_TIME, true)
 
 	local seen: {[number]: boolean} = {}
 	local started = tick()
 	local stopped = false
 
-	--- fixed-rhythm channel -> the BARRAGE PATTERN for interrupt checks
+	--- fixed-rhythm channel -> :channelBreak for interrupt checks
 	while tick() < started + ROLL_TIME do
 		task.wait()
 
-		if humObj:inStun() then break end
-		if this.isFeinted then
-			this.isFeinted = false
-			humObj.cooldowns:trigger("feint2")
-			fireVFX("feintfx", char)
-			break
-		end
+		if this:channelBreak() then break end
 
 		local _, hits = this:hitbox(CFrame.new(), Vector3.new(6, 6, 6))
 		for _, enemy in pairs(hits) do
@@ -126,16 +113,14 @@ local function useFunc(this:myself)
 			seen[enemy.entityId] = true
 
 			local attack = this:makeAtk(BLDR2, enemy, hurtbox.CFrame.LookVector)
-			-- rowa1 look*16, at the x0.6 knockback ratio (README S7)
 			attack.knockback = this:knockback(attack.atkDir * 9.6, 0.2, false, -1)
 			this:executeAttack(attack)
 
 			if attack:isHit() then
-				--[[ rowa1 used `ragdtillground`: a long CAP that stopOnGround
-					ends early. NOT (t, false) -- see IceBash for why that
-					meant victims never got up. ]]
+				--[[ a long CAP that stopOnGround ends early. NOT (t, false) --
+					see IceBash for why that meant victims never got up. ]]
 				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 10)
-				--- rowa1's `breakOut`: the roll ENDS on the first connect
+				--- the roll ENDS on the first connect
 				stopped = true
 			end
 		end

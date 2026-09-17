@@ -63,7 +63,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 		--grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0.5,3)
 		
 		victimAnim:Play()
-		if this:feintWait(0.62) then grabClass:release() victimHumObj.stun.value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
+		if this:feintWait(0.62) then grabClass:release() victimHumObj.stun.Value = 0 victimHumObj.trueStun.Value = 0 victimAnim:Stop() humObj.walkSpeed:RemoveMod("stopMoving") return end
 		
 		local attack = this:makeAtk(
 			dmgConfig.smash,

@@ -1,21 +1,4 @@
 --!strict
---- Oblitar - rowa1 Items/Weps/Oblitar/Main. Notes: README.md/PORTW_Oblitar,
---- PORTW_00 for the checklist.
---- A large slashing weapon whose HEAVY IS TWO BEATS, the second decapitating a
---- low-health victim (rowa1's `oblH2`, in AttackModule's `decapitation` set) --
---- that finisher is the whole reason the second beat exists. See Modules/execute.
---- FAMILY: Heavy/GreatAxe. It shipped as Medium/Swords first; weight class and
---- family are different questions and it plays closer to Executer.
---- The dmgTbl weights are STILL Medium, deliberately: that field is the ATTACK
---- weight, it decides trades, and rowa1 authored all three rows Medium.
---- !! TWO CORRECTIONS TO THE DOC, both from reading Main:
----   1. the heavy is NOT a charge -- one press plays both beats automatically,
----      so there is no heavyEnd binding and adding one needs a release the
----      player never makes.
----   2. the THRUST uses oblM1, not oblH2. The doc's numbers are right, its
----      mapping was not.
---- onParried is deliberately absent: Medium already defines it and a local one
---- would just shadow the family's.
 local baseWep = require(script.Parent)
 
 export type myself = baseWep.myself & {
@@ -36,17 +19,10 @@ function module.new(): myself&any
 	self._model = model
 	self._trail = model:WaitForChild("Trail1")
 
-	--[[ rowa1's `local AtkRate = 1.05`. It does two things at once: scaledTime
-		multiplies EVERY wait by it, and PlayAnim divides anim speed by it
-		(1/1.05 = 0.952, rowa1's `AtkAnim:AdjustSpeed(1/AtkRate)`).
-		AdditiveValue is base 1, so the mod is the 0.05 delta, not 1.05. ]]
 	self.atkRate:SetMod("oblitar", 0.05)
 	return self
 end
 
---[[ unequip FIRST, then drop the model. Heavy.destroy calls unequip, and
-	GreatAxe.unequip does `self._model.Parent = script` -- on an already
-	destroyed instance that throws "The Parent property is locked". ]]
 function module.destroy(self:myself)
 	self:unequip()
 	if self._model then

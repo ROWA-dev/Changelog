@@ -1,16 +1,4 @@
 --!strict
---- Slayer damage. rowa1 rows per README S4 (truestun + stun collapse to one).
----   slM1 -> m1 (all three links share it)   gsM2 -> downSlam
----   slM2/slM3/slM5/slM4 -> heavyCatch / heavyBreak / heavyGrind / heavyLaunch,
----   the four beats of the grab-and-drag heavy IN THAT ORDER -- not an m1
----   chain, whatever PORTW_Slayer says. See Slayer.luau's header.
---- Sounds are read off DMGS per row, not guessed. slM4 carries `ragdtillground`,
---- the only onHit on any Slayer row -- see launch.luau.
---- Retuned against EXECUTER, not rowa1 (PORTW_00): m1 24 -> 15, downSlam 20 -> 18
---- (Executer's heavy exactly), the heavy 74 -> 49 across its four beats.
---- !! POSTURE IS THE PART TO WATCH: rowa1's pm6 then pm8 is 14x against a
---- maxPosture of 80. Redundant here -- the victim is already WELDED to the
---- blade and is not blocking. Dropped to 3 and 4, README Q3, a starting point.
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local deepFreeze = require(game.ServerScriptService.Utils.deepfreeze)
 local sharedCfg = require(game.ServerStorage.ROWA.Weps.WepBase.dmgConfig)
@@ -65,7 +53,7 @@ local config:configs = {
 		stun     = 0,
 		posMult  = 0.3,
 		stunMeOnParried = 0,
-		onHit    = require(script.grind)
+		--onHit    = require(script.grind)
 	},
 
 	--- the launch that ends the drag.
@@ -75,9 +63,6 @@ local config:configs = {
 		dmg      = 10,
 		stun     = 0.7,
 		posMult  = 2,
-		--[[ carries rowa1's `ragdtillground`. This is the only Slayer row
-			with an onHit of its own and it is what makes the throw a THROW
-			rather than a shove. ]]
 		onHit    = require(script.launch)
 	},
 

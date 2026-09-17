@@ -61,6 +61,7 @@ export type myself = baseClass.entity & {
 	_lastDashCancel: number,
 	_lastJumped: 	 number,
 	_lastBlocked:    number,
+	_lastHit:        number,
 	_lastDoubleDash: number,
 	_wantSlide: 	 boolean,
 	_slideForce: 	 LinearVelocity?,
@@ -124,7 +125,7 @@ local module = {
 	-- same, plus: EntityBase.destroy leaves the metatable, so a dead humObj falls through to these class defaults and a stale holder reads 0 rather than nil.
 	combatDeadline = 0,
 
-	-- at or below this health you are KNOCKED DOWN. Lives on the shared tier so the CLIENT can gate its own movement: Humanoid.Health already replicates, so both sides derive the same answer for zero wire cost and zero stored state. HumObj owns the mechanic, DOC_CLASSES 3.5.
+	-- at or below this health you are KNOCKED DOWN. Lives on the shared tier so the CLIENT can gate its own movement: Humanoid.Health already replicates, so both sides derive the same answer for zero wire cost and zero stored state. HumObj owns the mechanic, CLASSES 3.5.
 	KNOCK_HP = 5,
 }
 module.__tostring = baseClass.__tostring
@@ -180,6 +181,7 @@ function module.new(hum: Humanoid):myself
 	self._lastDashed = 0
 	self._lastJumped = 0
 	self._lastBlocked = 0
+	self._lastHit = 0
 	self._lastDoubleDash = 0
 	self._wantSlide = false
 	-- !! NEVER pair `HipHeight -= 1.5` / `+= 1.5` by hand: a missed or doubled call leaks the offset forever. Only _enterSlideHip/_exitSlideHip touch this.
@@ -255,7 +257,7 @@ function module.destroy(self:myself)
 end
 
 
--- MANA: anchor (a,t,m) + closed form, nothing ticks (DOC_GOTCHAS "MANA"). The 2K/M term is derived from the CUBE, so changing the exponent means re-deriving it.
+-- MANA: anchor (a,t,m) + closed form, nothing ticks (GOTCHAS "MANA"). The 2K/M term is derived from the CUBE, so changing the exponent means re-deriving it.
 local MANA_K = 3
 
 -- pure and module-level: one closure total, not one per entity.

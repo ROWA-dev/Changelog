@@ -1,9 +1,7 @@
 --!strict
 --- Tendrils - blood tendrils reach out at range, GRAB a target, hoist them 10
 --- studs and break them. A ranged grab, not a projectile.
---- rowa1 port: README.md/PORT_Tendrils. `blodbreak` DOES exist in DMGS, so this
---- is genuinely two hits -- a 2s-stun catch then a 50-damage finisher -- not
---- grab-plus-visual as the doc guessed.
+--- Genuinely TWO hits: a 2s-stun catch, then a separate finisher.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -27,14 +25,11 @@ local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX   = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ !! `blood` MOVED BIT POSITION between the games -- rowa1 1024, rowa2
-	4096 (README S4.1). Written by NAME, as everything must be; a copied
-	literal here would silently become `wind`. ]]
+--- written by NAME, as every flag must be: a copied bit literal would silently
+--- become `wind`.
 local BLOOD_MAGIC = bit32.bor(dmgFlag.magic, dmgFlag.blood)
 
---[[ rowa1 "blodgrab": Heavy, magic+blood, 10 dmg, truestun 1.4 / stun 2.0,
-	posMult 5.
-	stun 2.0 is joint-longest in the whole table. Halved: the follow-up is
+--[[ stun is halved from the 2.0 a catch this heavy would take: the follow-up is
 	guaranteed by the hoist anyway, so the extra second only removed the
 	victim's ability to react to the FINISHER. ]]
 local BLODGRAB = {
@@ -48,7 +43,6 @@ local BLODGRAB = {
 	end,
 }
 
---- rowa1 "blodbreak": Heavy, magic+blood, 50 dmg, truestun 0.1 / stun 0.7.
 local BLODBREAK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = BLOOD_MAGIC,
@@ -60,7 +54,6 @@ local BLODBREAK = {
 	end,
 }
 
---- rowa1 GetNearestInDirection2 with maxstAngle = 0.8
 local TENDRIL_CONE = table.freeze({ distWeight = 10, maxAngle = 0.8 })
 
 local CAST_TIME   = 0.52
@@ -80,37 +73,37 @@ local function useFunc(this:myself)
 	local root = humObj.HRootPart
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	--[[ the correlation token. Two casters at once would otherwise find each
-		other's sigil; rowa1 got this right and it is worth copying for any
-		staged effect. ]]
+	--- the correlation token. Two casters at once would otherwise find each
+	--- other's sigil -- worth copying for any staged effect.
 	local vfxID = math.random(1, 65536)
 	fireVFX("bloodcast", 1, root, vfxID)
 
 	if this:feintWait(CAST_TIME) then
 		if anim then anim:Stop() end
-		this:triggerCD(cooldownID, 4, true) -- 4s cd upon cancelling it
+		-- the cancel tier. Tiers go UP from here, so nothing below may pass
+		-- dontOverwrite or it pins the id at 4s for the session. See triggerCD.
+		this:triggerCD(cooldownID, 4, true)
 		fireVFX("bloodcast", 2, root, vfxID)
 		return
 	end
 
 	fireVFX("bloodcast", 2, root, vfxID)
 
-	--[[ rowa1 used GetNearestInDirection2 called as (..., 60, 0.8): the soft
-		cone with an explicit 0.8 rad limit, so a tendril cannot reach for
-		someone stood behind the caster. ]]
+	--- a soft cone with an explicit 0.8 rad limit, so a tendril cannot reach
+	--- for someone stood behind the caster.
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, RANGE,
 		TENDRIL_CONE)
 
-	-- cd for 8s on miss
+	-- the miss tier
 	if target == nil or target.HRootPart == nil then
 		if anim then anim:Stop() end
-		this:triggerCD(cooldownID, 8, true)
+		this:triggerCD(cooldownID, 8)
 		return
 	end
 
 	this:useMana()
-	this:triggerCD(cooldownID, 16, true)
+	this:triggerCD(cooldownID, 16)
 
 	local eroot = target.HRootPart
 	local movePos = eroot.Position + Vector3.new(0, 10, 0)
@@ -136,11 +129,10 @@ local function useFunc(this:myself)
 	if anim then anim:Stop(0.4) end
 	this:PlayAnim(script.anim2, 0.4, 1, 1)
 
-	--[[ rowa1 froze the CASTER's input and ANCHORED the victim's root for the
-		hoist. walkSpeed is the rowa2 equivalent for the caster; the victim is
-		held by the client-side bldtendrils tween, which anchors and releases
-		its own limbs. Both halves must come off on EVERY exit -- a stranded
-		anchor is a permanently frozen player. ]]
+	--[[ the caster is rooted by walkSpeed; the victim is held by the client-side
+		bldtendrils tween, which anchors and releases its own limbs. Both halves
+		must come off on EVERY exit -- a stranded anchor is a permanently frozen
+		player. ]]
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 	fireVFX("bldtendrils", 2, eroot, movePos)
 

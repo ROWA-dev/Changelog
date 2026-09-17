@@ -113,6 +113,7 @@ local function useFunc(this:myself)
 
 	-- WINDUP, split across three feintWaits: 0.22 + 0.05 + 0.45 = 0.72.
 	if this:feintWait(0.22) then
+		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		cleanup()
 		return
 	end
@@ -214,15 +215,8 @@ local function useFunc(this:myself)
 
 		-- fixed-rhythm channel, so the interrupt checks are hand-rolled between beats rather than going through feintWait.
 		task.wait(STEP_GAP)
-		if humObj:inStun() then
+		if this:channelBreak() then
 			if anim then anim:Stop(0.1) end
-			return true
-		end
-		if this.isFeinted == true then
-			if anim then anim:Stop(0.1) end
-			this.isFeinted = false
-			humObj.cooldowns:trigger("feint2")
-			fireVFX("feintfx", char)
 			return true
 		end
 	end

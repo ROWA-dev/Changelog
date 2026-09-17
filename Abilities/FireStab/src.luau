@@ -21,10 +21,15 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
+-- half up front, full on a connect: a feinted stab costs the cheap tier.
+local CD_FEINT, CD_FULL = 6, 12
+
 local function useFunc(this:myself & any)
 	local cooldownID = "fireStab"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	print("USE ABILITY!")
+	--- the feint tier, paid up front. The full price below must not pass
+	--- dontOverwrite or this pins the id at 6s. See CombatAction.triggerCD.
+	this:triggerCD(cooldownID, CD_FEINT, true)
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 	local root = this._humObj.HurtBox
 
@@ -38,29 +43,16 @@ local function useFunc(this:myself & any)
 	) -- LAMBDA OF DOOM	
 
 	local feinted = this:feintWait(0.42)
-	local cd = 12
 
 	if feinted then
 		if anim then
 			anim:Stop()
 		end
-		this._lastUsed = math.max(this._lastUsed or 0, tick() - cd*0.5)
 		return
 	end
 	fireVFX("fstabb", root)
 	this:useMana()
-
-
-	-- rem cd
-	local now = tick()
-
-	local elapsed = now - (this._lastUsed or 0)
-	local remaining = math.max(0, cd - elapsed)
-
-	print("REMAINING:",remaining, elapsed)
-	this:triggerCD(cooldownID, remaining)
-	this._lastUsed = now
-	--
+	this:triggerCD(cooldownID, CD_FULL)
 
 	local humObj   = this._humObj
 	local hurtbox  = humObj.HurtBox

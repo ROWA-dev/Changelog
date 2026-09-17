@@ -1,9 +1,5 @@
 --!strict
---[[ BoltPunch - rowa1 Items/Ability/BoltPunch. Notes: README.md/PORT_BoltPunch.
-
-	A lunging lightning straight. The dash fires BEFORE the windup and runs
-	across it, so you commit your position at frame 0 -- that is the move's
-	identity and its risk, not an accident. ]]
+-- A lunging lightning straight. The dash fires BEFORE the windup and runs
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -26,15 +22,6 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 "bolt": Heavy, blunt+MAGIC, 38 dmg, truestun 0.5 / stun 1.0.
-	The magic flag (not lightning) is carried across deliberately -- rowa1
-	tagged the whole punch family that way and `isElemental` catches both, so
-	changing it is a balance decision, not a port fix. Flagged in the doc.
-
-	The onHit was a FORTY-LINE inline function in rowa1's damage table: it
-	cloned an fx part, emitted eleven emitters, fired CamShake and spawned a
-	coroutine that crackled the victim for 0.7s. All of that is the
-	`bolthit` quiver module now -- see VFXQuiver/bolthit. ]]
 local BOLT = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
@@ -50,6 +37,10 @@ local BOLT = {
 
 local FX_CHARGE, FX_FIZZLE = 1, 2
 
+-- active frames: the straight travels, so one snapshot lands wherever the dash
+-- happened to leave you. `lead` is the other half if it still reads short.
+local LUNGE = table.freeze({ window = 0.15 })
+
 local function useFunc(this:myself)
 	local cooldownID = "boltPunch"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -60,7 +51,7 @@ local function useFunc(this:myself)
 
 	fireVFX("boltp", FX_CHARGE, humObj.Hum)
 
-	local dash = this:bodyForce(Vector3.new(0, 0, -5), 0.4, true)
+	local dash = this:bodyForce(Vector3.new(0, 0, -6), 0.4, true)
 
 	if this:feintWait(0.5) then
 		if anim then anim:Stop() end
@@ -72,20 +63,12 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 10, true)
 
-	local _, hits
-	for i = 1,3 do
-		_, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(6, 6, 6))
-		if #hits ~= 0 then
-			break
-		end
-		task.wait(0.05)
-	end
+	local _, hits = this:sweep(CFrame.new(0, 0, -4), Vector3.new(6, 6, 6), LUNGE)
 
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(BOLT, enemy, hurtbox.CFrame.LookVector)
-		--[[ no knockback, matching rowa1. The dash already closed the gap and
-			a launch would undo it -- that is why a 38-damage heavy shipped
-			without one. ]]
+		--[[ NO KNOCKBACK: the dash already closed the gap and a launch would
+			undo it. ]]
 		this:executeAttack(attack)
 	end
 

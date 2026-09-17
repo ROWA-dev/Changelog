@@ -137,7 +137,7 @@ local function useFunc(this:myself)
 		if s and s:IsA("Sound") then s:Play() end
 	end
 
-	-- !! DO NOT SEND THIS PART TO A CLIENT MODULE: with StreamingEnabled an unstreamed Instance arrives as NIL forever, silently (DOC_VFX pattern A).
+	-- !! DO NOT SEND THIS PART TO A CLIENT MODULE: with StreamingEnabled an unstreamed Instance arrives as NIL forever, silently (VFX pattern A).
 	local emitters, light = collectFx(field)
 
 	local velocity = Vector3.zero

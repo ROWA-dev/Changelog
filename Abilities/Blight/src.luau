@@ -1,7 +1,6 @@
 --!strict
 --- Blight - launch a blinding orb; it travels ~22 studs over 0.3s and detonates
 --- in a 20-stud sphere. Weak damage, wide area, long cd -- a zoning poke.
---- rowa1 port: README.md/PORT_Blight.
 --- THE ORB DOES NOT DAMAGE IN FLIGHT: the whole move is one delayed AoE at the
 --- end point, so it is NOT a projectile. Client draws the orb, server schedules
 --- one hitbox.
@@ -27,10 +26,7 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 
---[[ rowa1 "blight": Light, magic, 5 dmg, stun 0.4, posMult 1. Already tiny;
-	kept as-is rather than scaled, because there is nothing to scale.
-
-	!! THE BLIND IS THE ABILITY. Five damage in a 20-stud sphere is not why
+--[[ !! THE BLIND IS THE ABILITY. Five damage in a 20-stud sphere is not why
 	anyone presses this -- the row's onHit fires a screen-covering flash at
 	the victim, and an earlier pass ported the damage and dropped the point.
 	It is Class/StatusEffects/Blind now rather than a one-shot client fx, so
@@ -49,7 +45,7 @@ local BLIGHT = {
 }
 
 local TRAVEL_TIME  = 0.6
-local TRAVEL_DIST  = 22   -- rowa1: 30 steps of a decelerating 1.5..0 stud stride
+local TRAVEL_DIST  = 22
 local BLAST_RADIUS = 20
 
 local function useFunc(this:myself)
@@ -71,18 +67,18 @@ local function useFunc(this:myself)
 
 	fireVFX("blightOrb", hurtbox.CFrame, forward, TRAVEL_DIST, TRAVEL_TIME)
 
-	--- the detonation OUTLIVES the ability call, as in rowa1: :use() returning
-	--- does not cancel a task.delay. Capturing `this` is fine at 0.3s -- the
-	--- "never hold the ability" rule is about things that fly for SECONDS and can
-	--- outlive an unequip. The guard below makes the short capture safe.
+	--- the detonation OUTLIVES the ability call: :use() returning does not
+	--- cancel a task.delay. Capturing `this` is fine over TRAVEL_TIME -- the
+	--- "never hold the ability" rule is about things that fly for SECONDS and
+	--- can outlive an unequip. The guard below makes the short capture safe.
 	task.delay(TRAVEL_TIME, function()
 		if humObj.isActive ~= true or this._humObj == nil then
 			return
 		end
 
-		--[[ :hitbox is an OBB and rowa1's GetNear was a SPHERE. Query the
-			bounding box, then reject the corners by distance -- three lines,
-			versus 8 studs of error at r=20 if you just eyeball a cube. ]]
+		--[[ :hitbox is an OBB and the blast is a SPHERE. Query the bounding box,
+			then reject the corners by distance -- three lines, versus 8 studs of
+			error at r=20 if you just eyeball a cube. ]]
 		local _, hits = this:hitbox(
 			CFrame.new(endPos),
 			Vector3.one * (BLAST_RADIUS * 2),

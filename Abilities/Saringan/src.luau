@@ -5,7 +5,7 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "Saringan",
-	manaUse = 50,
+	manaUse = 40,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module

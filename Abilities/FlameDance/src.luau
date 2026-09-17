@@ -44,7 +44,6 @@ local function useFunc(this:myself)
 
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
-	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
 	if this:feintWait(0.27) then
@@ -91,14 +90,7 @@ local function useFunc(this:myself)
 	while tick() < started + LIFETIME do
 		task.wait()
 
-		if humObj:inStun() then
-			stopDance()
-			break
-		end
-		if this.isFeinted then
-			this.isFeinted = false
-			humObj.cooldowns:trigger("feint2")
-			fireVFX("feintfx", char)
+		if this:channelBreak() then
 			stopDance()
 			break
 		end

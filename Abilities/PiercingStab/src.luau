@@ -1,8 +1,5 @@
 --!strict
---[[ PiercingStab - rowa1 Items/Ability/PiercingStab.
-	Notes: README.md/PORT_PiercingStab.
-
-	The slowest single hit in the set. A 0.65s telegraph you are rooted
+--[[ PiercingStab - the slowest single hit in the set. A 0.65s telegraph you are rooted
 	through, paid for with high damage and a -0.1 parry window. Needs a
 	weapon. ]]
 local baseClass = require(script.Parent.AbilityBase)
@@ -27,7 +24,6 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
--- rowa1 "pblow": Medium, slash, 32 dmg, truestun 0.3 / stun 0.85, posMult 3.
 local PBLOW = {
 	weight   = dmgUtils.weighEnum.Medium,
 	type     = dmgFlag.slash,
@@ -40,7 +36,7 @@ local PBLOW = {
 }
 
 --[[ NOT "stopMoving". That key is shared and something else can already be
-	holding it during this window (DOC_GOTCHAS); clobbering it would strand
+	holding it during this window (GOTCHAS); clobbering it would strand
 	whoever set it. A per-ability key can only ever fight itself. ]]
 local SLOW_KEY = "piercingStab"
 
@@ -50,7 +46,7 @@ local function useFunc(this:myself)
 
 	local humObj = this._humObj
 	if humObj.wielding_weapon == nil then
-		return -- needs a weapon, same gate as rowa1 (which walked the char for a Tool)
+		return -- needs a weapon
 	end
 
 	local hurtbox = humObj.HurtBox
@@ -61,7 +57,7 @@ local function useFunc(this:myself)
 		fireVFX("fsShine3", blade, hurtbox.Parent)
 	end
 
-	-- rowa1 froze input outright. A walkSpeed mod is the rowa2 equivalent.
+	-- rooted through the telegraph. MUST come off on every exit path.
 	humObj.walkSpeed:SetMod(SLOW_KEY, -13)
 
 	--[[ THE MOD MUST COME OFF ON EVERY EXIT. A stranded negative walkSpeed is

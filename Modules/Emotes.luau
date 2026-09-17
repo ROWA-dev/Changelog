@@ -53,7 +53,7 @@ end
 
 -- ARRAY of {id, name}, sorted, NEVER keyed by id: retiring an emote leaves a gap
 -- and a gapped numeric table does not survive a remote (same reason containers
--- use array-of-pairs, DOC_DATASTORE 17). Built once, shared. NAMES ONLY, so the
+-- use array-of-pairs, DATASTORE 17). Built once, shared. NAMES ONLY, so the
 -- picker requires no emote module and Phone's remote hook stays cold.
 local catalogue:{{any}}
 function module.catalogue(): {{any}}

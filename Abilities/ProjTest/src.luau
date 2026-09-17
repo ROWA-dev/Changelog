@@ -1,6 +1,5 @@
 --!strict
---- ProjTest - a test harness for Class/Projectile, NOT a real move. Nothing
---- here is ported from rowa1.
+--- ProjTest - a test harness for Class/Projectile, NOT a real move.
 --- Fires 2-4 arcing pellets in a spread, each with its own speed, all dying on
 --- the first wall: several projectiles alive at once exercises the scheduler,
 --- differing speeds expose client/server drift, stopOnWorld makes "it vanished

@@ -1,6 +1,6 @@
 --!strict
 --- StormUp - a rising lightning spin that launches the victim straight up WITH
---- you. The air-combo opener of the lightning set. rowa1 port: PORT_StormUp.
+--- you. The air-combo opener of the lightning set.
 --- HumObj's automatic air-combo handoff only fires when both parties are
 --- ALREADY airborne, and this launches from the ground -- so the handoff is
 --- done by hand below, using HumObj's own fields so there is one model.
@@ -27,11 +27,8 @@ local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX   = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 "storm": Heavy, lightning, 30 dmg, truestun 0.5 / stun 1.2.
-	Note the flag really is `lightning` here, while BoltPunch and JoltKick
-	use `magic` for the same fantasy. rowa1 was inconsistent; both are
-	carried across as-written so the inconsistency is visible rather than
-	quietly resolved. Pick one for the family in a balance pass, not a port. ]]
+--- BLUE lightning, so the flag is `lightning` and it carries Shock. The yellow
+--- pair (BoltPunch, JoltKick) is `magic` and deliberately does not.
 local STORM = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,
@@ -44,10 +41,10 @@ local STORM = {
 }
 
 local TARGET_RANGE = 100
---- rowa1 MiniDash((0,1,0) + look/4, 50); bodyForce scales by 5, so 50/5 = 10.
+--- bodyForce scales by 5 internally, so this is a power-50 rise.
 local RISE = 10
 
---- rowa1's AirCombo:Make, expressed the way HumObj's own onAttacked does it.
+--- the air-combo handoff, expressed the way HumObj's own onAttacked does it.
 local function startAirCombo(me: any, them: any, stun: number)
 	local keep = 0.2 + stun
 	if them.floating then
@@ -65,23 +62,13 @@ local function useFunc(this:myself)
 	if this:canTriggerCD(cooldownID) ~= true then return end
 
 	local humObj  = this._humObj
-	local now = tick()
-
-	if now < humObj.stun.Value + 0.4 then -- cant use 0.4s after stun
-		return
-	end
-
-	if now < humObj._lastBlocked + 0.4 then -- 0.4s
-		return
-	end
-	
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
 	--[[ targeting is only used to POINT the spin visual and to decide whether
 		this is a real launch or a hop. Nil is a normal outcome, not a bail. ]]
-	--- rowa1 used GetNearestInDirection3: the SOFT preset, no angle limit.
+	--- SOFT: no angle limit.
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, TARGET_RANGE,
 		Targeting.SOFT)
@@ -90,9 +77,8 @@ local function useFunc(this:myself)
 		fireVFX("phantom", char, char.PrimaryPart and char.PrimaryPart.CFrame or hurtbox.CFrame)
 	end
 
-	--[[ rowa1 passed Char.Attacking -- a BoolValue on the character -- so the
-		client knew when to stop spinning. THAT INSTANCE DOES NOT EXIST IN
-		ROWA2 (README S5 step 7b). The quiver module takes a duration. ]]
+	--- the quiver module takes a DURATION; there is no Attacking BoolValue on
+	--- the character for the client to watch.
 	--[[ !! HRootPart, NOT HurtBox. shockspin hangs an AlignPosition off this
 		part to DRAG the caster onto the target across the windup -- that pull
 		is what makes StormUp a gap-closer rather than a whiff at range.
@@ -124,18 +110,17 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
 
-	--[[ no target: rowa1 just hopped and ended, with NO attack at all. Kept --
-		it is what makes a whiffed StormUp a mobility option rather than a
-		punish. ]]
+	--[[ no target: just hop and end, with NO attack at all. That is what makes
+		a whiffed StormUp a mobility option rather than a punish. ]]
 	if target == nil then
 		this:bodyForce(Vector3.new(0, 1, 0).Unit * RISE + Vector3.new(0, 0, -RISE / 4), 0.2, true)
 		this:endLag(0.2)
 		return
 	end
 
-	--[[ rowa1 raycast to the MIDPOINT between caster and target and put the
-		box at the impact, so the launch catches someone standing behind cover
-		at the right spot rather than at the caster's feet. ]]
+	--[[ raycast to the MIDPOINT between caster and target and put the box at
+		the impact, so the launch catches someone standing behind cover at the
+		right spot rather than at the caster's feet. ]]
 	local origin = (hurtbox.Position + target.HRootPart.Position) / 2
 	local forward = hurtbox.CFrame.LookVector
 	local cf = CFrame.new(origin + forward * 5, origin + forward * 10)
@@ -144,8 +129,7 @@ local function useFunc(this:myself)
 	local parried = false
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(STORM, enemy, Vector3.new(0, 1, 0))
-		--[[ isRootRelative TRUE and mostly vertical: rowa1 look*2 + (0,18,0),
-			at the x0.6 knockback ratio (README S7) = look*1.2 + (0,10.8,0). ]]
+		--- isRootRelative TRUE and mostly vertical.
 		attack.knockback = this:knockback(
 			Vector3.new(0, 10.8, -1.2), 0.25, true, -1)
 		this:executeAttack(attack)

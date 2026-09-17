@@ -1,11 +1,9 @@
 --!strict
 --- IceSlash - throw TWO ice crescents, one off each leg. Each travels 200
 --- studs/s for up to 3s, cutting through targets, DEFLECTING off blocks, and
---- shattering on the first parry or wall. rowa1 port: README.md/PORT_IceSlash
---- (which says "up to 5"; the source calls sendIceSlash twice).
---- First customer of Class/Projectile: rowa1 compared accumulated SECONDS
---- against a stud count while stepping 6.6 studs through a 4-stud box, so
---- crescents passed clean through people. The class substeps.
+--- shattering on the first parry or wall.
+--- First customer of Class/Projectile, which SUBSTEPS -- stepping 6.6 studs
+--- through a 4-stud box at once is how crescents pass clean through people.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -30,10 +28,9 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 "ice2": Medium, ice+slash, 18 dmg, truestun 0.4 / stun 1.0.
-	stun cut to 0.6 because the Freeze meter now carries the control -- two
-	crescents at 1.0s each would stack into a lock the meter was built to
-	replace. See PORT_Freeze section 1. ]]
+--[[ stun is 0.6, not the 1.0 a hit this size would take: the Freeze meter
+	carries the control now, and two crescents at 1.0s each would stack into
+	the lock the meter was built to replace. ]]
 local ICE2 = {
 	weight   = dmgUtils.weighEnum.Medium,
 	type     = bit32.bor(dmgFlag.ice, dmgFlag.slash),
@@ -51,19 +48,18 @@ local FREEZE_FILL = 2
 
 local CRESCENT = table.freeze({
 	speed       = 200,
-	--- rowa1's real limit is TIME, not distance: 3 seconds at 200 studs/s.
-	--- In practice a wall ends it long before either.
+	--- the real limit is TIME, not distance: 3 seconds at 200 studs/s. In
+	--- practice a wall ends it long before either.
 	lifetime    = 3,
 	maxDistance = 600,
 	size        = Vector3.new(9, 9, 4),
 	dmgTbl      = ICE2,
-	--- it shatters on the FIRST body: rowa1 carried on through four, so the
-	--- shatter fx played on a crescent that was still visibly flying.
+	--- it shatters on the FIRST body, so the shatter fx never plays on a
+	--- crescent that is still visibly flying.
 	--- A BLOCK does not consume this -- resolveHits skips the pierce decrement
 	--- on a deflection, so a blocked crescent bends away with its hit intact.
 	pierce      = 1,
 	stopOnWorld = true,
-	--- rowa1 dir*8, at the x0.6 knockback ratio (README S7)
 	knockbackForce = 4.8,
 	fxId        = "iceSlashProj",
 
@@ -71,20 +67,19 @@ local CRESCENT = table.freeze({
 		if attack:isHit() then
 			attack.enemyEntity.statusEffects:apply(
 				statusEffects.Freeze, 4, FREEZE_FILL)
-			--- rowa1's "ice2" row carries onHit = ragdtillground: a 60s CAP
-			--- that stopOnGround ends when they land.
+			--- a 60s CAP that stopOnGround ends when they land.
 			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 8)
 			--- NO iceShatter here: the death carries `hitBody` now, so iceSlashProj plays that same shatter itself, where the server stopped.
 
 		elseif attack:isParried() then
-			--- PARRIED CRESCENTS GO HOME. rowa1 killed it silently, which is a
-			--- fine reward and a boring one. parryDir is the rocket's heading
-			--- blend; `newOwner` is what lets it reach the caster at all.
+			--- PARRIED CRESCENTS GO HOME. Killing it silently is a fine reward
+			--- and a boring one. parryDir is the rocket's heading blend;
+			--- `newOwner` is what lets it reach the caster at all.
 			--- No target: a crescent does not home.
 			local eroot = attack.enemyEntity.HRootPart
 			if eroot then
 				fireVFX("iceShatter", eroot)
-				--- rowa1's rocket blend, degeneracy handled. See parryDir.
+				--- the rocket blend, degeneracy handled. See parryDir.
 				proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15,
 					attack.enemyEntity)
 			else
@@ -115,15 +110,11 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	--[[ hshock takes a BASEPART, not a Humanoid -- it reads .Position off it.
-		rowa1's version took the Humanoid, so porting the call literally threw
-		"Position is not a valid member of Humanoid". Check the rowa2 module's
-		signature, not the rowa1 call site. ]]
+	--- hshock takes a BASEPART, not a Humanoid -- it reads .Position off it.
 	local leftLeg = char:FindFirstChild("Left Leg")
 	fireVFX("hshock", humObj.HRootPart)
 	fireVFX("icepop", leftLeg, 0.55)
 
-	-- rowa1: 0.05 + 5 * 0.1
 	if this:feintWait(0.47) then
 		if anim then anim:Stop() end
 		return

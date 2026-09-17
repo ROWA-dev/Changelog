@@ -14,7 +14,7 @@ export type card = {
 
 	-- claiming this DROPS that card id, i.e. it is an upgrade of it. Pair it with
 	-- `req = { card = <same id> }` or the upgrade can be drafted without the base.
-	-- Same contract as an ability's `replaces`; DOC_ABILITIES has the long version.
+	-- Same contract as an ability's `replaces`; ABILITIES has the long version.
 	replaces: number?,
 
 	-- PICK ONE: owning either side hides the other for good. Made symmetric below, so

@@ -1,7 +1,6 @@
 --!strict
 --- StrongerLeft - StrongLeft's big brother: longer charge, three shockwave
 --- rings, screen shake, terrain destruction, heaviest non-ultimate hit.
---- rowa1 port: README.md/PORT_StrongerLeft.
 --- Structurally StrongLeft.luau with different numbers, on purpose.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
@@ -26,11 +25,10 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---- rowa1 "strP2" 50 dmg, scaled ~0.65 to keep its ratio to StrongLeft.
---- posMult 6 -> 4: 6 was tuned against a 100 posture pool and rowa2's max is
---- 80, so it would guard-break in two connects from full.
---- parryH matched to StrongLeft; rowa1 set none here, which made the HARDER
---- version easier to parry. An omission, not a design.
+--- posMult 4, not 6: the posture pool is 80, and 6 guard-breaks in two
+--- connects from full.
+--- parryH is matched to StrongLeft, so the HARDER version is not the easier
+--- one to parry.
 local STR_P2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
@@ -78,10 +76,9 @@ local function useFunc(this:myself)
 		game.Debris:AddItem(circle, 4)
 	end
 
-	--[[ rowa1 charged for 15 iterations of Rwait(0.05): Emit(8) each, ~120
-		particles. !! THE CALLBACK RUNS EVERY FRAME, NOT EVERY 0.05s, so
-		emitting straight out of it runs at ~60Hz instead of 20Hz. The
-		accumulator restores the cadence and makes it framerate-independent. ]]
+	--[[ !! THE CALLBACK RUNS EVERY FRAME, NOT EVERY 0.05s, so emitting straight
+		out of it runs at ~60Hz instead of the 20Hz this wants. The accumulator
+		restores the cadence and makes it framerate-independent. ]]
 	local sinceEmit, ticks = 0, 0
 	local feinted = this:feintWait(0.72, function(dt: number)
 		sinceEmit += dt
@@ -102,7 +99,7 @@ local function useFunc(this:myself)
 
 	this:useMana()
 	this:triggerCD(cooldownID, 9, true)
-	-- rowa1 MiniDash power 40; bodyForce scales by 5 internally, so 40/5 = 8.
+	-- bodyForce scales by 5 internally, so this is a power-40 lunge.
 	this:bodyForce(Vector3.new(0, 0, -8), 0.2, true)
 
 	if anim then anim:AdjustSpeed(1.1) end
@@ -115,31 +112,23 @@ local function useFunc(this:myself)
 	local forward = hurtbox.CFrame.LookVector
 	local origin  = hurtbox.Position
 
-	--[[ the slam body and the three rings are ONE client effect now.
-		rowa1 cloned a server Part into workspace.Effects and relied on a
-		global `Effects.ChildAdded` listener in FxHandler to notice the name
-		and animate it. rowa2 has no such listener and should not grow one --
+	--[[ the slam body and the three rings are ONE client effect. Do NOT go back
+		to cloning a server Part into workspace.Effects and listening for it --
 		see VFXQuiver/strongerSlam for the full argument. ]]
 	fireVFX("strongerSlam", hurtbox)
 
-	-- rowa1 Destruction:BigBreak2, CUTTER_SIZE 16^3 -> Sphere r 8.
-	--[[ rowa1 BigBreak2 cut with a 16^3 CUBE. rowa2 has a real sphere, so
-		this is r8 (the inscribed sphere of that cube -- the circumscribed one
-		would carve ~40% wider than the original). ]]
+	--- r8 is the inscribed sphere of the 16^3 cut this replaced; the
+	--- circumscribed one would carve ~40% wider.
 	--- velo is studs/SECOND: `forward` alone is 1, which is why the rubble
 	--- used to sit there. A punch this size throws it.
 	Destruction.Sphere(nil, origin + Vector3.new(0, 8, 0) + forward * 9, 8, 4.8, forward * 60)
 
-	--- rowa1 fired its own CamShake RemoteEvent with exactly these args;
-	--- rowa2's camShake quiver id takes the same (pos, range, intensity, dur).
+	--- camShake takes (pos, range, intensity, dur).
 	fireVFX("camShake", origin, 400, 2, 0.3)
 
 	local _, hits = this:hitbox(CFrame.new(0, 0, -4), Vector3.new(7, 7, 7))
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(STR_P2, enemy, forward)
-		--[[ rowa1 look*50 + (0,8,0). Its Knockback set Velocity = knock*3;
-			rowa2's scales by 5. So a rowa1 vector K converts at K * 0.6 --
-			which is exactly what shipped StrongLeft did (rowa1 16 -> 9). ]]
 		attack.knockback = this:knockback(
 			attack.atkDir * 30 + Vector3.new(0, 5, 0), 0.15, false, -1)
 
@@ -149,7 +138,7 @@ local function useFunc(this:myself)
 		end
 	end
 
-	-- the trailing hand smoke outlives the move, exactly as in rowa1.
+	-- the trailing hand smoke deliberately outlives the move.
 	if grip then
 		local smoke = script.smoke:Clone()
 		smoke.Parent = grip

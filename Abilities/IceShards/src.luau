@@ -1,9 +1,8 @@
 --!strict
 --- IceShards - hop backwards and rain TWENTY ice shards on a target: five waves
 --- of 2/3/4/5/6, each forming in the air for 0.4s before it dives.
---- rowa1 port: README.md/PORT_IceShards.
---- NOT homing despite the doc -- each shard picks its direction ONCE at launch;
---- rowa1 only re-aims during the 0.4s formation. BaseProjectile, not Homing.
+--- NOT homing: each shard picks its direction ONCE at launch and only re-aims
+--- during the 0.4s formation. BaseProjectile, not Homing.
 --- They dive at a PITCH (70 deg about X, flown along -UpVector), which is why
 --- the aim is LookVector + (0,-0.4,0): looking down so the arc lands on the
 --- target rather than over their head.
@@ -31,10 +30,9 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 reused "ice2" (18 dmg) here, the SAME table IceSlash uses. But
-	IceSlash throws TWO crescents and this throws TWENTY shards, so the
-	shared number is far too high -- a target caught in the middle of the
-	fan would eat several. Cut to 8, and the Freeze fill per shard is small
+--[[ 8, not the 18 IceSlash's crescents carry. IceSlash throws TWO and this
+	throws TWENTY, so a target caught in the middle of the fan eats several
+	and the shared number would be far too high. The Freeze fill per shard is small
 	for the same reason. ]]
 local ICE_SHARD = {
 	weight   = dmgUtils.weighEnum.Medium,
@@ -55,13 +53,12 @@ local WAVES       = 5
 local FORM_TIME   = 0.4
 local SHARD_GAP   = 0.05
 local BLAST       = 8
---- rowa1 pitched every shard 70 degrees about X before flying it
+--- every shard is pitched this far about X before it flies
 local PITCH       = 70
---- rowa1 aimed slightly DOWN so the pitched dive lands on the target
+--- aimed slightly DOWN so the pitched dive lands on the target, not over them
 local AIM_DROP    = Vector3.new(0, -0.4, 0)
 
 local SHARD = table.freeze({
-	--- rowa1 randomised 260-300 per shard; the mean reads the same
 	speed       = 280,
 	lifetime    = 1,
 	maxDistance = 300,
@@ -80,7 +77,6 @@ local function launchShard(this: myself, offset: Vector3, shardId: number)
 
 	local rotate = CFrame.Angles(math.rad(PITCH), 0, 0)
 
-	--- rowa1 used GetNearestInDirection5: the TIGHT preset.
 	local aimDir = (root.CFrame.LookVector + AIM_DROP).Unit
 	local target = Targeting.nearestInDirection(root.Position, aimDir, humObj, 200, Targeting.TIGHT)
 
@@ -97,7 +93,7 @@ local function launchShard(this: myself, offset: Vector3, shardId: number)
 		return
 	end
 
-	--- re-aim at launch: rowa1 recomputed targDir AFTER the formation wait
+	--- re-aim AFTER the formation wait, so the fan tracks a target that moved
 	local targDir = if target and target.isActive == true and target.HRootPart
 		then (target.HRootPart.Position - root.Position).Unit
 		else root.CFrame.LookVector
@@ -125,10 +121,9 @@ local function launchShard(this: myself, offset: Vector3, shardId: number)
 
 		fireVFX("iceShard", 2, shardId, nil, pos)
 
-		--[[ rowa1 called placeSnow() on any ANCHORED surface it struck,
-			leaving a 16-stud sheet of ice for 50 seconds. That ground layer
-			is most of what the ability leaves behind and an earlier pass
-			dropped it entirely.
+		--[[ the ice sheet on any ANCHORED surface a shard strikes, 16 studs for
+			50 seconds. That ground layer is most of what the ability leaves
+			behind and an earlier pass dropped it entirely.
 			The surface NORMAL comes off proj.worldHit, which BaseProjectile
 			now records when its sweep hits geometry. ]]
 		local wh = proj.worldHit
@@ -144,7 +139,7 @@ local function launchShard(this: myself, offset: Vector3, shardId: number)
 			action:executeAttack(attack)
 			if attack:isHit() then
 				enemy.statusEffects:apply(statusEffects.Freeze, 4, FREEZE_FILL)
-				--- rowa1's "ice2" row carries onHit = ragdtillground
+				--- a long CAP ended by the ground check, not a 60s ragdoll
 				enemy.ragdoll:ragdoll(60, true, flyDir * 8)
 			end
 		end
@@ -175,9 +170,7 @@ local function useFunc(this:myself)
 	snd:Play()
 	game.Debris:AddItem(snd, 4)
 
-	--[[ rowa1 declares Attacking.Time 0.1 AND waits 0.1 -- for once the
-		claim and the truth agree. ]]
-	--- the hop: rowa1 MiniDash(-look + up, 50); bodyForce scales by 5.
+	--- the backwards hop. bodyForce scales by 5 internally.
 	local hop = this:bodyForce(Vector3.new(0, 1, 1).Unit * 10, 0.3, true)
 
 	if this:feintWait(0.1) then

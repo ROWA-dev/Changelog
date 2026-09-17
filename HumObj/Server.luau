@@ -60,6 +60,7 @@ export type myself = baseClass.myself & {
 	HandleAttack: (self:myself, attack:atkTyp, atkSource:any?) -> number,
 
 	canAttack: (self: myself) -> boolean,
+	canCounter: (self: myself, t: number?) -> boolean,
 	canBlock:  (self: myself) -> boolean,
 	isParry: (self: myself, atk:atkTyp?) -> boolean,
 	isBlock: (self: myself, atk:atkTyp?) -> boolean,
@@ -304,6 +305,12 @@ function module.new(hum: Humanoid): myself
 			self.ragdoll:unragdoll()
 		elseif attack:isHit() then
 			local now = tick()
+			--[[ the twin of _lastBlocked, and for the same reason: "was I under
+				pressure just now" cannot be asked of `stun.Value`, which is an
+				overwritable DEADLINE -- the parry branch above zeroes it, and
+				resolveHit's mutual-hit reset bare-writes it down to tick()+0.1.
+				A stamp of when it happened is the only honest source. ]]
+			self._lastHit = now
 			-- HYPER ARMOUR: a SECOND interrupt path that never consults stun, so it gates itself; true stun still cancels via :Stun -> onStunned.
 			if now < self.attackAt - 0.1 and self.wielding_weapon and not self:inHyperArmour() then
 				local equippedWep:any = self.wielding_weapon
@@ -913,6 +920,20 @@ function module.canAttack(self:myself)
 			and now > lastDashed
 			and now > self.canAtkThreshold
 	)
+end
+
+--[[ NO REVERSAL OUT OF PRESSURE. A counter thrown the instant you are hit or
+	while your guard is being worked is free defence rather than a read, so the
+	three counters ask this first.
+
+	!! IT READS STAMPS, NOT `stun.Value`. That field is a DEADLINE other code
+	overwrites -- the parry branch zeroes it outright, and resolveHit's
+	mutual-hit reset bare-writes it to tick()+0.1 -- so `stun.Value + t` was
+	true-then-suddenly-false and countering mid-stun was the symptom. ]]
+function module.canCounter(self:myself, t: number?): boolean
+	local window = t or 0.2
+	local now = tick()
+	return now > self._lastHit + window and now > self._lastBlocked + window
 end
 
 -- gate is duplicated from baseClass.Stun so it sits ABOVE the side effects: otherwise an armoured player still eats onStunned and loses their swing.

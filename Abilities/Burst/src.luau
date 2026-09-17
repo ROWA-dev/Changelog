@@ -56,6 +56,10 @@ local BRST2 = {
 
 local TICKS      = 13
 local TICK_RATE  = 0.05
+-- a feint past the commit RELEASES the charge early, so the rush is cut and the
+-- ball is given a beat to plant. Without it the blast goes off mid-slide on the
+-- same frame as the input, which is what made the tech read as a glitch.
+local FEINT_SETTLE = 0.12
 -- !! the call site passes decayT, so this ramps down and the charge reaches its own detonation at ~a third of launch speed. Left as-is deliberately.
 local RUSH_FORCE = 20
 local RUSH_TIME  = 0.7
@@ -110,15 +114,13 @@ local function useFunc(this:myself)
 	local breakCount = 0
 
 	local plr = if humObj.plrObj then humObj.plrObj.Plr else nil
+	local released = false
 	for i = 1, TICKS do
-		if humObj:inStun() then break end
 		-- a feint past the commit is an EARLY DETONATE, not a cancel: mana and the cd are already spent. Still costs feint2, so it is a real choice.
-		if this.isFeinted then
-			this.isFeinted = false
-			humObj.cooldowns:trigger("feint2")
-			if #caught == 0 then
-				fireVFX("feintfx", char)
-			end
+		-- a rush holding somebody is not a whiffed feint, so it keeps the cancel flourish off.
+		local why = this:channelBreak(#caught > 0)
+		if why then
+			released = (why == "feint")
 			break
 		end
 
@@ -161,6 +163,13 @@ local function useFunc(this:myself)
 	end
 
 	if rush then rush:destroy() end
+
+	-- planted, but still holding them: the settle happens BEFORE the release so a
+	-- victim cannot walk out of the blast they were dragged into.
+	if released and #caught > 0 then
+		this:atkWait(FEINT_SETTLE)
+	end
+
 	for _, enemy in ipairs(caught) do
 		if enemy.grab then enemy.grab:release() end
 	end

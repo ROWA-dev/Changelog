@@ -1,6 +1,5 @@
 --!strict
 --- Huozai - 3s flamethrower, six nested bands re-fired every 0.1s. Ultimate.
---- rowa1 port: README.md/PORT_Huozai. Band select fixes rowa1's shadowed `i`.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -64,7 +63,7 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	-- rowa1 froze input outright; walkSpeed is the rowa2 equivalent. MUST come off on every exit path.
+	-- MUST come off on every exit path.
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 
 	--- the breath-in is the whole tell; Debris 0 on the cancel path kills it.
@@ -101,13 +100,7 @@ local function useFunc(this:myself)
 	while tick() < started + CHANNEL do
 		task.wait()
 
-		if humObj:inStun() then break end
-		if this.isFeinted then
-			this.isFeinted = false
-			humObj.cooldowns:trigger("feint2")
-			fireVFX("feintfx", char)
-			break
-		end
+		if this:channelBreak() then break end
 		if tick() < nextTick then continue end
 		nextTick = tick() + TICK_RATE
 
@@ -116,7 +109,7 @@ local function useFunc(this:myself)
 		--- ONE table across all six bands: :hitbox only dedupes within one query, so this is what stops 6 dmg becoming 36.
 		local seen: {[number]: boolean} = {}
 
-		--- one carve roll per tick, not rowa1's per-band 1-in-5 (~150 carves a cast).
+		--- ONE carve roll per tick. Per-band rolls came to ~150 carves a cast.
 		local carveBand = math.random(1, BANDS - 1)
 
 		for i = 1, BANDS do
@@ -125,7 +118,6 @@ local function useFunc(this:myself)
 			local cf = CFrame.new(root.Position + forward * dist, root.Position)
 
 			if i == carveBand then
-				--- rowa1 BlockBreak2 is genuinely box-shaped, so it maps straight onto OBB.
 				local carveSize = size / (math.random(100, 150) / 100)
 				Destruction.OBB(nil, cf * CFrame.new(0, size.Y / 3, 0),
 					carveSize, math.max(1.5, math.min(carveSize.X, carveSize.Y, carveSize.Z) * 0.6),
@@ -137,7 +129,7 @@ local function useFunc(this:myself)
 				if seen[enemy.entityId] then continue end
 				seen[enemy.entityId] = true
 
-				--- outermost band is not an attack: rowa1's "burn" dmgID was dmg 0, stun 0.
+				--- the outermost band is not an attack, it only ignites.
 				if i == BANDS then
 					ignite(enemy)
 					continue
@@ -145,14 +137,12 @@ local function useFunc(this:myself)
 
 				local near = (i <= 2)
 
-				--- !! atkDir is WORLD-SPACE here; rowa1's `dir` was a local-space flinch selector, so do not copy its math.random literal.
+				--- !! atkDir is WORLD-SPACE here.
 				task.spawn(function()
 					local attack = this:makeAtk(near and FIRE_NEAR or FIRE_FAR, enemy, forward)
-					-- rowa1 Root.CFrame.LookVector*18 / *6, at the x0.6 ratio (README S7)
 					attack.knockback = this:knockback(
 						forward * (near and 10.8 or 3.6), 0.15, false, -1)
 					this:executeAttack(attack)
-					--- rowa1 burned on both bands too, behind that same guard.
 					if attack:isHit() then ignite(enemy) end
 				end)
 			end

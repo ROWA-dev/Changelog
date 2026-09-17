@@ -1,11 +1,9 @@
 --!strict
 --- Lightning - call a bolt down on a target's position. Four staged client
 --- effects, a flash-step, and a finisher flash on connect.
---- rowa1 port: README.md/PORT_Lightning.
---- NOT a projectile (PLAN_PROJECTILE 2E): a delayed world-space AoE at a
---- raycast endpoint, nothing travels.
---- The hitbox runs ONCE -- rowa1's `for i = 1,4` is the WINDUP, 4 x 0.1s,
---- whatever the earlier port doc said.
+--- NOT a projectile: a delayed world-space AoE at a raycast endpoint, nothing
+--- travels.
+--- The hitbox runs ONCE; the 4 x 0.1s loop is the WINDUP.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -29,10 +27,8 @@ local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX   = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ rowa1 "lning": Heavy, LIGHTNING, 30 dmg, truestun 0.5 / stun 1.2.
-	The flag is `lightning` here and `magic` on BoltPunch/JoltKick -- rowa1
-	was inconsistent across its own lightning family. Carried as written so
-	the inconsistency stays visible; resolve it in a balance pass. ]]
+--- BLUE lightning, so the flag is `lightning` and it carries Shock. The yellow
+--- pair (BoltPunch, JoltKick) is `magic` and deliberately does not.
 local LNING = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,
@@ -66,7 +62,6 @@ local function useFunc(this:myself)
 
 	fireVFX("lstrike", FX_CHARGE, char)
 
-	-- rowa1: 4 x 0.1s, re-checking between each.
 	if this:feintWait(0.32) then
 		if anim then anim:Stop() end
 		fireVFX("lstrike", FX_CANCEL, char)
@@ -75,9 +70,9 @@ local function useFunc(this:myself)
 
 	fireVFX("lstrike", FX_UP, char)
 
-	--[[ the flash-step. rowa1 fired ststep, waited 0.4, then ststep2 to
-		unhide. The merged module owns both halves, so a dropped second
-		packet can no longer leave the caster permanently invisible. ]]
+	--[[ the flash-step. ONE module owns both halves -- the hide and the unhide
+		0.4s later -- so a dropped second packet cannot leave the caster
+		permanently invisible. ]]
 	fireVFX("ststep", char, 0.4)
 
 	if this:feintWait(0.4) then
@@ -91,7 +86,7 @@ local function useFunc(this:myself)
 
 	--[[ point at whoever is in front, else straight ahead, then raycast so
 		the bolt lands on the first thing in the way rather than inside it. ]]
-	--- rowa1 used GetNearestInDirection3: the SOFT preset, no angle limit.
+	--- SOFT: no angle limit.
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, STRIKE_RANGE,
 		Targeting.SOFT)
@@ -122,16 +117,13 @@ local function useFunc(this:myself)
 		if attack:isHit() then
 			--[[ Shock marks the BLUE lightning specifically, not the whole
 				lightning family. Fulminate was the only source; this is the
-				other blue one, so it gets it too. rowa1 had no such status --
-				it is a rowa2 addition, and it is deliberately NOT given to
-				BoltPunch/JoltKick (which rowa1 flagged `magic` anyway). ]]
+				other blue one, so it gets it too. Deliberately NOT given to
+				the yellow pair, BoltPunch and JoltKick. ]]
 			enemy.statusEffects:apply(enemy.statusEffects.Shock, 3)
 
 			if enemy.HRootPart then
 				fireVFX("pauseF2", char, enemy.HRootPart.Parent)
-				--[[ rowa1 emitted the HIT effect on `selffx` -- the CASTER's
-					emitter -- while parenting an unused `hitfx` to the victim.
-					A copy-paste slip; the victim never got the effect. Fixed. ]]
+				--- the hit effect goes on the VICTIM, not the caster's emitter.
 				fireVFX("emit", enemy.HRootPart, "lvfx3", 20, 1)
 			end
 		end

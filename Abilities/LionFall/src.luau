@@ -1,10 +1,9 @@
 --!strict
 --- LionFall - a COUNTER, not the leaping slam the doc describes. Stand for
 --- 0.6s; if someone attacks you in that window their damage is CANCELLED and
---- you answer with one enormous punch. rowa1's 2.5s Attacking.Time is the
---- STANCE, not a windup. rowa1 port: README.md/PORT_LionFall.
+--- you answer with one enormous punch. The 2.5s is the STANCE, not a windup.
 --- Built on ToshiCounter's shape (subscribe to beforeAttacked, abort, remember
---- who threw it). Half the cooldown is refunded on a whiff, as in rowa1.
+--- who threw it). Half the cooldown is charged on a whiff.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -29,10 +28,6 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---[[ rowa1 "lionFall": Heavy, blunt, 30 dmg ("nerfed from 40"), truestun 0.4
-	/ stun 1. Its onHit was an INLINE function -- ragdtillground plus two
-	emitters parented to the victim -- so the emitters became the `lFall`
-	quiver id and the ragdoll moved into the isHit branch. ]]
 local LION_FALL = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
@@ -49,7 +44,6 @@ local LION_FALL = {
 
 local STANCE     = 0.4
 local CD         = 22
---- rowa1 gave back half on a whiff: `cd = tick() - cd/2`
 local WHIFF_CD   = CD / 2
 local SLOW_KEY   = "lionFall"
 
@@ -61,18 +55,19 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 
-	--- ToshiCounter's guards: a counter thrown out of stun is free defence
-	local now = tick()
-	if now < humObj.stun.Value + 0.4 then return end
-	if now < humObj._lastBlocked + 0.4 then return end
+	--- no reversal out of pressure. See HumObj:canCounter.
+	if not humObj:canCounter() then return end
 
 	local windup = this:PlayAnim(script.Windup, 0, 1, 1.5)
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 	this:useMana()
-	this:triggerCD(cooldownID, CD, true)
+	--- the whiff tier, paid UP FRONT. The full price lands below only if the
+	--- stance actually catches something -- charging it here and refunding after
+	--- is the no-op trigger() quietly eats. See triggerCD.
+	this:triggerCD(cooldownID, WHIFF_CD, true)
 	this:atkWait(0.1)
 
-	--- the red tell. rowa1 parented a Highlight straight onto the character.
+	--- the red tell.
 	local indicator = script.Highlight:Clone()
 	indicator.Enabled = true
 	indicator.Parent = char
@@ -80,8 +75,6 @@ local function useFunc(this:myself)
 	local triggeredBy = nil
 	local hook = humObj.beforeAttacked:Connect(function(atk)
 		triggeredBy = atk.myEntity
-		--- rowa1's `extras["nodmg"] = true`, expressed as the one field
-		--- rowa2 has for it
 		atk.status = dmgUtils.returnEnum.aborted
 	end)
 
@@ -95,12 +88,15 @@ local function useFunc(this:myself)
 	if windup then windup:Stop(0.1) end
 
 	if triggeredBy == nil then
-		--- whiffed: half cooldown, and a window to be punished in
-		this:triggerCD(cooldownID, WHIFF_CD, true)
+		--- whiffed: already paid the half tier, plus a window to be punished in
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		this:atkWait(0.6) -- on miss
 		return
 	end
+
+	--- it caught one, so it costs the full price. No dontOverwrite: that is
+	--- exactly what stops this landing.
+	this:triggerCD(cooldownID, CD)
 
 	local punch = this:PlayAnim(script.Punch, 0, 1, 1)
 
@@ -109,7 +105,6 @@ local function useFunc(this:myself)
 	startSnd:Play()
 	game.Debris:AddItem(startSnd, 4)
 
-	--- rowa1 hung the charge emitters off the RIGHT arm's grip attachment
 	local rArm = char:FindFirstChild("Right Arm")
 	local grip = rArm and rArm:FindFirstChild("RightGripAttachment")
 	local sparks, circle
@@ -122,17 +117,14 @@ local function useFunc(this:myself)
 		game.Debris:AddItem(circle, 4)
 	end
 
-	--[[ the 4 x 0.05s charge. atkWait, not feintWait: the counter has
-		already committed and rowa1 tagged it `noFeint` for exactly this
-		stretch. See PORT_LionFall step 2. ]]
+	--- the 4 x 0.05s charge. atkWait, not feintWait: the counter has already
+	--- committed, so this stretch is deliberately not cancellable.
 	for i = 1, 4 do
 		if humObj:inStun() then
 			if punch then punch:Stop() end
-			--[[ rowa1 bins Chargup AND HandSparks on this exact path
-				(Debris 0 on both). Getting stunned out of the charge left
-				the hand sparking and the charge sound ringing for another
-				four seconds -- the same interrupt-does-not-look-like-an-
-				interrupt bug as the beam and the flamethrower. ]]
+			--[[ bin BOTH emitters here. Getting stunned out of the charge left
+				the hand sparking and the charge sound ringing for another four
+				seconds -- an interrupt that does not look like one. ]]
 			game.Debris:AddItem(startSnd, 0)
 			if sparks then game.Debris:AddItem(sparks, 0) end
 			if circle then game.Debris:AddItem(circle, 0) end
@@ -146,20 +138,18 @@ local function useFunc(this:myself)
 
 	local forward = hurtbox.CFrame.LookVector
 	fireVFX("phantom", char, char.PrimaryPart and char.PrimaryPart.CFrame or hurtbox.CFrame)
-	--- rowa1 BigBreak cut with a 16^3 cube; r8 is its inscribed sphere
 	--- studs/SECOND, not a heading -- see Destruction's visualizeDestroyed
 	Destruction.Sphere(nil, hurtbox.Position + forward * 7, 8, 4.8, forward * 55)
 
 	local _, hits = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(8, 8, 8))
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(LION_FALL, enemy, forward)
-		-- rowa1 look*20 + (0,8,0), at the x0.6 knockback ratio (README S7)
 		attack.knockback = this:knockback(
 			attack.atkDir * 12 + Vector3.new(0, 4.8, 0), 0.15, false, -1)
 		this:executeAttack(attack)
 
 		if attack:isHit() then
-			--- rowa1's onHit ran ragdtillground: a long CAP ended by ground
+			--- a long CAP ended by the ground check, not a 60s ragdoll
 			attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 10)
 			local eroot = enemy.HRootPart
 			if eroot then
