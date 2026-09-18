@@ -2,11 +2,7 @@
 --- Prediction - a counter STANCE: for a short window every attack that would
 --- hit you is turned back on whoever threw it, until enough damage breaks
 --- through.
---- Short on purpose -- the mechanic is Class/StatusEffects/Reflect and the
---- resolver is untouched.
---- NOT LionFall/ToshiCounter's shape: those answer ONE attack with a move of
---- their own, this reflects everything and has no follow-up, so it applies an
---- effect and gets out of the way rather than using connect-then-abort.
+
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -28,10 +24,7 @@ end
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
---- the real reflect window; the 0.8s wait afterwards is just the ability
---- holding itself open.
-local WINDOW = 0.7
---- it shatters above this much absorbed
+local WINDOW = 0.6
 local ABSORB_CAP = 1000
 local SLOW_KEY = "prediction"
 

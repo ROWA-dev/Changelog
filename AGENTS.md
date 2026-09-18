@@ -55,4 +55,4 @@ Expand these docs as the framework evolves.
 
 ## Decided against
 Do not re-propose without new evidence: mass renames, carving up HumObj,
-per-action scopes, data-driven weapon ids.
+~per-action scopes, data-driven weapon ids.

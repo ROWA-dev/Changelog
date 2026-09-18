@@ -58,7 +58,7 @@ local function useFunc(this:myself)
 		fireVFX("streakFx", blade, humObj.HRootPart)
 	end
 
-	if this:feintWait(0.62) then
+	if this:feintWait(0.7) then
 		if first then first:Stop() end
 		return
 	end
@@ -88,6 +88,7 @@ local function useFunc(this:myself)
 
 	local stopDistance = endpDist
 
+	local landed = false
 	for _, enemy in pairs(hits) do
 		local eroot = enemy.HRootPart
 		if eroot == nil then continue end
@@ -98,6 +99,7 @@ local function useFunc(this:myself)
 		if attack:isParried() or attack:isBlocked() then
 			stopDistance = math.min(stopDistance, (origin - eroot.Position).Magnitude)
 		elseif not attack:isDodged() then
+			landed = true
 			eroot.CFrame = CFrame.new(endp + dir * 2, endp - dir)
 		end
 	end
@@ -108,7 +110,11 @@ local function useFunc(this:myself)
 	local landing = origin:Lerp(endp, alpha)
 	char:PivotTo(CFrame.new(landing, landing + dir))
 
-	this:endLag(0.28)
+	if landed == true then
+		this:endLag(0.26)
+	else
+		this:endLag(0.4)
+	end
 end
 
 function module.use(self:myself)

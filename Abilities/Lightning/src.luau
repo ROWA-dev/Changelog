@@ -1,9 +1,5 @@
 --!strict
---- Lightning - call a bolt down on a target's position. Four staged client
---- effects, a flash-step, and a finisher flash on connect.
---- NOT a projectile: a delayed world-space AoE at a raycast endpoint, nothing
---- travels.
---- The hitbox runs ONCE; the 4 x 0.1s loop is the WINDUP.
+--- Lightning - ~100 stud radius tp that strikes lightning at the endpos
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -27,17 +23,11 @@ local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX   = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---- BLUE lightning, so the flag is `lightning` and it carries Shock. The yellow
---- pair (BoltPunch, JoltKick) is `magic` and deliberately does not.
 local LNING = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,
 	dmg      = 16,
 	stun     = 1.2,
-	--- !! DO NOT remove this again. CalculatePostureDmg is the first line of
-	--- HandleAttack and reads `dmg * posMult` unguarded, so a nil posMult throws
-	--- into use()'s pcall -- every effect plays and NOBODY IS EVER DAMAGED.
-	--- That signature means a dmgTbl field HandleAttack reads unconditionally.
 	posMult  = 2,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "LightningRelease")
@@ -107,7 +97,10 @@ local function useFunc(this:myself)
 
 	local _, hits = this:hitbox(
 		CFrame.new(origin.Position + Vector3.new(0, 1, 0), origin.Position),
-		Vector3.new(8, 8, 8), nil, true)
+		Vector3.new(8, 8, 8),
+		nil,
+		true
+	)
 
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(LNING, enemy, Vector3.new(0, 1, 0))

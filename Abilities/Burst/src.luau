@@ -1,6 +1,5 @@
 --!strict
--- Burst - light a fireball on your fist and CHARGE; anyone you run through is welded to the ball and dragged along until it detonates.
--- the dash IS the move, it grabs continuously over 13 ticks, and it only detonates IF SOMEONE WAS CAUGHT -- a whiffed Burst is just a dash.
+-- Burst - a long active frames lunge and on grab it has a second part where it "bursts away" the grabbed victims
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -41,7 +40,6 @@ local BRST1 = {
 	end,
 }
 
--- the detonation.
 local BRST2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.fire, dmgFlag.blunt),
@@ -56,16 +54,13 @@ local BRST2 = {
 
 local TICKS      = 13
 local TICK_RATE  = 0.05
--- a feint past the commit RELEASES the charge early, so the rush is cut and the
--- ball is given a beat to plant. Without it the blast goes off mid-slide on the
--- same frame as the input, which is what made the tech read as a glitch.
+-- a feint past the commit RELEASES the charge, so the ball gets a beat to plant instead of going off mid-slide on the input frame.
 local FEINT_SETTLE = 0.12
 -- !! the call site passes decayT, so this ramps down and the charge reaches its own detonation at ~a third of launch speed. Left as-is deliberately.
 local RUSH_FORCE = 20
 local RUSH_TIME  = 0.7
 -- budgeted so a long rush cannot shred the whole map
 local BREAK_BUDGET = 24
--- the burn applied by the detonation
 local BURN_TIME, BURN_DMG = 6, 3
 
 -- !! 12 keeps this above the forceMag >= 60 scenery gate after Knockback's x5; the (0,5,0) lift stops stopOnGround ending the ragdoll instantly.
@@ -73,35 +68,74 @@ local function BLAST_KB(atkDir: Vector3): Vector3
 	return atkDir * 12 + Vector3.new(0, 5, 0)
 end
 
+-- everyone dragged is in the blast BY IDENTITY, not geometry; the box is for BYSTANDERS, since welded victims hang inside its near face.
+local function detonate(this:myself, caught:{any}, seen:{[number]:boolean})
+	local humObj = this._humObj
+	local forward = humObj.HurtBox.CFrame.LookVector
+	local blastBox, blast = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(9, 9, 9))
+
+	table.clear(seen)
+	for _, enemy in pairs(blast) do
+		seen[enemy.entityId] = true
+	end
+	-- `caught` is unique by construction, so membership is the only test needed.
+	for _, enemy in ipairs(caught) do
+		if enemy.isActive == true and not seen[enemy.entityId] then
+			table.insert(blast, enemy)
+		end
+	end
+
+	for _, enemy in pairs(blast) do
+		local attack = this:makeAtk(BRST2, enemy, forward)
+		attack.hitbox = blastBox
+		attack.knockback = this:knockback(BLAST_KB(attack.atkDir), 0.1, false, -1)
+		this:executeAttack(attack)
+
+		if attack:isHit() then
+			-- a CAP ended by landing; the release happens BEFORE the attack so the knockback has a free body to push. Guarded, ragdoll is not in Combatant.
+			if attack.enemyEntity.ragdoll then
+				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 12)
+			end
+			attack.enemyEntity.statusEffects:apply(
+				humObj.statusEffects.Burn, BURN_TIME, BURN_DMG)
+		end
+	end
+end
+
 local function useFunc(this:myself)
 	local cooldownID = "burst"
 	if this:canTriggerCD(cooldownID) ~= true then return end
 
 	local humObj  = this._humObj
-	local hurtbox = humObj.HurtBox
-	local char: any = hurtbox.Parent
+	local char: any = humObj.HurtBox.Parent
 	local anim = this:PlayAnim(script.Punch, 0, 1, 1)
 
 	local rightArm = char:FindFirstChild("Right Arm")
 	fireVFX("igniteBall", 1, rightArm, 2)
 
-	-- windup, then the shockwave, then 0.2 more
-	if this:feintWait(0.42) then
+	local function bail()
 		if anim then anim:Stop() end
 		fireVFX("igniteBall", 0)
+	end
+
+	-- windup, then the shockwave, then 0.2 more
+	if this:feintWait(0.42) then
+		bail()
 		return
 	end
 
 	fireVFX("burstRing", humObj.HRootPart, false)
 
 	if this:feintWait(0.2) then
-		if anim then anim:Stop() end
-		fireVFX("igniteBall", 0)
+		bail()
 		return
 	end
 
 	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
+
+	-- !! the Humanoid must stop walking for the length of the rush: RUSH_FORCE 20 is only 1.5x walkSpeed 13, so its own input steers the mover and the slide reads rigid. Fulminate does the same.
+	humObj.walkSpeed:SetMod(cooldownID, -100)
 
 	-- !! DO NOT set isRootRelative false here: it also arms knockBreakStuff, and at forceMag 120 you would tunnel through the scenery instead of being stopped by it.
 	local rush = this:bodyForce(Vector3.new(0, 0, -RUSH_FORCE), RUSH_TIME, true, RUSH_TIME, 0.5)
@@ -124,13 +158,14 @@ local function useFunc(this:myself)
 			break
 		end
 
-		local root = humObj.HRootPart
-		if root == nil then break end
-		local forward = root.CFrame.LookVector
+		-- the HurtBox, not HRootPart: identity weld, so same CFrame, and it is the one combat already reads.
+		local hurtbox = humObj.HurtBox
+		if hurtbox == nil then break end
+		local forward = hurtbox.CFrame.LookVector
 
-		-- the trench: a CYLINDER carves the run in one call and leaves a continuous trench rather than separate pits. Budgeted, see BREAK_BUDGET.
+		-- the trench: a CYLINDER carves the run in one call and leaves a continuous trench rather than separate pits.
 		if breakCount < BREAK_BUDGET then
-			Destruction.Cylinder(plr,root.Position + forward * 3 + Vector3.new(0, 2, 0),
+			Destruction.Cylinder(plr, hurtbox.Position + forward * 3 + Vector3.new(0, 2, 0),
 				-- velo is studs/SECOND, thrown along the rush
 				forward, 12, 3.5, 4, forward * 45)
 			breakCount += 1
@@ -164,8 +199,7 @@ local function useFunc(this:myself)
 
 	if rush then rush:destroy() end
 
-	-- planted, but still holding them: the settle happens BEFORE the release so a
-	-- victim cannot walk out of the blast they were dragged into.
+	-- settle BEFORE the release, or a victim walks out of the blast they were dragged into.
 	if released and #caught > 0 then
 		this:atkWait(FEINT_SETTLE)
 	end
@@ -174,8 +208,8 @@ local function useFunc(this:myself)
 		if enemy.grab then enemy.grab:release() end
 	end
 
-	-- only detonates if the rush actually caught someone
 	if #caught == 0 then
+		humObj.walkSpeed:RemoveMod(cooldownID)
 		fireVFX("igniteBall", 0)
 		this:endLag(0.25)
 		return
@@ -184,7 +218,7 @@ local function useFunc(this:myself)
 	fireVFX("igniteBall", 3)
 	-- consume a feint that lands in the TAIL so it cannot leak into the next action, then detonate anyway.
 	this.isFeinted = false
-	
+
 	fireVFX("burstRing", humObj.HRootPart, true)
 
 	if anim then anim:Stop() end
@@ -192,37 +226,9 @@ local function useFunc(this:myself)
 	-- an IMPULSE, not a held force
 	this:bodyForce(Vector3.new(0, 0, -12), 0.1, true)
 
-	local forward = hurtbox.CFrame.LookVector
-	local blastBox, blast = this:hitbox(CFrame.new(0, 0, -5), Vector3.new(9, 9, 9))
-
-	-- everyone dragged is in the blast BY IDENTITY, not geometry; the box is for BYSTANDERS, since welded victims hang inside its near face.
-	table.clear(seen)
-	for _, enemy in pairs(blast) do
-		seen[enemy.entityId] = true
-	end
-	for _, enemy in ipairs(caught) do
-		if enemy.isActive == true and not seen[enemy.entityId] then
-			seen[enemy.entityId] = true
-			table.insert(blast, enemy)
-		end
-	end
-
-	for _, enemy in pairs(blast) do
-		local attack = this:makeAtk(BRST2, enemy, forward)
-		attack.hitbox = blastBox
-		attack.knockback = this:knockback(BLAST_KB(attack.atkDir), 0.1, false, -1)
-		this:executeAttack(attack)
-
-		if attack:isHit() then
-			-- a CAP ended by landing; the release happens BEFORE the attack so the knockback has a free body to push. Guarded, ragdoll is not in Combatant.
-			if attack.enemyEntity.ragdoll then
-				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 12)
-			end
-			attack.enemyEntity.statusEffects:apply(
-				humObj.statusEffects.Burn, BURN_TIME, BURN_DMG)
-		end
-	end
-
+	-- held through the blast lunge, which is another 12 against walkSpeed 13.
+	detonate(this, caught, seen)
+	humObj.walkSpeed:RemoveMod(cooldownID)
 	this:endLag(0.3)
 end
 

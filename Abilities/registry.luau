@@ -96,7 +96,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	-- Blaze [2] is WIP
 	[manifold.Clap] = {
 		desc = "Clap shut on the nearest target within 40 studs.",
-		req = { strength = 5 },
+		req = { mind = 5 },
 	},
 	[manifold.ToshiCounter] = {
 		desc = "A counter stance answering with a two-hit reply.",
@@ -179,8 +179,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Cero] = {
 		desc = "A wide beam cannon that carves a tunnel.",
-		req = { mind = 6 },
-		tier = DraftTiers.ULTIMATE,
+		req = { dark = 4 }
 	},
 	[manifold.Huozai] = {
 		desc = "A 3s flamethrower in six nested bands.",
@@ -202,8 +201,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.RPG] = {
 		desc = "One homing rocket. A parry redirects it to someone else.",
-		req = { creation = 4 },
-		tier = DraftTiers.ULTIMATE,
+		req = { creation = 4 }
 	},
 	[manifold.PaperBomb] = {
 		desc = "Four explosive kunai that stick and burn a fuse.",
@@ -273,13 +271,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.InverseRed] = {
 		desc = "A red orb fired flat. All the damage is in the blast.",
 		-- CARD id raw, like loadChar's, so Abilities gains no require on Cards. NOT ability 13.
-		req = { card = 13 }, -- Six Eyes
-		tier = DraftTiers.ULTIMATE,
+		req = { card = 13 } -- Six Eyes
 	},
 	[manifold.FullBlue] = {
 		desc = "A gravity well that drags everything into orbit.",
-		req = { card = 13 }, -- Six Eyes card
-		tier = DraftTiers.ULTIMATE,
+		req = { card = 13 } -- Six Eyes card
 	},
 	[manifold.BoulderKick] = {
 		desc = "Rip a chunk of the map out and punt it.",
@@ -414,8 +410,15 @@ function module.catalogue(): {{any}}
 				table.insert(picks, listName(other))
 			end
 			-- DENSE: "" and {} never nil -- a nil gaps the row, and a nil req means INHERIT.
-			table.insert(built, {id, listName(id), meta.desc or "", Requirements.describe(meta.req),
-				meta.req or {}, drops, table.concat(picks, ", ")})
+			table.insert(built, {
+				id,
+				listName(id),
+				meta.desc or "",
+				Requirements.describe(meta.req),
+				meta.req or {},
+				drops,
+				table.concat(picks, ", ")
+			})
 		end
 		catalogue = table.freeze(built)
 	end

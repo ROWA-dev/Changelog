@@ -169,7 +169,7 @@ return function(this:wepTyp&any): wepType.atkResult
 
 	this:bodyForce(Vector3.new(0, -2, 2), 0.2, true, 0.2)
 	emit(att, "Debris", 12)
-	emit(att, "smoke", 12).
+	emit(att, "smoke", 12)
 	release()
 
 	-- THE LAUNCH

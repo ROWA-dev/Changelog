@@ -1,7 +1,6 @@
 --!strict
 -- InverseRed - charge a red orb on your arm, then fire it flat at 800 studs/s; it sweeps for bodies and detonates on contact, a wall, or expiry.
 -- the orb does NO contact damage, it is all in the blast, but it carries a zeroed dmgTbl so contact RESOLVES and can be parried.
--- THE PURPLE COMBO IS CUT, decided: FullBlue still sets PurpleReady, but nothing here reads it. If revived it goes on the FIELD, not the orb.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -92,10 +91,8 @@ end
 
 local ORB_CFG = table.freeze({
 	speed       = 800,
-	-- capped: at 800 studs/s an uncapped lifetime is an 8000-stud shot.
 	maxDistance = 900,
 	lifetime    = 2,
-	-- only the cross-section is ours: the depth is the substep, which the scheduler owns.
 	size        = Vector3.new(6, 6, 6),
 	dmgTbl      = PROXIMITY,
 	pierce      = 1,
@@ -110,9 +107,7 @@ local ORB_CFG = table.freeze({
 			if eroot == nil then return end
 			fireVFX("rocketDeflect", proj.pos, eroot.CFrame.LookVector)
 			-- blended heading with the head-on case handled. See parryDir.
-			proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15,
-				attack.enemyEntity)
-			-- a deflected orb belongs to whoever it reaches next
+			proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15, attack.enemyEntity)
 			proj.victimRoot = nil
 			return
 		end
@@ -120,12 +115,12 @@ local ORB_CFG = table.freeze({
 		-- stamps EVERY body the sweep touches, hit or not, so a blocked or i-framed contact still puts the blast on the person. See detonate.
 		local enemy = attack.enemyEntity
 		proj.victimRoot = enemy and enemy.HRootPart or nil
-		-- !! ends it here itself: resolveHits no longer spends the pierce on an i-framed contact, and this orb blasts the body it touched either way.
 		Projectile.kill(proj)
 	end,
 })
 
-local WINDUP = 0.8
+-- an air cast pays more, because aerialAim hangs you there and the extra time is aim.
+local WINDUP, AIR_WINDUP = 0.5, 0.8
 
 local function useFunc(this:myself)
 	local cooldownID = "inverseRed"
@@ -136,8 +131,13 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Punch, 0, 1, 1)
 
+	-- the orb leaves along the root's facing, so without this an air cast fires along whatever heading the jump had. No-ops grounded.
+	-- maxTime is a CEILING, so the longer windup covers both cases.
+	local releaseAir, inAir = aerialAim(humObj, AIR_WINDUP + 0.5)
+	local windup = if inAir then AIR_WINDUP else WINDUP
+
 	local rightArm = char:FindFirstChild("Right Arm")
-	fireVFX("inverseRedCharge", 1, rightArm, WINDUP)
+	fireVFX("inverseRedCharge", 1, rightArm, windup)
 
 	-- the charge whine: sound on the ability, visuals in the quiver.
 	local chargeSnd = script.particle_style_charge:Clone()
@@ -145,10 +145,7 @@ local function useFunc(this:myself)
 	chargeSnd:Play()
 	game.Debris:AddItem(chargeSnd, 4)
 
-	-- the orb leaves along the root's facing, so without this an air cast fires along whatever heading the jump had. No-ops grounded.
-	local releaseAir = aerialAim(humObj, WINDUP + 0.5)
-
-	if this:feintWait(WINDUP) then
+	if this:feintWait(windup) then
 		if anim then anim:Stop(0.1) end
 		releaseAir()
 		-- or the orb hangs off the arm forever

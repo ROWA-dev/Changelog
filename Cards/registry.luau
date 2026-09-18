@@ -343,8 +343,15 @@ function module.catalogue(): {{any}}
 			end
 			-- describe() runs HERE, where the namer is; a client prints "card #17" instead.
 			-- DENSE: "" and {} never nil -- a nil gaps the row, and a nil req means INHERIT.
-			table.insert(built, {id, card.name, card.desc or "", Requirements.describe(card.req),
-				card.req or {}, drops, table.concat(picks, ", ")})
+			table.insert(built, {
+				id,
+				card.name,
+				card.desc or "",
+				Requirements.describe(card.req),
+				card.req or {},
+				drops,
+				table.concat(picks, ", ")
+			})
 		end
 		catalogue = table.freeze(built)
 	end

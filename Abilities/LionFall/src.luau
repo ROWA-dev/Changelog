@@ -90,7 +90,7 @@ local function useFunc(this:myself)
 	if triggeredBy == nil then
 		--- whiffed: already paid the half tier, plus a window to be punished in
 		humObj.walkSpeed:RemoveMod(SLOW_KEY)
-		this:atkWait(0.6) -- on miss
+		this:atkWait(0.7) -- on miss
 		return
 	end
 

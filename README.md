@@ -1,10 +1,10 @@
-# ability cleanup
-Update 1.7.0
+# small balancing changes
+Update 1.7.1
 
-new blood ability: Harvest
-buffed some of the multihits (since u can parry mid multihit now)
-made bolt punch travel better so u can actually catch predicted rolls w it
-general cleanup on the abilities
-pushed my embarrassing docs
+reduced prediction window by 0.1 -note still needs an indicator...
+less divide dmg
+streak windup correction
+etc
+small balancing
 
 and more
