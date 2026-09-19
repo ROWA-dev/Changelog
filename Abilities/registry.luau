@@ -55,7 +55,10 @@ local abilityList:list = {
 	[43] = manifold.ProjTest,
 	[44] = manifold.HollowPurple,
 	[45] = manifold.Saringan,
-	[46] = manifold.Harvest
+	[46] = manifold.Harvest,
+	[47] = manifold.StrongShove,
+	[48] = manifold.StrongKick,
+	[49] = manifold.Tentacles
 }
 table.freeze(abilityList)
 
@@ -259,7 +262,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Freeze] = {
-		desc = "A line of ice. Fills the Freeze meter in one hit.",
+		desc = "A line of ice. Freezes in one hit.",
 		req = { ice = 6 },
 		tier = DraftTiers.RARE,
 	},
@@ -269,7 +272,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		tier = DraftTiers.RARE,
 	},
 	[manifold.InverseRed] = {
-		desc = "A red orb fired flat. All the damage is in the blast.",
+		desc = "fast projectile explodes on impact",
 		-- CARD id raw, like loadChar's, so Abilities gains no require on Cards. NOT ability 13.
 		req = { card = 13 } -- Six Eyes
 	},
@@ -282,14 +285,18 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { earth = 4 },
 	},
 	[manifold.HollowPurple] = {
-		desc = "A 4.25s charge, then a beam that ignores geometry.",
+		desc = "long windup unparryable undodgeable projectile",
 		req = { card = 13, mind = 10 }, -- Six Eyes card
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.Saringan] = {
-		desc = "Double mana recovery, empower weapons and copy abilities used by recent victims. Exclusive with Six Eyes.",
-		req = { mind = 8 },
+		desc = "2x mana regen, copy abilities, +10% basic weapon damage. Exclusive with Six Eyes.",
+		req = { mind = 10 },
 		excludesCards = { 13 }, -- Six Eyes
+	},
+	[manifold.Tentacles] = {
+		desc = "Dark strands lash out of a portal down a long lane.",
+		req = { dark = 4 },
 	},
 }
 table.freeze(abilityMeta)
@@ -365,8 +372,7 @@ function module.nameOf(id:number): string
 	return (ok and class and class.Name) or ("ability_"..tostring(id))
 end
 
--- nil for a module on disk but not in abilityList (EarthShot, HitSelf, StrongKick,
--- StrongShove). NOT a fault, so it warns rather than errors: callers must handle nil.
+-- nil for a module on disk but not in abilityList. NOT a fault, so it warns rather than errors: callers must handle nil.
 function module.moduleToID(module:ModuleScript): number?
 	for i, v in abilityList do
 		if v == module then

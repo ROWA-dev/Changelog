@@ -26,7 +26,7 @@ local wepList:list = {
 	--- Heavy/GreatAxe, NOT Medium/Swords. It was first modelled on Claymore
 	--- and moved once it read as an axe closer to Executer. See GreatAxe.
 	[14] = manifold.Heavy.GreatAxe.Oblitar,
-	[15] = manifold.Heavy.Greatsword.Slayer,
+	[15] = manifold.Heavy.Greatsword.Slayer
 }
 table.freeze(wepList)
 

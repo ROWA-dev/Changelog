@@ -1,11 +1,13 @@
 --!strict
 local baseWep = require(script.Parent)
+local locomotionProfiles = require(game.ReplicatedStorage.Modules.LocomotionProfiles)
 
 export type myself = baseWep.myself & {
 }
 
 local module = {
 	Name = "bostaff",
+	locomotionProfile = locomotionProfiles.HEAVY,
 	idleAnim = script:WaitForChild("idle")
 }
 module.__tostring = baseWep.__tostring

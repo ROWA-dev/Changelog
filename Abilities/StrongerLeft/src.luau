@@ -1,7 +1,5 @@
 --!strict
---- StrongerLeft - StrongLeft's big brother: longer charge, three shockwave
---- rings, screen shake, terrain destruction, heaviest non-ultimate hit.
---- Structurally StrongLeft.luau with different numbers, on purpose.
+--- StrongerLeft - Heavier Strong Left
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -25,16 +23,12 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
---- posMult 4, not 6: the posture pool is 80, and 6 guard-breaks in two
---- connects from full.
---- parryH is matched to StrongLeft, so the HARDER version is not the easier
---- one to parry.
 local STR_P2 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
 	dmg      = 40,
 	stun     = 1.6,
-	posMult  = 4,
+	posMult  = 3,
 	parryH   = -0.04,
 	onHit    = function(attack, _source)
 		local eroot = attack.enemyEntity.HRootPart

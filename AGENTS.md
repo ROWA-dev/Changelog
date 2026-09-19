@@ -33,6 +33,10 @@ cleanup, safe to spam every hit (apply dedupes -> onStack).
 
 Build new subsystems to be called like that one.
 
+## Building
+Map layout, naming, the two assembly regimes and the edge-alignment metric live
+in `BUILDING.md`. Read it before touching the map.
+
 ## Before you move anything
 Use the scripts named in these docs, not random ones you find.
 
@@ -50,6 +54,8 @@ Every doc is a markdown FILE and a CHILD of `ServerStorage/README.md`. No Luau
 wrapper, no `return true`, and nothing requires one — they are read, not
 loaded. A doc may have its own children. This file is the exception: it is
 rules, not reference, so it sits beside the README rather than under it.
+`BUILDING.md` hangs off this file for the same reason — it is map rules, not
+codebase reference, so it is not in the README doc map.
 
 Expand these docs as the framework evolves.
 

@@ -24,7 +24,7 @@ end
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
-local WINDOW = 0.6
+local WINDOW = 0.5
 local ABSORB_CAP = 1000
 local SLOW_KEY = "prediction"
 

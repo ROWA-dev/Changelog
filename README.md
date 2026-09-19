@@ -1,10 +1,7 @@
-# small balancing changes
-Update 1.7.1
+# dark
+Update 1.7.2
 
-reduced prediction window by 0.1 -note still needs an indicator...
-less divide dmg
-streak windup correction
-etc
-small balancing
+tentacle ability still missing some vfx needs polishing
+some balancing
 
 and more

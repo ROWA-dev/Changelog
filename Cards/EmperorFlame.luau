@@ -9,7 +9,7 @@ export type myself = baseClass.myself & { _crown: BasePart? }
 local KNOCK_THRESHOLD = 9.6
 local PROC_RANGE = 15
 local MANA_DRAIN = 8
-local BURN_TIME, BURN_DAMAGE = 10, 3
+local BURN_TIME, BURN_DAMAGE = 10, 2
 
 local EXPLOSION = table.freeze({
 	weight = dmgUtils.weighEnum.Heavy,

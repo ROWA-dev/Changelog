@@ -1,6 +1,5 @@
 --!strict
 -- Freeze - slam the ground and send a line of ice erupting forward: two spikes a step across seven steps, each laying its own sheet of ground ice.
--- !! THE STUN IS NOT IN THE DAMAGE TABLE: the payoff is the Freeze METER, filled in ONE application. Other ice moves CHIP it, this DETONATES it.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -26,15 +25,14 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX       = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx        = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
--- an ordinary heavy row: the stun BECOMES the freeze, and posMult stays low because the meter is the payoff, not a posture deletion on top of it.
 local FREEZE_HIT = {
 	weight  = dmgUtils.weighEnum.Heavy,
 	type    = dmgFlag.ice,
 	dmg     = 10,
 	stun    = 0.4,
-	posMult = 3,
-	-- committed heavy, same read as IceBash
+	posMult = 4,
 	parryH  = -0.04,
+	dodgeH  = -0.1,
 	onHit   = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "IceSplash")
 	end,
@@ -222,7 +220,7 @@ local function useFunc(this:myself)
 	end
 
 	if anim then anim:Stop(0.2) end
-	this:endLag(0.3)
+	this:endLag(0.2)
 	return true
 end
 

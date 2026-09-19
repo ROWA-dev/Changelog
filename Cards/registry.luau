@@ -117,7 +117,7 @@ local cardList:clType = {
 	},
 	[15] = {
 		name = "Quick Step",
-		desc = "dodging grants a second dodge window, if you keep off the attack",
+		desc = "dodging grants a second dodge window, if you keep off the attack. one chain evades 40 damage",
 		module = manifold.QuickStep,
 		req = { dexterity = 8 },
 	},

@@ -122,13 +122,15 @@ this is also used for things that would clobber up the network stream... instead
     stopped, which reads as the feint not having worked. So the sustained
     ids take (root, duration) and treat `duration <= 0` as "end the one
     running on this root NOW": icelasers, icelst, fdance, bground, ststep,
-    huozai.
+    huozai, tentacles.
     Same shape in all of them -- an `active[root] = token` registry, the
     token re-checked AFTER every yield (the cancel lands during the Wait,
     and the while-condition is not read again until the bottom of the body).
     A CANCELLED one must not merely stop emitting: long-lifetime particles
     hang in the air. Fade with ReplicatedStorage/Modules/fxFade, which
-    carries the traps and both callers.
+    carries the traps and both callers. An AIMED muzzle (one that is placed
+    in front of the caster and turns with them, not an aura) follows with
+    ReplicatedStorage/Modules/fxFollow: icelasers and tentacles.
     Server side is one local -- `local function stopX() fireVFX(id, root, 0) end`
     called on every early-exit branch. IceBeam and FlameDance are the models.
 

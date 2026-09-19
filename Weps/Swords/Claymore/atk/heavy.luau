@@ -25,7 +25,7 @@ return function(this:wepTyp): wepType.atkResult
 	
 	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 	
-	if this:feintWait(0.42) then vfx:Destroy() floorVfx:Destroy() humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() return end
+	if this:feintWait(0.42) then vfx:Destroy() floorVfx:Destroy() humObj.walkSpeed:RemoveMod("stopMoving") anim:Stop() this:endLag(0.2) return end
 
 vfx["Critical Hit"]:Play()
 	local particles = {}
@@ -113,7 +113,7 @@ vfx["Critical Hit"]:Play()
 			game.Debris:AddItem(fx, 4)
 		end
 		table.clear(vfxPool)
-		
+		this:endLag(0.2)
 		return
 	end
 	vfx["hit sound"]:Play()
@@ -137,7 +137,6 @@ vfx["Critical Hit"]:Play()
 
 	local ogCF = hurtbox.CFrame
 	local lastDist = 0
-	local total = 0
 	
 	local hitSound = vfx["hit sound"]
 	local fireworks = vfx.firework
@@ -217,10 +216,6 @@ vfx["Critical Hit"]:Play()
 			end)
 		end
 		
-		if total > 70 then
-			print("RAH too much to break")
-			break
-		end
 		task.wait()
 	end
 	
@@ -233,7 +228,7 @@ vfx["Critical Hit"]:Play()
 	table.clear(alreadyHit)
 	
 	if hitLanded == false then
-		this:endLag(0.25)
+		this:endLag(0.3)
 	else
 		this:endLag(0.1)
 	end

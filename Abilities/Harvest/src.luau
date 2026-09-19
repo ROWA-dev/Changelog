@@ -95,17 +95,18 @@ local function useFunc(this:myself&any)
 		return
 	end
 	this:triggerCD(cooldownID, 6, true)
-	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*12, 0.2)
+	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*10, 0.2)
 
 	local _, hits = this:sweep(HITBOX_CF, HITBOX_SZ, SWING)
 	-- sweep bails on stun; this is the interrupt branch it bailed for.
 	if humObj:inStun() then
-		bmover:destroy()
 		if anim then anim:Stop() end
 		restore()
+		if bmover then bmover:destroy() end
 		return
 	end
 	
+	local landed = false
 	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(HARVEST, enemy, hurtbox.CFrame.LookVector)
 		attack.knockback = this:knockback(attack.atkDir*6, 0.1, false, -1)
@@ -118,10 +119,18 @@ local function useFunc(this:myself&any)
 				BLEED_DMG
 			)
 			humObj:Heal(attack:CalculateDamage() * 0.5)
+			landed = true
+		else
+			-- lowercase destroy: bmover is a KBObj, not an Instance. nil when the humObj went away.
+			if bmover then bmover:destroy() end
 		end
 	end
 
-	this:endLag(0.1)
+	if landed == true then
+		this:endLag(0.1)
+	else
+		this:endLag(0.3)
+	end
 	restore()
 end
 
