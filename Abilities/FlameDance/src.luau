@@ -1,7 +1,5 @@
 --!strict
--- FlameDance - a 2s spinning fire aura: ticks damage every 0.1s inside 20 studs and ignites anything in the outer band. Zoning, not burst.
--- !! the stun-lock is handled by giving the victim an OUT, not by slowing the hits: trivially parryable, no parry stun on the caster, and parryH ESCALATES to 1 on first contact.
--- that escalation mutates the table, which is why the dmgTbl is built PER CAST inside useFunc -- a module-scope one would carry it into every cast.
+-- 2s spinning fire aura: ticks damage every 0.1s inside 20 studs and ignites anything in the outer band.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -66,7 +64,7 @@ local function useFunc(this:myself)
 	local FD = {
 		weight   = dmgUtils.weighEnum.Medium,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.fire),
-		dmg      = 5,
+		dmg      = 4,
 		stun     = 0.5,
 		posMult  = 0.5,
 		parryH   = 0.1,

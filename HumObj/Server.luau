@@ -170,6 +170,23 @@ local function landHitSpeedBuff(humObj:any, extraTime:number)
 	end
 end
 
+-- what a shadow hit drains, as a share of the damage it dealt. At 0.5 a fully
+-- landed Tentacles channel (10 ticks x 2) returns exactly its 10 manaUse: land
+-- all of it and it pays for itself, land half and it cost you half.
+local SHADOW_STEAL = 0.5
+
+-- a TRANSFER, not a reward: capped by what the victim actually holds, so an
+-- empty one feeds you nothing and there is no minting. Module-level, so the
+-- rule is one closure for the server and not one per HumObj.
+local function stealMana(self:any, victim:any, dmg:number)
+	if victim == nil then return end
+	-- inert pair on Combatant covers a victim with no mana, so no nil check.
+	local took = math.min(victim:manaNow(), dmg * SHADOW_STEAL)
+	if took <= 0 then return end
+	victim:setMana(victim:manaNow() - took)
+	self:setMana(self:manaNow() + took)
+end
+
 -- detach, never destroy: wepItem and the NPC Tool script own their weapons and outlive the character.
 local function releaseWep(w:any)
 	if w == nil then return end
@@ -400,6 +417,13 @@ function module.new(hum: Humanoid): myself
 			if attack:isWep() then
 				-- increase mana. :setMana clamps and re-anchors; never write .Value
 				self:setMana(self:manaNow() + attack:CalculateDamage() / 4)
+			end
+
+			-- DARK STEALS MANA. The FLAG is the whole switch: a dark move opts in by
+			-- being dmgFlags.shadow and needs no code of its own. Not elseif -- a
+			-- shadow-flagged WEAPON is both, and should do both.
+			if attack:hasDmgFlag(DmgUtils.dmgFlags.shadow) then
+				stealMana(self, attack.enemyEntity, attack:CalculateDamage())
 			end
 
 			blockedOrHit(attack)

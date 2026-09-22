@@ -228,6 +228,15 @@ Footguns, silent failures and "why is this not working" traps.
     receipt (same idiom as trueStun). So the client trails the server
     by one ping of regen, <=1 mana at empty, and it does NOT accumulate --
     every re-anchor corrects it.
+  * MANA IS GRANTED IN ONE PLACE, HumObj's `onAttack_mana`, off a LANDED hit:
+    a weapon hit pays the attacker dmg/4, and a `dmgFlags.shadow` hit STEALS
+    SHADOW_STEAL of its damage off the victim. Both are flag-driven, so a new
+    dark move opts in by being shadow and carries no mana code of its own --
+    and a shadow-flagged WEAPON does both. The steal is a TRANSFER, capped by
+    what the victim holds, so an empty target feeds you nothing.
+  * A victim need not HAVE mana: manaNow/setMana are the OPTIONAL half of the
+    Combatant contract, inert-silent and 0 on anything that never had any
+    (SimpleEntity). Never nil-check them, and never reach for `.mana` itself.
 
 ## ABILITY LIFECYCLE
   * `:use` checks mana but does NOT spend it. Call `this:useMana()` yourself.

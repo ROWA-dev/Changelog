@@ -21,30 +21,30 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
+local aerialAim = require(game.ServerStorage.ROWA.Modules.aerialAim)
 
---- stunMeOnParried 0: at 19 ticks, parrying one must not stun the caster for
---- the other eighteen.
 local DARK = {
 	weight   = dmgUtils.weighEnum.Light,
 	type     = dmgFlag.shadow,
-	dmg      = 2,
+	dmg      = 3,
 	stun     = 0.4,
 	posMult  = 0, -- 0 posture dmg (the kb will still apply posture)
-	parryH   = 0.1,
+	parryH   = -0.06,
 	stunMeOnParried = 0,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "wet_punch2")
 	end,
 }
 
-local TICKS     = 19
+local TICKS     = 12
 local TICK_RATE = 0.1
 --- inward drag per tick, and the distance it gives up at: inside that they
 --- are already on you and another yank only jitters them through your body.
-local PULL      = 3.6
+local PULL      = 6
 local PULL_STOP = 6
 --- what the client is told the lash will last. See stopLash below.
 local LASH_TIME = TICKS * TICK_RATE
+local WINDUP    = 0.5
 
 local function useFunc(this:myself)
 	local cooldownID = "tentacles"
@@ -54,28 +54,42 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	-- TODO no windup tell yet: IceBeam charges icelst up the left arm, and the
-	-- Tentacles asset has no charge stage. Dark charge fx, or open the portal early.
-	if this:feintWait(0.82) then
+	-- the lane is HurtBox-local and sweeps as you turn, so hold an air cast up and let the camera aim it; the walkSpeed root below does nothing mid-air. No-ops grounded.
+	local releaseAir = aerialAim(humObj, WINDUP + LASH_TIME + 0.5)
+	humObj.walkSpeed:SetMod(cooldownID, -100)
+
+	--- OPEN ON THE CAST, not on the lash: the portal draws a ring per half-windup and is the windup tell. Cadence is the quiver module's.
+	--- END ON THE REAL END, not on the duration it was started with: this
+	--- channel drops out early on stun and on feint. VFX.md, sustained ids.
+	fireVFX("tentacles", hurtbox, LASH_TIME, WINDUP)
+	local function stopLash()
+		releaseAir()
+		humObj.walkSpeed:RemoveMod(cooldownID)
+		fireVFX("tentacles", hurtbox, 0)
+	end
+
+	if this:feintWait(WINDUP) then
 		if anim then anim:Stop(0.1) end
+		stopLash()
 		return
 	end
 
-	this:useMana()
 	this:triggerCD(cooldownID, 12, true)
-
-	--- END ON THE REAL END, not on the duration it was started with: this
-	--- channel drops out early on stun and on feint. VFX.md, sustained ids.
-	fireVFX("tentacles", hurtbox, LASH_TIME)
-	local function stopLash()
-		fireVFX("tentacles", hurtbox, 0)
-	end
 
 	--- fixed-rhythm channel, so :channelBreak does the interrupt checks --
 	--- feintWait would fight the 0.1s cadence.
 	for _ = 1, TICKS do
+		task.wait(TICK_RATE)
+
+		--this:useMana()
+		local manaUse = 1
+		local manaNow = humObj:manaNow() - manaUse
+		humObj:setMana(manaNow)
+		if manaNow < 4 then
+			break
+		end
 		--- HurtBox-LOCAL, so the lane sweeps as the player turns.
-		local _, hits = this:hitbox(CFrame.new(0, 0, -20), Vector3.new(6, 6, 38))
+		local _, hits = this:hitbox(CFrame.new(0, 0, -22), Vector3.new(7, 7, 40))
 
 		for _, enemy in pairs(hits) do
 			task.spawn(function()
@@ -88,12 +102,8 @@ local function useFunc(this:myself)
 					attack.knockback = this:knockback(toMe.Unit * PULL, TICK_RATE, false, -1)
 				end
 				this:executeAttack(attack)
-				-- TODO PAYOFF: 19 ticks of 1.5 with no stun needs one. The pull
-				-- is half of it; Blind is the dark-flavoured meter (Blight's).
 			end)
 		end
-
-		task.wait(TICK_RATE)
 
 		if this:channelBreak() then
 			if anim then anim:Stop(0.1) end
@@ -102,9 +112,9 @@ local function useFunc(this:myself)
 		end
 	end
 
-	stopLash()
 	if anim then anim:Stop(0.2) end
-	this:endLag(0.3)
+	--this:endLag(0.1)
+	stopLash()
 end
 
 function module.use(self:myself)

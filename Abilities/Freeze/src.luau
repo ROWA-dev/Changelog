@@ -139,7 +139,8 @@ local function useFunc(this:myself)
 		workspace:FindFirstChild("Entities") :: any,
 	}
 
-	local castOrigin = root.Position + root.CFrame.LookVector * 2 - root.CFrame.RightVector
+	local hurtbox = humObj.HurtBox
+	local castOrigin = hurtbox.Position + hurtbox.CFrame.LookVector * 2 - hurtbox.CFrame.RightVector
 	local castHit = workspace:Raycast(castOrigin, Vector3.new(0, -10, 0), params)
 	keep(attach("Rays", castHost, 1))
 	if castHit then
@@ -154,9 +155,9 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 
 	-- measured off the root ONCE: the line does not re-aim, so turning mid-cast does not bend it.
-	local rootPos   = root.Position
-	local rootLook  = root.CFrame.LookVector
-	local rootRight = root.CFrame.RightVector
+	local rootPos   = hurtbox.Position
+	local rootLook  = hurtbox.CFrame.LookVector
+	local rootRight = hurtbox.CFrame.RightVector
 
 	-- !! ONE `seen` for the WHOLE line, not one per spike: :hitbox only dedupes within a query, and a second application lands in the refractory, so two spikes would freeze for LESS time than one.
 	local seen: {[number]: boolean} = {}

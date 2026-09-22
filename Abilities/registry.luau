@@ -150,7 +150,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Blight] = {
 		desc = "A blinding orb that detonates in a 20-stud sphere.",
-		req = { creation = 2, flame = 1 },
+		req = { light = 1 },
 	},
 	[manifold.StrongerLeft] = {
 		desc = "Three shockwave rings and terrain destruction.",
@@ -166,7 +166,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Zoltraak] = {
 		desc = "A lock-on bolt; a connect follows with a 10-shot volley.",
-		req = { mind = 7 },
+		req = { light = 4 },
 	},
 	[manifold.JoltKick] = {
 		desc = "A lightning roundhouse that chains a second jolt.",
@@ -290,7 +290,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.Saringan] = {
-		desc = "2x mana regen, copy abilities, +10% basic weapon damage. Exclusive with Six Eyes.",
+		desc = "1.5x mana regen, copy abilities, +10% basic weapon damage. Exclusive with Six Eyes.",
 		req = { mind = 10 },
 		excludesCards = { 13 }, -- Six Eyes
 	},

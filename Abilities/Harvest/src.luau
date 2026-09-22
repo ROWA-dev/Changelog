@@ -95,7 +95,7 @@ local function useFunc(this:myself&any)
 		return
 	end
 	this:triggerCD(cooldownID, 6, true)
-	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*10, 0.2)
+	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*12, 0.2)
 
 	local _, hits = this:sweep(HITBOX_CF, HITBOX_SZ, SWING)
 	-- sweep bails on stun; this is the interrupt branch it bailed for.

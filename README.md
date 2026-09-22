@@ -1,7 +1,9 @@
-# dark
-Update 1.7.2
+# smalls
+Update 1.7.3
 
-tentacle ability still missing some vfx needs polishing
-some balancing
+tentacles harder to parry and 2 ticks longer
+fixed dbri being laggy as hell when they are clumped together
+now server tries to avoid clumping them together...
+fixed some entity pointer stuff on enemy/dmg tagging (the slain by Unknown Entity msgs) hopefully
 
 and more
