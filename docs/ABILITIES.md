@@ -73,6 +73,7 @@ AbilityBase overrides, all on purpose:
 
 - `use` / `useMana` — the lifecycle below
 - `hitbox` — its own opts table, §6
+- `canTriggerCD` — stamps `_cdId` + `humObj.last_ability` first, for Dispel
 - `PlayAnim` — `AnimationPriority.Action4`, and the track is stashed in
   `humObj.lastAbilityAnim` so a weapon swing can kill it (`WepBase:PlayAnim`
   calls `stopAbilityAnims`)

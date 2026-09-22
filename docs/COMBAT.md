@@ -599,6 +599,10 @@ shipped that way. See the port bible S4.2.
                       with Adrenaline
     Adrenaline        +5 speed for 10s on the hit that starts your fight
     PiercingChill     +5% damage from YOU to anything holding a live Freeze
+    Dispel            weapon heavy HIT puts the victim's last_ability on a
+                      240s cd. Skips ids never triggered this life
+    Purity            debuffMult 0.5: DEBUFFS on you get half the duration
+                      and amp. Shock's amp is hardcoded, so duration only
     SecondWind        under half posture, postureHeal x2 as a MOD (so the
                       client's own step follows). PICK ONE with Composure
     Composure         postureHeal +25%, flat

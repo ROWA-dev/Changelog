@@ -413,6 +413,9 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
   Class/StatusEffects.luau   :apply(effect, duration, ...) / :remove(effect),
                              auto-cleanup keyed by effect NAME, so applying
                              twice refreshes instead of stacking.
+                             `debuffMult` scales a DEBUFFS entry's duration
+                             + amp on the way in; that set is the one
+                             "is it harmful" list.
                              Burn / Shock / Bleed / Blind / Hemorrhage /
                              HyperArmour / Reflect / EarthArmour / Saringan /
                              Freeze. Freeze is the odd one: a BUILDUP METER,

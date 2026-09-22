@@ -223,6 +223,18 @@ local cardList:clType = {
 		module = manifold.EmperorFlame,
 		req = { flame = 10 },
 	},
+	[32] = {
+		name = "Dispel",
+		desc = "landing a heavy puts the ability they are using, or last used, on a 4 minute cooldown",
+		module = manifold.Dispel,
+		req = { dark = 8 },
+	},
+	[33] = {
+		name = "Purity",
+		desc = "harmful status effects on you last half as long and half as strong",
+		module = manifold.Purity,
+		req = { light = 4 },
+	},
 }
 table.freeze(cardList)
 

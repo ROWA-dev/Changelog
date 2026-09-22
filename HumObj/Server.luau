@@ -33,6 +33,7 @@ export type myself = baseClass.myself & {
 	plrObj: any?,
 	wielding_weapon: weaponBase.myself?,
 	using_ability:  abilityTyp?,
+	last_ability:   abilityTyp?, -- casting now or cast last, stamped by AbilityBase.canTriggerCD. Dispel's target
 
 	dmgRecord:      dmgRecord.myself,
 	cards:          cardLoader.myself,
