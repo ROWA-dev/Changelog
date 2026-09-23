@@ -51,4 +51,29 @@ Example:
 
 <br><sub>2026-03-20</sub>
 
+<br>
+
+## Requirement Notation
+Requirements are shortened to make typing them less repetitive. This notation should be used as a future reference as well (*ahem* air)
+
+- Weapon stats
+  - Light = lht
+  - Medium = med
+  - Heavy = hvy
+- Base stats
+  - Strength = str
+  - Fortitude = ftd
+  - Dexterity = dex
+  - Mind - mnd
+- Elemental stats
+  - Flame = flm
+  - Earth = ert
+  - Wind = wnd
+  - Ice = ice
+  - Lightning = ltn
+  - Blood = bld
+  - Creation = crt
+  - Dark = drk
+  - Light = lgt
+
 [Changelog]: ./CHANGELOG.md

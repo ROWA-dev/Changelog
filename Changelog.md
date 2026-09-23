@@ -3,12 +3,42 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.19.2 - Yin Yang
+
+### Added ✅
+- New Dark card: Dispel
+- New Light card: Purity
+
+<br><sub>2026-09-22</sub>
+
+## 1.19.1 - "La Peace Green"
+
+### Added ✅
+- New stat: Light
+- Tentacles now has a 0.5s wind up
+
+### Changes 🛠️
+- Decreased Flame Dance tick damage (5 -> 4)
+- Increased Harvest dash velocity
+- Increased Tentacles tick damage (2 -> 3)
+- Decreased Tentacles parry window (0.3s -> 0.14s)
+- Decreased Tentacles total ticks (19 -> 12)
+- Increased Tentacles pull force
+- Decreased Tentacles endlag (0.3s -> 0.1s)
+- Changed Blight requirement (2 crt, 1 flm -> 1 lgt)
+- Changed Zoltraak requirement (7 mnd -> 4 lgt)
+- Fixed debris lag
+- Fixed damage tagging
+
+<br><sub>2026-09-22</sub>
+
 ## 1.19.0 - Tentacles
 
 > Note: Now that stats exist, ability and card additions will have their element specified.
 
 ### Added ✅
-- New Dark Ability: Tentacles
+- New stat: Dark
+- New Dark ability: Tentacles
 - Harvest now has a 0.3s endlag on miss
 - Quick Step now has a dodge budget of 40 damage
 - Claymore heavy attack now has an endlag of 0.2s
