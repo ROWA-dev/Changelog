@@ -3,6 +3,88 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.19.0 - Tentacles
+
+> Note: Now that stats exist, ability and card additions will have their element specified.
+
+### Added ✅
+- New Dark Ability: Tentacles
+- Harvest now has a 0.3s endlag on miss
+- Quick Step now has a dodge budget of 40 damage
+- Claymore heavy attack now has an endlag of 0.2s
+
+### Changes 🛠️
+- Increased Freeze posture damage multiplier (3x -> 4x)
+- Decreased Freeze dodge window (-0.1s*)
+  - I don't know what the dodge window is
+- Decreased Freeze endlag (0.3s -> 0.2s)
+- Decreased Harvest dash velocity
+- Decreased Prediction duration (0.6s -> 0.5s)
+- Decreased Stronger Left posture damage multiplier (4x -> 3x)
+- Increased Saringan requirement (8 mnd -> 10 mnd)
+- Decreased Emperor Flame burn tick damage (3 -> 2)
+- Decreased Quick Step regrant window (0.6s -> 0.5s)
+- Increased Claymore heavy attack miss endlag (0.25s -> 0.3s)
+
+### Removed ❌
+- Removed yellow coloring around some cards signifying "ULTIMATE" tiers
+
+<br><sub>2026-09-19</sub>
+
+## 1.18.5 - Limestone Type Patch
+
+### Changes 🛠️
+- Decreased Divide launch damage (10 -> 8)
+- Increased Lion Fall endlag (0.6s -> 0.7s)
+- Decreased Prediction duration (0.7s -> 0.6s)
+- Increased Streak wind up (0.62s -> 0.7s)
+- Streak endlag changed from 0.28s
+  - If landed, endlag is 0.26s
+  - If missed, endlag is 0.4s
+- Changed Clap requirement (5 str -> 5 mnd)
+- Changed Cero requirement (6 mnd -> 4 drk)
+- Cleaned up code
+
+### Removed ❌
+- Removed yellow coloring around some cards signifying "ULTIMATE" tiers
+
+<br><sub>2026-09-18</sub>
+
+## 1.18.4 - Egyptian Melody Type Patch
+
+### Added ✅
+- New Ability: Harvest
+
+### Changes 🛠️
+- Cleaned up code
+- Saringan mana cost decreased (50 -> 40)
+- Buffed some multi-hit attacks
+- Increased Bolt Punch dash velocity
+- Increased Canine heavy attack damage (18 -> 28)
+- Decreased Vise heavy attack slam damage (16 -> 14)
+
+### Removed ❌
+- Removed Inverse Red true stun
+
+<br><sub>2026-09-17</sub>
+
+## 1.18.3 - The Two Lines Of Code
+
+### Removed ❌
+- Removed the two lines in the Mace heavy attack code that set walkspeed to 150 and sat player if feinting Mace heavy attack midway
+
+<br><sub>2026-09-14</sub>
+
+## 1.18.2 - Mini Emperor Flame Patch 2
+
+### Changes 🛠️
+- Reduced Emperor Flame stun duration (1s -> 0.2s)
+- Reduced Emperor Flame posture damage multiplier (2x -> 1x)
+- Increased Emperor Flame requirement (8 flm -> 10 flm)
+- Increased Katana charged heavy attack stun (0.05s -> 0.1s)
+
+<br><sub>2026-09-13</sub>
+
 ## 1.18.1 - Mini Emperor Flame Patch
 
 ### Changes 🛠️
