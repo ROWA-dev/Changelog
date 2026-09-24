@@ -50,6 +50,13 @@ local HOP_TIME   = 0.1
 local diveParams = RaycastParams.new()
 diveParams.FilterType = Enum.RaycastFilterType.Exclude
 diveParams.IgnoreWater = true
+--- !! A BODY IS NOT THE FLOOR, and this is why the kick missed. A root is
+--- CanCollide + CanQuery in the Default group, so diving AT someone made
+--- THEM the landing surface: the loop broke with `hits` still nil and the
+--- kick carved, played everything and dealt nothing. Entities is excluded so
+--- only world geometry ends the ride; people are answered by the hitbox.
+--- Set once: the diver is under Entities too, so a per-dive `char` entry only pinned the last diver.
+diveParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 
 local function useFunc(this:myself)
 	local cooldownID = "dropKick"
@@ -90,13 +97,6 @@ local function useFunc(this:myself)
 	local root = humObj.HRootPart
 	--- down and forward
 	local dive = this:bodyForce(Vector3.new(0, -1.2, -1).Unit * DIVE_FORCE, MAX_DIVE, true)
-
-	--- !! A BODY IS NOT THE FLOOR, and this is why the kick missed. A root is
-	--- CanCollide + CanQuery in the Default group, so diving AT someone made
-	--- THEM the landing surface: the loop broke with `hits` still nil and the
-	--- kick carved, played everything and dealt nothing. Entities is excluded so
-	--- only world geometry ends the ride; people are answered by the hitbox.
-	diveParams.FilterDescendantsInstances = { char, workspace.Effects, workspace.Entities }
 
 	local hits = nil
 	local landing = nil

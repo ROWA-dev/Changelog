@@ -252,6 +252,8 @@ function module.destroy(self:myself)
 	self.floating:destroy()
 	self.targetFloatY:destroy()
 	self.charAnims:destroy()
+	-- its trails + the attachments we made, and its back-refs to this humObj and the old character
+	if self.limbTrails then self.limbTrails:destroy() end
 	self.charSize:destroy()
 	baseClass.destroy(self)
 end

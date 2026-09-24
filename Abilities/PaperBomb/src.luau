@@ -58,6 +58,8 @@ local MAX_HOLD     = 3
 local aimParams = RaycastParams.new()
 aimParams.FilterType = Enum.RaycastFilterType.Exclude
 aimParams.IgnoreWater = true
+-- set once: the caster is a Model under Entities too, so no per-cast list (which also pinned the last caster)
+aimParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 
 local function vecRand(r: number): Vector3
 	return Vector3.new(math.random(-r, r), math.random(-r, r), math.random(-r, r))
@@ -134,7 +136,7 @@ end
 	prediction itself as a fallback. Scatter is applied to the surface point,
 	along the axes the surface normal does NOT occupy, so the spread hugs the
 	wall or floor instead of drifting off it. ]]
-local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number, char: Instance): Vector3
+local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number): Vector3
 	if target == nil or target.HRootPart == nil then
 		return baseDir
 	end
@@ -143,8 +145,6 @@ local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number, 
 	local predicted = troot.Position
 		+ (troot.AssemblyLinearVelocity * distance / 200 / i)
 		+ troot.CFrame.LookVector * 4
-
-	aimParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities, char }
 
 	local wall = workspace:Raycast(predicted, baseDir * 12, aimParams)
 	if wall then
@@ -170,7 +170,6 @@ local function useFunc(this:myself)
 
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
-	local char: any = hurtbox.Parent
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
 	--- !! 0.1, NOT 0.7: the throw is basically instant, and that snappiness is
@@ -198,7 +197,7 @@ local function useFunc(this:myself)
 			math.rad(math.random(-10, 10)),
 			math.rad(math.random(-10, 10)),
 			0)
-		local dir = aimAt(origin, (hurtbox.CFrame * spread).LookVector, target, i, char)
+		local dir = aimAt(origin, (hurtbox.CFrame * spread).LookVector, target, i)
 		this:projectile(cast.cfg, CFrame.new(origin, origin + dir))
 	end
 

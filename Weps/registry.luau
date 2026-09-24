@@ -21,12 +21,9 @@ local wepList:list = {
 	[11] = manifold.Light.Rapier.Rapier,
 	[12] = manifold.Heavy.Greatsword.Executer,
 	[13] = manifold.Light.Dagger.Dagger,
-	-- rowa1 weapon port. See ServerStorage/rowa1OldPlanToPort/README.md/
-	-- PORTW_00_WEAPONS for the checklist. IDS ARE PERSISTED: append only.
-	--- Heavy/GreatAxe, NOT Medium/Swords. It was first modelled on Claymore
-	--- and moved once it read as an axe closer to Executer. See GreatAxe.
 	[14] = manifold.Heavy.GreatAxe.Oblitar,
-	[15] = manifold.Heavy.Greatsword.Slayer
+	[15] = manifold.Heavy.Greatsword.Slayer,
+	[16] = manifold.Medium.Swords.Sword
 }
 table.freeze(wepList)
 

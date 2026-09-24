@@ -58,7 +58,8 @@ local abilityList:list = {
 	[46] = manifold.Harvest,
 	[47] = manifold.StrongShove,
 	[48] = manifold.StrongKick,
-	[49] = manifold.Tentacles
+	[49] = manifold.Tentacles,
+	[50] = manifold.WindSlash
 }
 table.freeze(abilityList)
 

@@ -170,7 +170,8 @@ hit landed. WepBase itself only reads `prevHits`.
    don't kill it early)
 5. **pcalls** the attack; an error warns with a traceback, it is not a crash
 6. on success only, `prevHits == 0` means the swing WHIFFED ->
-   `atkRate:SetMod("antiASwing", 0.1)` for 0.4s
+   `atkRate:SetMod("antiASwing", 0.1)` until 0.4s after the LATEST whiff
+   (versioned like the trail, so a second whiff is not cut short by the first)
 7. always clears `attacking`; disables the trail 0.4s later if still the latest
    version
 

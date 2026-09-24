@@ -130,6 +130,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	end
 	rayParams.FilterDescendantsInstances = ignore
 	local ground = workspace:Raycast(hurtbox.Position, Vector3.new(0,-10,0), rayParams)
+	rayParams.FilterDescendantsInstances = {} -- shared params hold strong refs: don't pin the wielder and the held
 	if ground and ground.Instance then
 		local col = ColorSequence.new(ground.Instance.Color)
 		if debris then (debris :: any).Color = col end

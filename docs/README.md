@@ -21,6 +21,7 @@ writing anything.
 | EMOTES.md | emote tree, the saved wheel loadout, the vendored piano |
 | ARCHITECTURE.md | the require graph. read before adding a require to the combat pipeline |
 | ADMIN.md | the slash-command admin. read before authoring a command or an arg type |
+| DESTRUCTION.md | carving the map, what falls, regen. read before adding a shape or touching Carve |
 | howIsaveRuntimeRAM.md | the allocation playbook |
 | tricksThatSaveNetwork.md | the wire playbook. read before adding a remote, a broadcast or a per-frame send |
 

@@ -221,7 +221,7 @@ local function useFunc(this:myself)
 	end
 
 	if anim then anim:Stop(0.2) end
-	this:endLag(0.2)
+	this:endLag(0.1)
 	return true
 end
 

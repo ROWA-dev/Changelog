@@ -1,5 +1,7 @@
-# two new light and dark cards
-Update 1.7.4
+# cleaning
+Update 1.7.5
 
-a light card and dark card
-and more?
+rapid wiffing attacks now stacks the anti airswing slow modifier..
+fallen destroyed things like a tree thats trunk got cut is able to be destroyed even when its fallen now
+
+and more

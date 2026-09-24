@@ -89,6 +89,7 @@ local function useFunc(this:myself)
 
 	rayParams.FilterDescendantsInstances = { workspace.Effects, char }
 	local hit = workspace:Raycast(hurtbox.Position, dir * STRIKE_RANGE, rayParams)
+	rayParams.FilterDescendantsInstances = {} -- shared params hold strong refs: don't pin the caster until the next cast
 	local endPos = if hit then hit.Position else hurtbox.Position + dir * STRIKE_RANGE
 	local origin = CFrame.new(endPos, endPos + dir)
 

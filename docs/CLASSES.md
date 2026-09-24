@@ -117,7 +117,8 @@ Adds the state both sides need to read/predict.
   `Entities.Register(inst, classOverride?)`, `Entities.Unregister(inst)`,
   `Entities.GetAll()`.
   Auto-destroys the entity on AncestryChanged/Destroying.
-  Instances/Humanoids tagged "no_entity" return nil from Get.
+  Instances/Humanoids tagged "no_entity" return nil from Get, and so does
+  anything outside workspace (a removed character is never re-registered).
   (Was Humanoids.luau, now DELETED. The CharacterRepli.OnServerEvent hook
   moved to ServerScriptService/CharacterRepliHandler.luau and is started
   EXPLICITLY from Core.luau via `require(sss.CharacterRepliHandler).start()`.

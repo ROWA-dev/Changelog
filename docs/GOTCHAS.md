@@ -97,6 +97,14 @@ Footguns, silent failures and "why is this not working" traps.
     flavours go through ROWA/Class/HitboxQuery.
   * Both filter to `workspace.Entities` with CollisionGroup "hitbox". A rig
     parented anywhere else is NEVER hit, whatever the geometry.
+  * A MODULE-LEVEL RaycastParams/OverlapParams holds STRONG refs to its filter
+    list until the next assignment, so a per-call `char` in it stays pinned
+    until that ability runs again (a whole old character if characters are
+    not destroyed on respawn). Either filter only permanent folders, set ONCE
+    (a caster is already under `workspace.Entities`: PaperBomb, DropKick), or
+    clear right after the query: `params.FilterDescendantsInstances = {}`
+    (Lightning, Targeting, Slayer heavy, Destruction reglue). A shared params
+    used across a yield is also shared with every other caster mid-flight.
   * `:hitbox` is a one-shot snapshot, not continuous. For ACTIVE FRAMES use
     `CombatAction:sweep`, which re-queries for you and stops on the first
     body it could land on (a DODGE does not count, so i-frames cannot spend
