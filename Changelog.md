@@ -3,11 +3,29 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
-## 1.19.2 - Yin Yang
+## 1.20.0 - The Limit As X Approaches Negative One From The Right Side
 
 ### Added ✅
-- New Dark card: Dispel
-- New Light card: Purity
+- New wind ability: Wind Slash
+- New medium weapon: Sword
+- Whiffing multiple attacks in a row now stacks the "anti airswing slow modifier"
+- Felled objects are now able to be destroyed (such as cutting a felled tree)
+
+### Changes 🛠️
+- Decreased Freeze endlag (0.2s -> 0.1s)
+- Decreased Claymore M1 hitbox size (-1.5 studs)
+- Adjusted Claymore M1 hitbox offset (+0.5 studs Z)
+- Decreased Katana M1 hitbox size (-0.5 studs)
+
+- Cleaned up code
+
+<br><sub>2026-09-24</sub>
+
+## 1.19.2 - Yin And Yang
+
+### Added ✅
+- New dark card: Dispel
+- New light card: Purity
 
 <br><sub>2026-09-22</sub>
 
@@ -34,11 +52,11 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 ## 1.19.0 - Tentacles
 
-> Note: Now that stats exist, ability and card additions will have their element specified.
+> Note: Now that stats exist, ability, card, and weapon additions will have their stat/element specified.
 
 ### Added ✅
 - New stat: Dark
-- New Dark ability: Tentacles
+- New dark ability: Tentacles
 - Harvest now has a 0.3s endlag on miss
 - Quick Step now has a dodge budget of 40 damage
 - Claymore heavy attack now has an endlag of 0.2s
