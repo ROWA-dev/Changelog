@@ -1,8 +1,8 @@
-# AGENTS — ROWA
+# AGENTS
 
-Rules for anyone editing this codebase, human or agent. The docs index, the
-60-second mental model and the entry points are `ServerStorage/README.md`.
-This file is only the rules.
+entry points and context about the game in `ServerStorage/README.md`
+
+skills in `ServerStorage/Skills/<name>/SKILL.md`
 
 ## House style
 - Conserve RAM. The cooldown shape (two floats, nothing ticks) is the model.
@@ -34,31 +34,8 @@ cleanup, safe to spam every hit (apply dedupes -> onStack).
 Build new subsystems to be called like that one.
 
 ## Building
-Map layout, naming, the two assembly regimes and the edge-alignment metric live
 in `BUILDING.md`. Read it before touching the map.
 
-## Before you move anything
-Use the scripts named in these docs, not random ones you find.
-
-When MOVING, RENAMING or DELETING, **GREP FIRST**, including when a doc says it
-already checked. One doc was wrong about that and would have broken a live
-summon.
-
 ## Tests
-AVOID testing, let me play test changes manually.
-
 NEVER RUN dynamic tests like simulating a humObj, since its destructive.
-
-## Docs
-Every doc is a markdown FILE and a CHILD of `ServerStorage/README.md`. No Luau
-wrapper, no `return true`, and nothing requires one — they are read, not
-loaded. A doc may have its own children. This file is the exception: it is
-rules, not reference, so it sits beside the README rather than under it.
-`BUILDING.md` hangs off this file for the same reason — it is map rules, not
-codebase reference, so it is not in the README doc map.
-
-Expand these docs as the framework evolves.
-
-## Decided against
-Do not re-propose without new evidence: mass renames, carving up HumObj,
-~per-action scopes, data-driven weapon ids.
+Those will be playtested manually

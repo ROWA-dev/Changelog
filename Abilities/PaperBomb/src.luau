@@ -1,13 +1,5 @@
 --!strict
---- PaperBomb - throw four explosive kunai. They fly straight, stick in what
---- they hit, and detonate on a fuse.
---- !! NOT AN ARC -- no gravity anywhere, dead straight at 200 studs/s. What
---- makes them land around a target is the AIMING: predict the target, raycast
---- for a wall behind them or the ground beneath them, aim at that with scatter.
---- Projectile.Arcing is not involved.
---- HOLD THE HOTBAR KEY to keep them armed, let go to set them off. Tapping just
---- throws, see MIN_HOLD.
---- CombatAction:chargeWait is the shared half.
+--- PaperBomb - four explosive kunai, dead straight (no gravity), stick in walls or limbs; hold the hotbar key to keep them armed, release to set them off in sequence.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -43,22 +35,19 @@ local EXPLO3 = {
 local KUNAI_COUNT  = 4
 local BLAST_RADIUS = 16
 local TARGET_RANGE = 200
---- TIGHT, but aiming at the Head
+--- seconds between blasts in one cast
+local BLAST_GAP    = 0.1
 local PAPERBOMB_CONE = table.freeze({
 	distWeight = 4, maxAngle = 0.8, closeRange = 20, closeBonus = 1.5,
 	requireLOS = true, useHead = true,
 })
---- the floor is REQUIRED: the cast fires on the same press the charge watches,
---- so a tap has already sent endAbility by the time the watcher starts and
---- would read as an instant release.
---- MAX_HOLD is capped by the VISUAL -- kunaiProj lingers 4s -- not by balance.
+--- the floor stops a tap reading as an instant release; MAX_HOLD must stay under kunaiProj's LINGER
 local MIN_HOLD     = 0.6
 local MAX_HOLD     = 3
 
 local aimParams = RaycastParams.new()
 aimParams.FilterType = Enum.RaycastFilterType.Exclude
 aimParams.IgnoreWater = true
--- set once: the caster is a Model under Entities too, so no per-cast list (which also pinned the last caster)
 aimParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 
 local function vecRand(r: number): Vector3
@@ -68,15 +57,14 @@ local function vecAbs(v: Vector3): Vector3
 	return Vector3.new(math.abs(v.X), math.abs(v.Y), math.abs(v.Z))
 end
 
---- the blast itself, once the charge is released.
-local function blast(action: any, pos: Vector3, fallbackDir: Vector3)
+--- `bomb.p` is local to `bomb.at` (the limb it is stuck in), world space when nil
+local function blast(action: any, bomb: any, fallbackDir: Vector3)
 	if action == nil or action._humObj == nil then return end
 
+	local pos = if bomb.at then bomb.at.CFrame:PointToWorldSpace(bomb.p) else bomb.p
 	fireVFX("kunaiBoom", pos)
 
-	--- !! FULL EXTENT, so RADIUS * 2. A box sized to the radius is a box of
-	--- HALF it, which is why the distance test below could never reject
-	--- anything -- nothing outside the sphere was ever in the query.
+	--- full extent, so RADIUS * 2
 	local _, hits = action:hitbox(
 		CFrame.new(pos), Vector3.one * (BLAST_RADIUS * 2), nil, true)
 
@@ -94,36 +82,35 @@ local function blast(action: any, pos: Vector3, fallbackDir: Vector3)
 	end
 end
 
---- state is PER CAST, not per module: four kunai share one `cast` table so they
---- detonate together, and two casters never see each other's. A module-level
---- flag would cross-trigger.
---- A kunai landing while charging is ARMED and waits; one landing after the
---- release goes off on arrival.
-local function makeCast(this: any)
-	local cast = { armed = {}, charging = true, dir = Vector3.zAxis }
+local function detonate(cast: any, action: any, bomb: any)
+	local now = os.clock()
+	cast.nextAt = math.max(now, cast.nextAt)
+	task.delay(cast.nextAt - now, blast, action, bomb, cast.dir)
+	cast.nextAt += BLAST_GAP
+end
+
+--- per cast, so two casters never cross-trigger; a kunai landing while charging waits, one landing after release goes off on arrival
+local function makeCast()
+	local cast = { armed = {}, charging = true, dir = Vector3.zAxis, nextAt = 0 }
 
 	cast.cfg = {
 		speed       = 200,
 		lifetime    = 1,
 		maxDistance = 220,
 		size        = Vector3.new(3, 3, 4),
-		--- the kunai itself is inert; the blast is the whole payload
 		dmgTbl      = nil,
 		stopOnWorld = true,
+		stickInBody = true,
 		fxId        = "kunaiProj",
 
-		--[[ MUST NOT YIELD. This runs inside the scheduler's step loop, so a
-			yield suspends it mid-iteration and corrupts its swap-remove,
-			silently dropping other projectiles. BaseProjectile.kill detaches
-			payloads now, but this stays non-yielding: arming is a table insert. ]]
 		onExpire = function(proj: any, pos: Vector3, _hitWorld: boolean)
-			local action = proj.action
-			if action == nil or action._humObj == nil then return end
 			cast.dir = proj.dir
+			local at = proj.stuckIn
+			local bomb = { at = at, p = if at then at.CFrame:PointToObjectSpace(pos) else pos }
 			if cast.charging then
-				table.insert(cast.armed, pos)
+				table.insert(cast.armed, bomb)
 			else
-				blast(action, pos, proj.dir)
+				detonate(cast, proj.action, bomb)
 			end
 		end,
 	}
@@ -131,11 +118,7 @@ local function makeCast(this: any)
 	return cast
 end
 
---[[ predict where the target will be, then look for a surface to pin the kunai
-	to -- a wall BEHIND them first, the ground BENEATH them second, and the
-	prediction itself as a fallback. Scatter is applied to the surface point,
-	along the axes the surface normal does NOT occupy, so the spread hugs the
-	wall or floor instead of drifting off it. ]]
+--- predict the target, then aim at a wall behind them, else the ground beneath, else the prediction; scatter hugs the surface
 local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number): Vector3
 	if target == nil or target.HRootPart == nil then
 		return baseDir
@@ -172,8 +155,6 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
-	--- !! 0.1, NOT 0.7: the throw is basically instant, and that snappiness is
-	--- the move.
 	if this:feintWait(0.1) then
 		if anim then anim:Stop() end
 		return
@@ -182,14 +163,11 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)
 
-	--[[ TIGHT with useHead: 0.8 rad cone, close-range forgiveness, and a
-		LINE-OF-SIGHT check so you cannot pepper someone through a wall.
-		`useHead` measures the angle to the target's HEAD, not their root. ]]
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, TARGET_RANGE,
 		PAPERBOMB_CONE)
 
-	local cast = makeCast(this)
+	local cast = makeCast()
 
 	local origin = hurtbox.Position
 	for i = 1, KUNAI_COUNT do
@@ -201,16 +179,12 @@ local function useFunc(this:myself)
 		this:projectile(cast.cfg, CFrame.new(origin, origin + dir))
 	end
 
-	--[[ DETACHED, and that is the point. The throw is over in 0.18s and you
-		should be free to move and fight while the kunai sit there armed --
-		holding the action open for the whole charge would lock you out of
-		everything for three seconds, which is not a hold, it is a channel.
-		So the ability ENDS here and a watcher owns the detonation. ]]
+	--- detached so you can fight while they sit armed; the watcher owns the detonation
 	task.spawn(function()
 		this:chargeWait(MAX_HOLD, MIN_HOLD)
 		cast.charging = false
-		for _, pos in ipairs(cast.armed) do
-			blast(this, pos, cast.dir)
+		for _, bomb in ipairs(cast.armed) do
+			detonate(cast, this, bomb)
 		end
 	end)
 

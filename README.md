@@ -1,7 +1,13 @@
-# cleaning
-Update 1.7.5
+# op ice and sticky
+Update 1.7.6
 
-rapid wiffing attacks now stacks the anti airswing slow modifier..
-fallen destroyed things like a tree thats trunk got cut is able to be destroyed even when its fallen now
+ice shards now actually aim exactly where enemy is at so most the shards actually hit (OP!!)
+and kb on hit to make it feel strong
+
+paper bombs stick to limbs of enemy now (ALSO OP)
+
+blocking divide wont kb u up alittle.
+
+huozai destruction is more shallow now... wont deep craters
 
 and more

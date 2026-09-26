@@ -419,7 +419,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              "is it harmful" list.
                              Burn / Shock / Bleed / Blind / Hemorrhage /
                              HyperArmour / Reflect / EarthArmour / Saringan /
-                             Freeze. Freeze is the odd one: a BUILDUP METER,
+                             Charm / Freeze. Freeze is the odd one: a BUILDUP METER,
                              and the full encase CLEARS Burn (one-way, ice
                              beats fire). Nothing else cross-cancels.
   Class/HumObj/cardLoader    :addCard(id) / :hasCard(id) / :remCard(id),

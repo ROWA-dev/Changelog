@@ -59,7 +59,8 @@ local abilityList:list = {
 	[47] = manifold.StrongShove,
 	[48] = manifold.StrongKick,
 	[49] = manifold.Tentacles,
-	[50] = manifold.WindSlash
+	[50] = manifold.WindSlash,
+	[51] = manifold.MassFreeze,
 }
 table.freeze(abilityList)
 
@@ -217,7 +218,8 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.IceShards] = {
 		desc = "Rain twenty ice shards in five waves.",
-		req = { ice = 3 },
+		req = { ice = 6 },
+		tier = DraftTiers.RARE
 	},
 	[manifold.bloodChain] = {
 		desc = "A chain that yanks both parties to the midpoint.",
@@ -264,7 +266,12 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.Freeze] = {
 		desc = "A line of ice. Freezes in one hit.",
-		req = { ice = 6 },
+		req = { ice = 3 }
+	},
+	[manifold.MassFreeze] = {
+		desc = "Freeze that keeps going: fans out, grows to twice the size and ends in a crown of ice.",
+		req = { ice = 8, ability = 38 }, -- Freeze
+		replaces = 38,
 		tier = DraftTiers.RARE,
 	},
 	[manifold.Armor] = {

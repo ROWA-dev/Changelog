@@ -104,10 +104,8 @@ local ORB_CFG = table.freeze({
 	onHit = function(proj: any, attack: any)
 		if attack:isParried() then
 			local eroot = attack.enemyEntity.HRootPart
-			if eroot == nil then return end
-			fireVFX("rocketDeflect", proj.pos, eroot.CFrame.LookVector)
-			-- blended heading with the head-on case handled. See parryDir.
-			proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15, attack.enemyEntity)
+			if eroot then fireVFX("rocketDeflect", proj.pos, eroot.CFrame.LookVector) end
+			proj:parryHome(attack.enemyEntity)
 			proj.victimRoot = nil
 			return
 		end

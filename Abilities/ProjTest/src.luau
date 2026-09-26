@@ -3,7 +3,7 @@
 --- Fires 2-4 arcing pellets in a spread, each with its own speed, all dying on
 --- the first wall: several projectiles alive at once exercises the scheduler,
 --- differing speeds expose client/server drift, stopOnWorld makes "it vanished
---- at the wall" the pass condition, and Arcing is where mismatches show worst.
+--- at the wall" the pass condition, and gravity is where mismatches show worst.
 --- Also the rig for the FullBlue gravity-well work.
 --- Registered ONLY because the admin `ability` command skips anything
 --- moduleToID cannot resolve. No mana cost and a 1s cooldown, on purpose.
@@ -27,7 +27,6 @@ end
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag    = dmgUtils.dmgFlags
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
-local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 
 --- deliberately feeble: this is a test rig, not a damage source
 local PELLET = table.freeze({
@@ -47,7 +46,6 @@ local PELLET = table.freeze({
 	mismatch between the server's arc and the drawn one is invisible on
 	anything fast and flat. ]]
 local BASE = table.freeze({
-	class       = Projectile.Arcing,
 	speed       = 60,
 	gravity     = 45,
 	maxDistance = 260,
@@ -90,7 +88,7 @@ local function useFunc(this:myself)
 			in the air. Clone, change the one field, hand it over. ]]
 		local cfg = table.clone(BASE)
 		cfg.speed = BASE.speed * (1 + (math.random() * 2 - 1) * SPEED_JITTER)
-		--- re-frozen before it is handed over, as RPG and IceShards do
+		--- re-frozen before it is handed over, as RPG does
 		table.freeze(cfg)
 
 		--- fan across the spread rather than randomly, so 2 and 4 both read

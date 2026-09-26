@@ -1,11 +1,5 @@
 --!strict
---- IceBeam - a sustained freezing beam down a 4x4x40 lane. 19 ticks of tiny
---- damage.
---- THE BEAM DOES NOT STUN, IT FREEZES. Stunning every tick needs exemptions all
---- over the resolver to stop it being an unbreakable lock. Here each tick pours
---- into the Freeze meter: ~7 connected ticks fill it, the victim freezes ONCE,
---- and a 4s refractory blocks the rest of the beam from refilling it. That is
---- the entire reason StatusEffects/Freeze exists.
+-- IceBeam - a sustained freezing beam down a 4x4x40 lane. multiple ticks of tiny dmg
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

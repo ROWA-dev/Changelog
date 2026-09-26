@@ -1,6 +1,6 @@
 --!strict
 -- BoulderKick - rip a chunk of the actual MAP out of the ground and punt it at someone, at its real size, colour and material.
--- the server runs Arcing math and owns no Instance; the rock is client-drawn and the carve happens where it lands.
+-- the server runs the arc (cfg.gravity) and owns no Instance; the rock is client-drawn and the carve happens where it lands.
 -- FIZZLE IS A FEATURE: no breakable underfoot means a 2s cooldown instead of 12. The only ability that reads the map before it commits.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
@@ -24,7 +24,6 @@ local dmgFlag     = dmgUtils.dmgFlags
 local fireVFX     = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx      = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
-local Projectile  = require(game.ServerStorage.ROWA.Class.Projectile)
 
 -- kept in step with StoneBall's neighbouring row.
 local BLDR = table.freeze({
@@ -140,7 +139,6 @@ local function useFunc(this:myself)
 
 	-- !! THE PROJECTILE IS SPAWNED BEFORE THE FX: the drawn rock needs the projectile's `id` to receive a correction, and the id does not exist until it is spawned.
 	local p = this:projectile(table.freeze({
-		class       = Projectile.Arcing,
 		speed       = SPEED,
 		gravity     = GRAVITY,
 		maxDistance = MAX_DIST,

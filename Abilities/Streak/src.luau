@@ -75,7 +75,7 @@ local function useFunc(this:myself)
 	local origin = hurtbox.Position
 	local dir = hurtbox.CFrame.LookVector
 
-	Destruction.Cylinder(nil, origin + Vector3.new(0, 1, 0), dir, RANGE, 4, 2.4, dir * 50)
+	Destruction.Cylinder(nil, origin + Vector3.new(0, 1, 0), dir, RANGE, 4, 3, dir * 100)
 
 	rayParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 	local hit = workspace:Raycast(origin, dir * RANGE, rayParams)

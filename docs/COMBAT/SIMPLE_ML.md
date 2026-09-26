@@ -16,7 +16,7 @@ THE GOAL IS A BELIEVABLE OPPONENT WITH ONE DIFFICULTY DIAL, NOT A
 PARRY MAXIMISER.
 
 0.1 WHAT REPLACES WHAT
-CombatAi today is configured by ten hand-tuned chances -- feint_chance,
+CombatAi today is configured by eleven hand-tuned chances -- feint_chance,
 uppercut_chance, early_parry_chance, miss_parry_chance and so on --
 and botSummonsSetup fills them with math.random per bot. Difficulty is
 therefore RANDOM NOISE, not a setting, and the numbers have drifted

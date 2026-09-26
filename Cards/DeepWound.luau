@@ -1,6 +1,6 @@
 --!strict
-local EXTEND = 4
-local CD_ID, COOLDOWN = "deepWound", 4
+local EXTEND = 8
+local CD_ID, COOLDOWN = "deepWound", 8
 
 return require(script.Parent:WaitForChild("heavyOnBleeding"))(CD_ID,
 	function(humObj, _victim, bleed)

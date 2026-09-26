@@ -1,9 +1,5 @@
 --!strict
--- this needs to get reworked TODO
---[[ IceBash - a committed overhead ice smash. Longest reach of the simple set,
-	ragdolls on hit, and feeds the Freeze meter
-	(Class/StatusEffects/Freeze) rather than carrying an ice stun of its
-	own. ]]
+-- IceBash - overhead ice block smash: longest reach of the simple set, ragdolls, feeds the Freeze meter.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -26,6 +22,7 @@ local dmgFlag  = dmgUtils.dmgFlags
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
+local layIce  = require(game.ServerStorage.ROWA.Modules.layIce)
 
 local ICE3 = {
 	weight   = dmgUtils.weighEnum.Heavy,
@@ -39,8 +36,16 @@ local ICE3 = {
 	end,
 }
 
---- the "icebsh" quiver module switches on this first argument.
-local FX_CHARGE, FX_FIZZLE, FX_CONNECT = 1, 2, 3
+-- icebsh stages
+local FX_CHARGE, FX_FIZZLE, FX_CONNECT, FX_WHIFF = 1, 2, 3, 4
+
+local WINDUP = 0.52
+local ANIM_HIT = 0.667 -- anim time the fist lands; the track is sped up to hit on WINDUP
+local REACH = 7 -- where the block lands
+local ICE_SIZE = 16
+local groundParams = RaycastParams.new()
+groundParams.FilterType = Enum.RaycastFilterType.Exclude
+groundParams.FilterDescendantsInstances = { workspace:WaitForChild("Effects"), workspace:WaitForChild("Entities") } -- permanent folders, set once (GOTCHAS)
 
 local function useFunc(this:myself)
 	local cooldownID = "iceBash"
@@ -48,11 +53,11 @@ local function useFunc(this:myself)
 
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
-	local anim    = this:PlayAnim(script.Anim, 0, 1, 1)
+	local anim    = this:PlayAnim(script.Anim, 0, 1, ANIM_HIT / WINDUP)
 
-	fireVFX("icebsh", FX_CHARGE, humObj.Hum)
+	fireVFX("icebsh", FX_CHARGE, humObj.Hum, this:scaledTime(WINDUP))
 
-	if this:feintWait(0.52) then
+	if this:feintWait(WINDUP) then
 		if anim then anim:Stop() end
 		fireVFX("icebsh", FX_FIZZLE, humObj.Hum)
 		return
@@ -61,10 +66,7 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 8, true)
 
-	--[[ the longest reach in the simple set. Extending `range` rather than
-		inflating the box keeps the shape honest: range grows the OBB along the
-		facing axis only, an 11-deep box would also
-		catch people beside you. ]]
+	-- range, not a deeper box: it only grows the facing axis
 	this.range:SetMod(cooldownID, 1)
 	local _, hits = this:hitbox(CFrame.new(0, 0, -6), Vector3.new(6, 6, 7))
 	this.range:RemoveMod(cooldownID)
@@ -77,20 +79,20 @@ local function useFunc(this:myself)
 		this:executeAttack(attack)
 		if attack:isHit() then
 			hitAny = true
-			--[[ !! 0.8 AND false, NOT 60. Every `(60, true)` elsewhere is a CAP
-				that stopOnGround ends early -- so `(60, false)` means 60s flat
-				and victims never get up. ]]
+			-- flat 0.8s: (60, false) would never end
 			attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 8)
-			--[[ 3 of a 10 meter. IceBash is the SETUP in the ice kit -- a
-				solid chunk off one committed heavy, but never a freeze on its
-				own. See StatusEffects/Freeze. ]]
+			-- 3 of 10: the setup, never a freeze alone
 			attack.enemyEntity.statusEffects:apply(statusEffects.Freeze, 4, 3)
 		end
 	end
 
-	--- `isHit` is narrow on purpose: an ABORTED attack is not a connect, so the
-	--- flourish does not fire on one.
-	fireVFX("icebsh", hitAny and FX_CONNECT or FX_FIZZLE, humObj.Hum)
+	fireVFX("icebsh", hitAny and FX_CONNECT or FX_WHIFF, humObj.Hum)
+
+	-- ices the ground hit or miss
+	local ground = workspace:Raycast(hurtbox.Position + hurtbox.CFrame.LookVector * REACH + Vector3.new(0, 4, 0), Vector3.new(0, -12, 0), groundParams)
+	if ground then
+		layIce(ground.Position, ground.Normal, ICE_SIZE, ground.Instance :: BasePart)
+	end
 
 	this:endLag(0.2)
 end

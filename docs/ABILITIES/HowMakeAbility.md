@@ -133,6 +133,8 @@ output and an ability that silently does nothing. Check the console first.
 | an AoE at a point | world-space hitbox (4th arg `true`), then reject by distance | §6 |
 | burn / freeze / shock / bleed | `enemy.statusEffects:apply(effect, t, n)` | Class/StatusEffects |
 | to break the map | `Destruction.Sphere / OBB / Cylinder / Ellipsoid` | DESTRUCTION.md |
+| to freeze / scorch the map for a while | `partFx.apply(part, partFx.Burn, t)` | Modules/partFx |
+| ice on the ground | `layIce(pos, normal, size, partHit)` | Modules/layIce, VFXQuiver/placeSnow |
 | to hold somebody | `grab` welds them to a limb, `pinTo` drags them to a point | §10 |
 | to knock them down | `enemy.ragdoll:ragdoll(t, stopOnGround, dir)` | CLASSES.md |
 | a cheaper price for a whiff | tiers: short first, full at the commit | §5 |

@@ -23,7 +23,6 @@ end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag    = dmgUtils.dmgFlags
-local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
@@ -56,8 +55,7 @@ local CRESCENT = table.freeze({
 	dmgTbl      = ICE2,
 	--- it shatters on the FIRST body, so the shatter fx never plays on a
 	--- crescent that is still visibly flying.
-	--- A BLOCK does not consume this -- resolveHits skips the pierce decrement
-	--- on a deflection, so a blocked crescent bends away with its hit intact.
+	--- a block deflects, which refunds the pierce, so a blocked crescent bends away with its hit intact.
 	pierce      = 1,
 	stopOnWorld = true,
 	knockbackForce = 4.8,
@@ -72,31 +70,15 @@ local CRESCENT = table.freeze({
 			--- NO iceShatter here: the death carries `hitBody` now, so iceSlashProj plays that same shatter itself, where the server stopped.
 
 		elseif attack:isParried() then
-			--- PARRIED CRESCENTS GO HOME. Killing it silently is a fine reward
-			--- and a boring one. parryDir is the rocket's heading blend;
-			--- `newOwner` is what lets it reach the caster at all.
-			--- No target: a crescent does not home.
+			--- parried crescents go home
 			local eroot = attack.enemyEntity.HRootPart
-			if eroot then
-				fireVFX("iceShatter", eroot)
-				--- the rocket blend, degeneracy handled. See parryDir.
-				proj:deflect(proj:parryDir(eroot.CFrame.LookVector), nil, 0.15,
-					attack.enemyEntity)
-			else
-				Projectile.kill(proj)
-			end
+			if eroot then fireVFX("iceShatter", eroot) end
+			proj:parryHome(attack.enemyEntity)
 
 		elseif attack:isBlocked() then
-			--- DEFLECTION: a blocked crescent bends away along the blocker's
-			--- facing rather than dying. The only mechanic of its kind here.
-			--- !! :setDir, not `proj.dir =` -- velocity is the storage and `dir` a
-			--- derived read, so a raw assignment is overwritten next step.
-			--- NOT :deflect() -- that clears `seen`, and a crescent that forgets
-			--- who it hit can re-hit the same blocker for the rest of its flight.
+			--- bends off the guard and flies on, hit intact; the grace outlasts the pass through the blocker, so the cleared `seen` can't re-hit them
 			local eroot = attack.enemyEntity.HRootPart
-			if eroot then
-				proj:setDir(proj.dir + eroot.CFrame.LookVector / 3)
-			end
+			if eroot then proj:deflect(proj.dir + eroot.CFrame.LookVector / 3, nil, 0.15) end
 		end
 	end,
 })

@@ -98,7 +98,6 @@ local PROXIMITY = table.freeze({
 })
 
 local ROCKET_CFG = table.freeze({
-	class       = Projectile.Homing,
 	speed       = 200,
 	-- == TARGET_RANGE on purpose: never acquire what it cannot reach, and never fly past what it was allowed to acquire.
 	maxDistance = TARGET_RANGE,

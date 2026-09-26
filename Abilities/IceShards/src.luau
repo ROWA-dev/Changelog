@@ -1,11 +1,5 @@
 --!strict
---- IceShards - hop backwards and rain TWENTY ice shards on a target: five waves
---- of 2/3/4/5/6, each forming in the air for 0.4s before it dives.
---- NOT homing: each shard picks its direction ONCE at launch and only re-aims
---- during the 0.4s formation. BaseProjectile, not Homing.
---- They dive at a PITCH (70 deg about X, flown along -UpVector), which is why
---- the aim is LookVector + (0,-0.4,0): looking down so the arc lands on the
---- target rather than over their head.
+--- IceShards - hop back and fire 20 shards (waves of 2..6) that form behind you for 0.4s, then fly at the target's lead point; they stick in whoever they hit and a parry scatters them.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -28,18 +22,16 @@ local dmgFlag  = dmgUtils.dmgFlags
 local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local layIce   = require(game.ServerStorage.ROWA.Modules.layIce)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ 8, not the 18 IceSlash's crescents carry. IceSlash throws TWO and this
-	throws TWENTY, so a target caught in the middle of the fan eats several
-	and the shared number would be far too high. The Freeze fill per shard is small
-	for the same reason. ]]
+--- per shard, and all 20 can land: Barrage/FlameDance's multi-hit numbers
 local ICE_SHARD = {
 	weight   = dmgUtils.weighEnum.Medium,
 	type     = bit32.bor(dmgFlag.ice, dmgFlag.slash),
-	dmg      = 8,
+	dmg      = 4,
 	stun     = 0.4,
-	posMult  = 1,
+	posMult  = 0, -- the knockback's 3^0.8 is the posture now, ~the old 2
 	parryH   = 0.1,
 	stunMeOnParried = 0,
 	onHit    = function(attack)
@@ -47,122 +39,80 @@ local ICE_SHARD = {
 	end,
 }
 
---- 20 shards, so each fills a fifth of what a single IceBash hit does
-local FREEZE_FILL = 0.6
+local FREEZE_FILL = 1.5
 local WAVES       = 5
 local FORM_TIME   = 0.4
 local SHARD_GAP   = 0.05
-local BLAST       = 8
---- every shard is pitched this far about X before it flies
-local PITCH       = 70
---- aimed slightly DOWN so the pitched dive lands on the target, not over them
-local AIM_DROP    = Vector3.new(0, -0.4, 0)
+local RANGE       = 200
+--- no lock: the fan converges this far ahead instead of flying parallel
+local NO_LOCK_DIST = 60
 
 local SHARD = table.freeze({
 	speed       = 280,
 	lifetime    = 1,
 	maxDistance = 300,
-	size        = Vector3.new(4, 4, 6),
-	--- the shard is inert in flight; the landing burst is the payload
-	dmgTbl      = nil,
+	size        = Vector3.new(2, 2, 4),
+	dmgTbl      = ICE_SHARD,
 	stopOnWorld = true,
+	--- each hit re-arms the mover, so a volley reads as one steady shove
+	knockbackForce = 4,
+
+	onHit = function(proj, attack)
+		local enemy = attack.enemyEntity
+		if attack:isHit() then
+			--- rides the end packet, so the drawn shard sticks in them
+			proj.target = enemy
+			enemy.statusEffects:apply(statusEffects.Freeze, 4, FREEZE_FILL)
+			--- a long CAP ended by the ground check, not a 60s ragdoll
+			enemy.ragdoll:ragdoll(60, true, proj.dir * 8)
+		elseif attack:isParried() then
+			--- scattered like a side gun bullet but NOT handed to the parrier, so it can't come back into its caster and break the volley
+			local eroot = enemy.HRootPart
+			if eroot then proj:deflect(proj:parryDir(eroot.CFrame.LookVector, 0.2)) end
+		end
+	end,
+
+	onExpire = function(proj, pos, hitWorld)
+		local wh = proj.worldHit
+		if hitWorld and wh and wh.Instance.Anchored then
+			layIce(pos, wh.Normal, 16, wh.Instance :: BasePart)
+		end
+	end,
 })
 
---- one shard: form, then dive. Runs per shard, off the main thread.
+--- client key for a shard before its projectile exists; monotonic so casts never collide
+local nextShard = 0
+
 local function launchShard(this: myself, offset: Vector3, shardId: number)
 	local humObj = this._humObj
-	if humObj == nil or humObj.isActive ~= true then return end
 	local root = humObj.HRootPart
-	if root == nil then return end
+	if humObj.isActive ~= true or root == nil then return end
 
-	local rotate = CFrame.Angles(math.rad(PITCH), 0, 0)
-
-	local aimDir = (root.CFrame.LookVector + AIM_DROP).Unit
-	local target = Targeting.nearestInDirection(root.Position, aimDir, humObj, 200, Targeting.TIGHT)
-
-	fireVFX("iceShard", 0, shardId, root, offset, rotate, target and target.HRootPart)
+	local target = Targeting.nearestInDirection(root.Position, root.CFrame.LookVector, humObj, RANGE, Targeting.TIGHT)
+	local troot = target and target.HRootPart
+	local ahead = root.Position + root.CFrame.LookVector * NO_LOCK_DIST
+	fireVFX("iceShard", 0, shardId, root, offset, troot or ahead)
 
 	task.wait(FORM_TIME)
-	if humObj.isActive ~= true or humObj:inStun() then
-		fireVFX("iceShard", 2, shardId)
-		return
-	end
 	root = humObj.HRootPart
-	if root == nil then
+	if humObj.isActive ~= true or root == nil or humObj:inStun() then
 		fireVFX("iceShard", 2, shardId)
 		return
 	end
 
-	--- re-aim AFTER the formation wait, so the fan tracks a target that moved
-	local targDir = if target and target.isActive == true and target.HRootPart
-		then (target.HRootPart.Position - root.Position).Unit
-		else root.CFrame.LookVector
-
-	local cf = CFrame.new(root.Position, root.Position + targDir)
-		* CFrame.new(offset.X, offset.Y, offset.Z)
-		* rotate
-
-	--[[ !! THE SHARD FLIES ALONG ITS OWN -UpVector AND KEEPS ITS PITCHED
-		ORIENTATION -- two different things. Sending CFrame.new(pos, pos+flyDir)
-		points the mesh along its travel and throws the 70 degree pitch away.
-		`cf` carries BOTH: the client uses it as the visual orientation and
-		derives the heading from its own -UpVector. ]]
-	local flyDir = -cf.UpVector
-
-	--[[ SERVER gets a look-at: BaseProjectile only reads .Position and
-		.LookVector off this, so it wants the HEADING and does not care how
-		the mesh is angled. Same two vectors, different consumer. ]]
-	local originCF = CFrame.new(cf.Position, cf.Position + flyDir)
-
-	local cfg = table.clone(SHARD)
-	cfg.onExpire = function(proj, pos, hitWorld)
-		local action = proj.action
-		if action == nil or action._humObj == nil then return end
-
-		fireVFX("iceShard", 2, shardId, nil, pos)
-
-		--[[ the ice sheet on any ANCHORED surface a shard strikes, 16 studs for
-			50 seconds. That ground layer is most of what the ability leaves
-			behind and an earlier pass dropped it entirely.
-			The surface NORMAL comes off proj.worldHit, which BaseProjectile
-			now records when its sweep hits geometry. ]]
-		local wh = proj.worldHit
-		if hitWorld and wh and wh.Instance and wh.Instance.Anchored then
-			fireVFX("placeSnow", pos, wh.Normal, 16)
-		end
-
-		local _, hits = action:hitbox(CFrame.new(pos), Vector3.one * BLAST, nil, true)
-		for _, enemy in pairs(hits) do
-			local eroot = enemy.HRootPart
-			if eroot == nil then continue end
-			local attack = action:makeAtk(ICE_SHARD, enemy, flyDir)
-			action:executeAttack(attack)
-			if attack:isHit() then
-				enemy.statusEffects:apply(statusEffects.Freeze, 4, FREEZE_FILL)
-				--- a long CAP ended by the ground check, not a 60s ragdoll
-				enemy.ragdoll:ragdoll(60, true, flyDir * 8)
-			end
-		end
-	end
-
-	local p = this:projectile(table.freeze(cfg), originCF)
-
-	--[[ !! FIRED AFTER THE PROJECTILE, so the shard can be handed its `id` and
-		follow a deflect or an early end. It used to go first, which is why the
-		drawn shard was on its own the moment the real one was interfered with.
-		CLIENT gets the pitched CFrame: it needs the ORIENTATION, not the
-		heading -- see the note on flyDir above. ]]
-	fireVFX("iceShard", 1, shardId, root, cf, SHARD.speed,
-		{ id = p and p.id, maxDistance = SHARD.maxDistance, lifetime = SHARD.lifetime })
+	local from = root.CFrame:PointToWorldSpace(offset)
+	local lock = target and target.isActive == true and target.HRootPart
+	local at = if lock then Targeting.lead(lock, from, SHARD.speed) else ahead
+	local launchCF = CFrame.lookAt(from, at)
+	local p = this:projectile(SHARD, launchCF)
+	fireVFX("iceShard", 1, shardId, launchCF, SHARD.speed, p and p.id)
 end
 
 local function useFunc(this:myself)
 	local cooldownID = "iceShards"
 	if this:canTriggerCD(cooldownID) ~= true then return end
 
-	local humObj  = this._humObj
-	local hurtbox = humObj.HurtBox
-	local char: any = hurtbox.Parent
+	local humObj = this._humObj
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 
 	local snd = script.magicFreeze:Clone()
@@ -184,16 +134,13 @@ local function useFunc(this:myself)
 	this:triggerCD(cooldownID, 20, true)
 
 	for x = 1, WAVES do
-		if humObj:inStun() then break end
-
 		local amt = x + 1
 		local halfpt = amt / 2 + 0.5
 		for i = 1, amt do
-			if humObj:inStun() then break end
-			--[[ the fan: shards spread sideways by rank and climb by wave,
-				so each wave arcs over the one before it. ]]
-			local offset = Vector3.new((i - halfpt) * 8, x * 6, 10)
-			task.spawn(launchShard, this, offset, math.random(1, 65536))
+			if humObj.isActive ~= true or humObj:inStun() then break end
+			nextShard += 1
+			--- sideways by rank, higher each wave, 10 studs behind the caster
+			task.spawn(launchShard, this, Vector3.new((i - halfpt) * 8, x * 6, 10), nextShard)
 			task.wait(SHARD_GAP)
 		end
 	end

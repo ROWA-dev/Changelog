@@ -600,7 +600,8 @@ shipped that way. See the port bible S4.2.
     Adrenaline        +5 speed for 10s on the hit that starts your fight
     PiercingChill     +5% damage from YOU to anything holding a live Freeze
     Dispel            weapon heavy HIT puts the victim's last_ability on a
-                      240s cd. Skips ids never triggered this life
+                      2s/dmg cd, capped 240s. Hits of one heavy within 0.4s
+                      of each other sum. Skips ids never triggered this life
     Purity            debuffMult 0.5: DEBUFFS on you get half the duration
                       and amp. Shock's amp is hardcoded, so duration only
     SecondWind        under half posture, postureHeal x2 as a MOD (so the
@@ -609,6 +610,10 @@ shipped that way. See the port bible S4.2.
     Bleed             1 damage a second for 10s, flat and unconditional
     Hemorrhage        +2% damage taken per stack, up to 10 stacks (20%),
                       stacks share one duration, no per-stack decay
+    Charm             -15% damage the charmed deals to its owner,
+                      re-apply refreshes and takes the new owner
+    Charisma          your landed hits apply 10s of Charm, skipped if the
+                      victim is already charmed (by anyone)
 PingCompensation and HeavensEqualizer are latency subsidies (4.16), not
 balance knobs.
 

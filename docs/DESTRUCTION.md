@@ -3,7 +3,7 @@
 
 ## Files
     ROWA/Destruction_Stable/
-      Destruction         public API: Sphere, Sphere_Fast, Cylinder, Ellipsoid, OBB, Grab.
+      Destruction         public API: Sphere, Sphere_Fast, Cylinder, Ellipsoid, OBB, Grab; original(frag) -> the part it was cut from.
                           `plr` is ignored everywhere; kept so ~40 callers didn't change
         Carve             THE carve engine + the four shapes
         FloodFill         what a carve left unsupported
@@ -44,6 +44,9 @@ Blocks under minSz are decided by their centre, so misclassified volume scales w
 - `reglue` clears its shared OverlapParams after use (GOTCHAS, HITBOX TRAPS: params hold strong refs).
 - Client: dbri keeps a pool of up to ~200 debris parts (each with a dust emitter), reused oldest
   first and never destroyed. That cap is destruction's steady-state cost per client.
+- Client: a hit with velocity also re-throws pooled rubble inside its cut's bounds (+4 studs a side), one spatial query per carved part.
+- Client: dbri splits debris over 4 studs into pieces, but the chunk limit is counted before the split and only one
+  piece per cuboid trails dust: the split makes debris smaller, never more (dust is sized to its chunk, so big plates were the overdraw).
 
 ## Gotchas
 - `velo` is studs per SECOND, not a direction. See the header of Destruction.
@@ -67,3 +70,6 @@ Blocks under minSz are decided by their centre, so misclassified volume scales w
   piece bridging the gap while the flood fill runs.
 - Fragments are parented straight into the world. StreamingEnabled is on, so a ReplicatedStorage hop
   would send every piece to every client.
+- Fragments copy the base's CURRENT Material/Color, so a part under a temporary look (Modules/partFx, e.g. frozen)
+  hands it on; `partFx.inherit` makes them restore with the base instead of staying that way until regen.
+  OBB's last arg `fx` throws the debris in that look instead (Huozai: charred rubble), ~20 bytes per carved part.

@@ -53,13 +53,6 @@ local function sound(self: any, name: string, pitch: number?)
 	Debris:AddItem(voice, 4)
 end
 
-local function randVec(s)
-	return Vector3.new(
-		(math.random() * 2 - 1) * s,
-		(math.random() * 2 - 1) * s,
-		(math.random() * 2 - 1) * s
-	)
-end
 -- PARRIED BULLETS GO BACK, shared by every gun.
 -- !! newOwner is what makes it arrive: HitboxQuery ignores the owner, so without it the bullet passes through the shooter.
 function module.onBulletHit(proj: any, attack: any)
@@ -68,14 +61,7 @@ function module.onBulletHit(proj: any, attack: any)
 	local eroot = attack.enemyEntity.HRootPart
 	if eroot == nil then return end
 
-	proj:deflect(
-		proj:parryDir(
-			(eroot.CFrame.LookVector + randVec(0.2)).Unit
-		),
-		nil,
-		0,
-		attack.enemyEntity
-	)
+	proj:deflect(proj:parryDir(eroot.CFrame.LookVector, 0.2), nil, 0, attack.enemyEntity)
 end
 
 --- subclasses call this, then clone their OWN model, exactly like a WepBase subclass.

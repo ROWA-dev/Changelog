@@ -24,6 +24,7 @@ local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 local Targeting  = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
+local projMotion = require(game.ReplicatedStorage.Modules.projMotion)
 
 -- low damage, high posture: a guard-breaking opener, not a damage move. Preserve that shape.
 -- !! `blood` is written by NAME, never by bit value.
@@ -91,7 +92,6 @@ local function yankTogether(rootA: BasePart, rootB: BasePart): () -> ()
 end
 
 local CHAIN_CFG = table.freeze({
-	class       = Projectile.Homing,
 	-- winds 60 -> 160 over the flight
 	speed       = 60,
 	accel       = 100,
@@ -108,6 +108,8 @@ local CHAIN_CFG = table.freeze({
 	-- !! NO fxId: the beam needs the CASTER'S ARM for its near end, and without Attachment0 a Beam renders nothing. bchain is fired by hand below.
 	fxId        = nil,
 })
+-- the same wire form the standard broadcast sends, built once
+local CHAIN_MOTION = projMotion.pick(CHAIN_CFG)
 
 local function useFunc(this:myself)
 	local cooldownID = "bloodChain"
@@ -170,9 +172,6 @@ local function useFunc(this:myself)
 				proot.Position, look, humObj, RANGE, Targeting.TIGHT)
 			-- blended heading with the head-on case handled. See parryDir.
 			proj:deflect(proj:parryDir(look), newTarget, 0.15, attack.enemyEntity)
-			-- no fxId (see CHAIN_CFG), so stage 3 is how the drawn chain is turned.
-			fireVFX("bchain", 3, arm, proj.pos, proj.dir,
-				newTarget and newTarget.HRootPart or nil)
 			return
 		end
 
@@ -205,9 +204,7 @@ local function useFunc(this:myself)
 
 	-- fired by hand because the beam's NEAR end must be the caster's hand, and AFTER the projectile so the chain can be handed its `id`.
 	fireVFX("bchain", 1, originCF, CHAIN_CFG.speed, CHAIN_CFG.maxDistance,
-		{ steer = CHAIN_CFG.steer, accel = CHAIN_CFG.accel,
-			maxSpeed = CHAIN_CFG.maxSpeed },
-		arm, target.HRootPart, p and p.id)
+		CHAIN_MOTION, arm, target.HRootPart, p and p.id)
 
 	this:endLag(0.25)
 end

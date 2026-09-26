@@ -29,11 +29,13 @@ local UCUT = {
 	type     = dmgFlag.blunt,
 	dmg      = 8,
 	stun     = 1,
-	posMult  = 3,
+	posMult  = 3.5, -- 3 + the lift's old posture share, now that it isn't on the attack up front
 	parryH   = -0.04,
-	-- 0.8s FLAT ragdoll: they must ragdoll IN THE AIR, and a ground check would release them the moment they came down. Smash shares this row.
-	onHit    = function(attack)
+	-- the lift lives here so a block doesn't launch them. NO DECAY: a decaying vertical mover barely lifts. 0.8s FLAT ragdoll: a ground check would release them mid-air.
+	onHit    = function(attack, this)
 		hitSfx(attack.enemyEntity.HRootPart, "kick1")
+		attack.knockback = this:knockback(Vector3.new(0, 6, 0), 0.2, false, -1)
+		attack:ApplyKnockback()
 		attack.enemyEntity.ragdoll:ragdoll(0.8, false, attack.atkDir * 8)
 	end,
 }
@@ -87,8 +89,6 @@ local function launch(this:myself, hurtbox:BasePart, myRoot:BasePart?): any?
 		if not canLaunch then continue end
 
 		local attack = this:makeAtk(UCUT, enemy, forward)
-		-- NO DECAY: a decaying vertical mover fights gravity down its ramp and barely lifts. They are SUPPOSED to land before the follow-up.
-		attack.knockback = this:knockback(Vector3.new(0, 6, 0), 0.2, false, -1)
 		this:executeAttack(attack)
 
 		if not attack:isHit() then return nil end

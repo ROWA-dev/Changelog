@@ -24,7 +24,6 @@ local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
 
--- shared with Divide.
 local UCUT = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,

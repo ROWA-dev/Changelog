@@ -173,14 +173,14 @@ local cardList:clType = {
 	},
 	[24] = {
 		name = "Bloodletting",
-		desc = "heavy attacking a bleeding enemy ends the bleed and heals you for what it had left",
+		desc = "heavy attacking a bleeding enemy ends the bleed and heals you 2x the bleed dmg",
 		module = manifold.Bloodletting,
 		-- the ELEMENT is spelled `blood`; an unknown name is unsatisfiable, not skipped.
 		req = { blood = 8 },
 	},
 	[25] = {
 		name = "Deep Wound",
-		desc = "heavy attacking a bleeding enemy extends the bleed by 4 seconds",
+		desc = "heavy attacking a bleeding enemy extends the bleed by 8 seconds",
 		module = manifold.DeepWound,
 		req = { blood = 5 },
 		excludes = { 24 }, -- Bloodletting
@@ -225,7 +225,7 @@ local cardList:clType = {
 	},
 	[32] = {
 		name = "Dispel",
-		desc = "landing a heavy puts the ability they are using, or last used, on a 4 minute cooldown",
+		desc = "landing a heavy puts the ability they are using, or last used, on cooldown for 2 seconds per damage dealt, up to 4 minutes",
 		module = manifold.Dispel,
 		req = { dark = 8 },
 	},
@@ -234,6 +234,12 @@ local cardList:clType = {
 		desc = "harmful status effects on you last half as long and half as strong",
 		module = manifold.Purity,
 		req = { light = 4 },
+	},
+	[34] = {
+		name = "Charisma",
+		desc = "all your hits charm, charmed enemies deal 15% less damage to you",
+		module = manifold.Charisma,
+		req = { mind = 3 },
 	},
 }
 table.freeze(cardList)
