@@ -32,7 +32,7 @@ clones them at runtime. Nothing is shared between abilities except through a Mod
 | `newAbility(id, ...)` | instance; varargs go to `.new`, i.e. the humObj. Also stamps `notWepClass` onto it |
 | `moduleToID(module)` | reverse lookup, warns + nil if unregistered |
 | `getMeta(id)` | draft metadata, or nil for NOT DRAFTABLE |
-| `nameOf(id)` | class Name without holding an instance |
+| `nameOf(id)` | display name, off the ModuleScript, requires nothing |
 | `catalogue()` | frozen rows, draftable only. Same columns as `Cards.catalogue`, because the codex draws one page for both |
 | `supersededBy` / `conflictsOf` / `conflictsWithCard` | reverse maps, built once at load |
 
@@ -41,10 +41,6 @@ Meta fields: `desc`, `req`, `tier`, `replaces`, `reoffersBase`, `excludes`,
 
 Read the ids off `abilityList`. They are **persisted on saved items: append only**,
 never renumber, never reuse.
-
-Some modules on disk are not in `abilityList` (EarthShot, HitSelf, StrongKick,
-StrongShove). `getAbilityClass` errors on those — require the module directly, or
-add it to the list.
 
 ## 3. The class split
 
@@ -300,5 +296,5 @@ and slot load, never use**: a granted ability stays usable for the session, and
   `canCounter` is immune to it now; `canDash` is not.
 - `attackHelpers/arial` and `/sprint` still gate on `stun.Value + 0.2`. Arguably an
   intended parry punish — decide, do not blanket-fix.
-- Blaze (id 2) is WIP: its `triggerCD` is commented out and it spends no mana, so
-  it is spammable. It has no meta, so it is not draftable.
+- Blaze, StrongShove, StrongKick are WIP: `triggerCD` commented out, no mana, so
+  spammable. No meta, so not draftable.

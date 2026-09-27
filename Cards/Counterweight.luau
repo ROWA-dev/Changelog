@@ -14,8 +14,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	-- a plain lazy field, not an AdditiveValue: one card owns it, nothing else
 	-- writes it, and nil is the default for every entity that lacks the card.

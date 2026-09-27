@@ -11,9 +11,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -39,7 +37,7 @@ local function useFunc(this:myself)
 	vfx3.Parent = blade
 
 	local initForce = this:bodyForce(Vector3.new(0,0,2), 0.6, true, 0.6, 0.5)
-	humObj.walkSpeed:SetMod("stopMoving", -100)
+	humObj.walkSpeed:SetMod(cooldownID, -100)
 	
 	local st = tick()
 	local feinted = this:feintWait(0.62, function()
@@ -51,7 +49,7 @@ local function useFunc(this:myself)
 	game.Debris:AddItem(vfx2, 4)
 	
 	if feinted then
-		humObj.walkSpeed:RemoveMod("stopMoving")
+		humObj.walkSpeed:RemoveMod(cooldownID)
 		if anim then
 			anim:Stop()
 		end
@@ -103,7 +101,7 @@ local function useFunc(this:myself)
 	local alreadyHit = {}
 	local hcount = 0
 	while tick() < endt do
-		if humObj:inStun() then
+		if humObj.isActive ~= true or humObj:inStun() then
 			hcount = 0
 			break
 		end
@@ -134,7 +132,6 @@ local function useFunc(this:myself)
 				this:executeAttack(attack)
 				if attack:isParried() then
 					moveForce:destroy()
-					--humObj.walkSpeed:RemoveMod("stopMoving")
 					endt = 0
 					hcount = 0
 				elseif attack:isHit() or attack:isBlocked() or attack:isDodged() then
@@ -142,7 +139,8 @@ local function useFunc(this:myself)
 					if hitEnemy and hitEnemy.statusEffects then
 						hitEnemy.statusEffects:apply(
 							hitEnemy.statusEffects.Shock,
-							1.5 -- duration
+							1.5, -- duration
+							1 -- strength
 						)
 					end
 					hcount += 1
@@ -164,7 +162,7 @@ local function useFunc(this:myself)
 		this:endLag(0.2)
 	end
 	
-	humObj.walkSpeed:RemoveMod("stopMoving")
+	humObj.walkSpeed:RemoveMod(cooldownID)
 end
 
 function module.use(self:myself)

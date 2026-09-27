@@ -17,9 +17,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)
@@ -127,9 +125,6 @@ local function useFunc(this:myself)
 
 	local hit = resolveBolt(this, target, Vector3.zero)
 
-	--- every shot re-checks `target.isActive` and the distance itself: a
-	--- destroyed entity is a bare empty table (GOTCHAS), so without it the
-	--- volley happily keeps shooting a corpse.
 	if not hit then
 		this:endLag(0.2)
 		return
@@ -143,7 +138,8 @@ local function useFunc(this:myself)
 
 	task.wait(0.1)
 	for _ = 1, VOLLEY do
-		if humObj:inStun() or humObj.isActive ~= true then break end
+		if humObj.isActive ~= true or humObj:inStun() then break end
+		-- a destroyed entity is a bare empty table (GOTCHAS), so every shot re-checks isActive
 		if target.isActive ~= true or target.HRootPart == nil then break end
 		root = humObj.HRootPart
 		if root == nil then break end

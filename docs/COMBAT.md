@@ -6,8 +6,8 @@ correct defensive option whenever one exists. Skill decides WHICH option
 you take; latency decides whether it was available at all (4.16).
 
 Covers the FIGHT, not the code. API and authoring live in WEAPONS /
-ABILITIES / GOTCHAS. No per weapon damage tables, they rot within
-a patch. Every number here is a FEEL number; changing one is a balance
+ABILITIES / GOTCHAS. No per weapon, ability or card lists, they rot
+within a patch. Every number here is a FEEL number; changing one is a balance
 call. Harness: require(game.ServerScriptService.Tests.CombatTests.Harness).run()
 
 ## 1. THE SHAPE OF A FIGHT
@@ -60,7 +60,9 @@ DODGE. 0.3s of i-frames granted by dashing, not a separate button, cut to
 0.16s after a dashcancel. Dashing cancels a pending parry, so you cannot
 hold both options. Gated 0.1s after stun ends (0.3s if you attacked in
 the last second), 0.1s after your last dash, 0.1s after a feint. Cooldown
-1.5s, RESET every time you land a hit.
+1.5s, RESET every time you land a hit. The attack's dodgeH is added to the
+window, and moving INTO the blow widens it by up to 0.1, running with it
+narrows it as much (VELOCITY_NUDGE in HumObj).
 
 BLOCK. Costs posture equal to damage * posMult, plus force^0.8 if the hit
 carries knockback. From behind it fails. Hit 0 posture and you
@@ -234,8 +236,8 @@ and parryH only forgives the guess. Fast finishers at +0.3 are not
 reactable with no slack. In stun it is prediction only.
 
 This also makes the 0.18s feint visibility floor (5.8) redundant, and
-makes PingCompensation and HeavensEqualizer (8.9) latency subsidies
-rather than balance knobs.
+makes PingCompensation and HeavensEqualizer latency subsidies rather than
+balance knobs.
 
 4.17 YOU DO NOT DIE, YOU GET KNOCKED DOWN
 A hit that would leave you at 5 health or less does not kill. You clamp to
@@ -247,9 +249,8 @@ pool, so chip damage counts but one more poke is not enough.
 You get up when health regen carries you back over 5, eight seconds at the
 default rate. So a knockdown is a tempo loss and a free window for
 everyone else, not a death.
-THE EXCEPTION: the decapitation heavies (Katana, Executer, Oblitar, Axe)
-ignore the pool entirely and kill outright. Being down in front of one of
-those is death, which is the point of carrying one.
+THE EXCEPTION: a weapon whose hit calls Modules/execute ignores the pool
+and kills outright, which is the point of carrying one.
 You also stay execute-able until health passes 10, so the moment you stand
 up is still the most dangerous one.
 Mechanism and the reasons it is where it is: CLASSES 3.5.
@@ -259,18 +260,8 @@ What one player can infer about another. Most of the mindgame is
 reading habits, not reading state: there is no stamina bar to watch and
 no cooldown UI on the opponent.
 
-TRUE STUN ALSO TAKES YOUR FACING. Under shiftlock the ENGINE turns you to
-face the camera (UserGameSettings.RotationType = CameraRelative, set by
-BaseCamera:UpdateMouseBehavior), so a stunlocked player could still re-aim
-for free. ClientClass calls shiftLock.freezeCharacter("trueStun", ...) off
-trueStun.Changed, which holds RotationType at MovementRelative for the
-duration. The lock itself stays ON -- only the steering stops.
-
-This needed a WIRE CHANGE to work at all: client `trueStun` was
-permanently 0, so nothing client-side could tell a guard break from a jab.
-See GOTCHAS, "CLIENT trueStun USED TO BE PERMANENTLY 0" -- it also
-woke up CharController's hard movement zero, which is a real feel change
-on every true stun in this file (guard break, the three grabs, Freeze).
+TRUE STUN ALSO TAKES YOUR FACING and roots you hard: under shiftlock the
+steering freezes for the duration, the lock itself stays on.
 
 5.1 THE BACKDASH TELL
 The only place the game leaks a cooldown through the animation, and the
@@ -359,7 +350,7 @@ only because it tracks windup.
 
 Never a speed option. A weapon feint costs its lockout PLUS 0.15 rate for
 0.2s, about 0.69s to the next hit in the cheapest light case, slower than
-an uninterrupted string. Ability feints skip both penalties (8.8).
+an uninterrupted string. Ability feints skip both penalties (4.7).
 
 The free answer to a held attack button is the string itself: it arrives
 at the flourish on a fixed schedule, and 4.16 makes that finisher the
@@ -455,12 +446,11 @@ Base 13. Everything adds or subtracts, and several stack at once:
     sprint      ramps up to +14 over time, not instant
     slide       up to +28, decays with terrain
     landing hit +5 or more for about a second
-    parry card  +5 for 1s
     blocking    -6            attacking    -2
     backpedal   -3, doubled to -6 for 2s after being stunned
     crouch      -7            swimming     -4
-    shock       -6            rooted moves -100
-    true stun   0
+    rooted moves -100         true stun    0
+    cards and status effects stack their own on top
 
 7.2 SPRINT IS A COMMITMENT
 Sprint ramps rather than toggling, so it is slow to reach top speed and
@@ -531,8 +521,8 @@ mobility economy, and 5.5 is how you lose it.
     guard break            1.6s true stun, 1.9s stun, breaking hit lands
 
 8.5 DAMAGE TABLE SHAPE
-Every attack is weight, damage, stun, posMult, plus optional parryH,
-dodgeH and stunMeOnParried. Ranges currently in use:
+Every attack is weight, damage, stun, posMult (nil = 1), plus optional
+parryH, dodgeH and stunMeOnParried. Ranges currently in use:
     damage    2 to 50         stun    0.2 to 1.0
     posMult   0.7 to 30       parryH  -0.1 to +0.3
     weight    Heavy, Medium, Light. Heavy is the only one with a class
@@ -540,22 +530,8 @@ dodgeH and stunMeOnParried. Ranges currently in use:
 posMult is the guard pressure knob and has the widest range in the game;
 high posMult with low damage is the shield breaker shape. parryH negative
 means harder. stunMeOnParried 0 means the move is safe on parry.
-dodgeH negative means harder to dodge, and it is LIVE as of the isDodge
-fix -- it was inert for its whole life. Authored range -10 to +0.15:
-    weapons          -0.1     Rapier x3, Claymore, magicStaff, Spear
-    Fulminate        -0.2
-    lock-on / AoE    +0.1 to +0.15   Zoltraak, Lightning, Tendrils, RPG
-    HollowPurple     -10      not a difficulty, a STATEMENT: i-frames do
-                              not answer this. rowa1's `bypassiframes`.
-Against a 0.3 dodge window, -0.1 is a third of it and +0.15 is half again,
-so these are not small. They took effect all at once; if dodging suddenly
-feels different, this is why.
-
-posMult IS NOT OPTIONAL. CalculatePostureDmg defaults it to 1 now, but it
-used to read `dmg * posMult` raw -- and since that is the first line of
-HandleAttack, a nil posMult threw into AbilityBase.use's pcall, which only
-warns. The ability then plays in full and damages nobody. Lightning
-shipped that way. See the port bible S4.2.
+dodgeH negative means harder to dodge. Authored -0.2 to +0.15, which is
+large against a 0.3 window; -10 is a statement, i-frames do not answer it.
 
 8.6 HYPER ARMOUR
     cutoff 0.55, scale 3.5, cap 0.5, applied to m1 windups only.
@@ -571,161 +547,58 @@ shipped that way. See the port bible S4.2.
     weapons scale knockback by character size, abilities do not
 
 8.8 ABILITIES
-    all cost 10 mana, though most never spend it.
-    cooldowns run 6 to 20s.
-    abilities skip the whiff penalty and never grow hitboxes in the air.
-    ability feints are cheaper than weapon feints by design.
+    manaUse 10 by default, 6 to 60 overridden, spent at the commit
+    cooldowns mostly 6 to 22s, the big moves 40 to 60s
+    no whiff penalty (4.6), no air hitbox growth (4.11), cheap feints (4.7)
 
 8.9 CARDS AND STATUS
-    Underdog          -15% damage taken when below the attacker's health
-                      (the card text says 20%, see 9)
-    SpeedOnParry      +5 speed for 1s on parry
-    Counterweight     +25% on the parrier's half of the posture trade,
-                      via the lazy parryPostureMult knob in resolveParry
-    PingCompensation  delays resolution up to 90% of your ping, aborting
-                      the moment you parry, dodge or attack
-    HeavensEqualizer  up to +0.04 parry window, scaled down as wins
-                      approach 30, plus a flat 0.04s grace under 2 wins
-    Burn              damage every 0.4s, HALVED if you cannot dash,
-                      cancelled outright by dodging
-    Shock             -6 speed, 0.1 damage per 0.02s, capped at 4 total
-    RendingBlow       guard breaking applies Bleed, off attack.guardBroke
-    Bloodletting      weapon heavy on a bleeding enemy eats the bleed, heals
-                      what it had left. PICK ONE with Deep Wound
-    DeepWound         same trigger, +4s on the bleed instead, on a 4s cd so a
-                      multi-hit heavy cannot stack it per hit
-    FirstInstinct     the hit that would start your fight is dodged, and
-                      registers a 0-dmg entry so it fires once. PICK ONE
-                      with Adrenaline
-    Adrenaline        +5 speed for 10s on the hit that starts your fight
-    PiercingChill     +5% damage from YOU to anything holding a live Freeze
-    Dispel            weapon heavy HIT puts the victim's last_ability on a
-                      2s/dmg cd, capped 240s. Hits of one heavy within 0.4s
-                      of each other sum. Skips ids never triggered this life
-    Purity            debuffMult 0.5: DEBUFFS on you get half the duration
-                      and amp. Shock's amp is hardcoded, so duration only
-    SecondWind        under half posture, postureHeal x2 as a MOD (so the
-                      client's own step follows). PICK ONE with Composure
-    Composure         postureHeal +25%, flat
-    Bleed             1 damage a second for 10s, flat and unconditional
-    Hemorrhage        +2% damage taken per stack, up to 10 stacks (20%),
-                      stacks share one duration, no per-stack decay
-    Charm             -15% damage the charmed deals to its owner,
-                      re-apply refreshes and takes the new owner
-    Charisma          your landed hits apply 10s of Charm, skipped if the
-                      victim is already charmed (by anyone)
-PingCompensation and HeavensEqualizer are latency subsidies (4.16), not
-balance knobs.
+    not listed per item: the numbers are each card's `desc` in ROWA/Cards
+    and the modules under Class/StatusEffects
 
 ## 9. THINGS THAT LOOK LIKE BUGS
 Listed so nobody "fixes" one without deciding it is a balance change.
 
-  * FIXED, was: "dodgeH does nothing." It genuinely did nothing --
-    HandleAttack called :isDodge() with no attack while its parry and
-    block siblings both passed one, so per-weapon dodge difficulty, the
-    directional bonus and HollowPurple's i-frame pierce were all inert.
-    It passes the attack now. TWO consequences, both live:
-      - every authored dodgeH took effect at once (8.5 lists them).
-      - the directional bonus is real: moving INTO a blow widens your
-        window by up to 0.1, running with it narrows it by the same.
-        VELOCITY_NUDGE / NUDGE_MIN_SPEED in HumObj, one place to tune.
-    AND isDodge no longer WRITES to dodgeThreshold. It used to, which
-    meant the three cards that poll it (PingCompensation every Heartbeat
-    for the length of a ping, Nick_Amplifier, HeavensEqualizer) moved the
-    defender's real dodge window every time they asked a question.
   * Medium weapons have no postureGain, so they are punished on parry
     like light weapons despite swinging the biggest heavies (4.3).
-  * One ability has no cooldown at all.
-  * Underdog's text says 20%, its code does 15%.
   * Two heavy weapons are numerically identical, and three medium
     weapons share one heavy attack.
   * The grab heavies try to clear stun on release with a lowercase field
     name, so that half of the release does nothing.
-
 ## 10. WHAT A KILL PAYS OUT
-One question ("who actually did the work?"), asked once, paid three ways.
-
-  HumObj/onDeath -> ProcessDmgRecord builds ONE `enemyLog` from the
-  victim's dmgRecord (Class/HumObj/damageRecord, entries live 60s and are
-  keyed weakly). Everything below reads that same log:
+HumObj/onDeath -> ProcessDmgRecord builds ONE `enemyLog` from the victim's
+dmgRecord (Class/HumObj/damageRecord, entries live 60s, weak keys), and
+everything reads that log:
     heal      the killers, by `myDmgToEnemy` (health pack, inline)
     death msg topRecent / topDmg / topFair killer, FireAllClients
     xp        onDeath/processXp   <- per contributor
     elo+W/L   onDeath/processElo  <- needs BOTH sides to hold a slot
+processXp runs BEFORE the `no plrObj or loadedSlot -> return` guard so a
+slotless NPC kill still levels you; processElo runs after it on purpose.
 
-  Order matters: processXp runs BEFORE the
-  `myPlrObj == nil or loadedSlot == nil -> return` guard, because killing
-  a slotless NPC should still level you. processElo is after it on
-  purpose -- elo is a rating between two saved accounts.
+THE DYING THING ANSWERS, ONE SITE DIVIDES. `victim:xpWorth()` is the pot
+(Combatant contract, inert 0); processXp splits it by damage share and knows
+nothing else (Progression.md owns what follows). Never put a "what kind of
+thing died" branch in processXp.
+HumObj.xpWorth is the one place that asks "am I player-backed?": player ->
+its slot's lvl, anything else -> `.xpLevel` (unset = 0 = worth nothing), so a
+boss bounty is one line, `humObj.xpLevel = 12`.
 
-  ### WHO DECIDES THE AMOUNT (the rowa1 lesson)
-  THE DYING THING ANSWERS, ONE SITE DIVIDES.
-    `victim:xpWorth()` -> total pot   (Combatant contract, inert 0)
-    processXp          -> splits it by damage share, and knows NOTHING
-                          else: not slots, not levels, not plrObj
-  rowa1 put this rule in SEVEN places -- six AiCores each with their own
-  multiplier and clamp (*1/*2/*3, clamp 400 vs 1000) plus a separate
-  player path in rewardKillers -- because every death site decided the
-  amount itself. Adding a boss/crate/entity class here needs no edit to
-  the payout: it either inherits inert 0 or defines its own xpWorth.
-  DO NOT put a `what kind of thing died` branch back into processXp.
+THE INVARIANT. A kill pays KILL_LEVELS (2) levels of xp at the VICTIM's
+level, split by damage share, so an even 1v1 is exactly one level at every
+level (lvl1 kills lvl1 @50% -> 160 xp == nextLevelXp(1)).
+  * victim's level, not the killer's: that cancels the curve, so farming the
+    weakest would pay like beating the best, and a corpse cannot know its
+    killer anyway.
+  * your own level is not in it: punching up can pay several levels (lvl 1
+    soloing lvl 30 -> lvl 10), farming down decays by itself. giveExp rolls
+    over as often as the exp covers.
+  * the curve lives once, plrObjClient/slot.nextLevelXp; processXp calls it
+    with a `{lvl=n}` stub.
+Knobs: KILL_LEVELS 2 (HumObj), MIN_SHARE 0.05 below which you did nothing
+(processXp). Self-damage is out of the pot; a dead killer is still paid, one
+with no slot is skipped.
 
-  HumObj.xpWorth is the ONE place that asks "am I player-backed?":
-  player -> its slot's lvl, anything else -> `.xpLevel`, a plain number a
-  summon sets in one line next to its cards. Unset == 0 == worth nothing.
-
-  ### THE XP INVARIANT
-  A kill is a pot worth KILL_LEVELS (2) levels of xp AT THE VICTIM'S
-  LEVEL (HumObj.xpWorth). You are paid your damage share of that pot. So
-  an even 1v1 -- you dealt half the damage that killed them -- is EXACTLY
-  ONE LEVEL, at every level, because both sides ride the same curve.
-    lvl1 kills lvl1 @50% -> 160 xp, nextLevelXp(1) == 160 -> lvl 2.
-  Three-way where you did a third of the work pays a third of a level.
-
-  Victim's level, NOT yours. Scaling by the KILLER's level cancels the
-  curve exactly (kills-per-level becomes 1/(2*share) at every level), so
-  farming the weakest thing alive would pay the same as beating the best
-  player on the server. It also cannot be expressed as xpWorth -- the
-  corpse does not know who killed it -- so it would force the branch back
-  into the payout. Victim-level is the only one that survives the design.
-
-  YOUR OWN LEVEL IS NOT IN THE FORMULA, deliberately. Punching far above
-  your weight can pay several levels in one death (a lvl 1 soloing a
-  lvl 30 banks 8000 -> lvl 10) and that is intended, not a bug to clamp.
-  giveExp rolls over as many times as the exp covers. Farming DOWN needs
-  no guard either -- the pot IS the victim's level, so it decays by
-  itself: a lvl 30 killing a lvl 2 gets 640, a rounding error up there.
-
-  The curve is NOT duplicated. processXp calls
-  plrObjClient/slot.nextLevelXp with a `{lvl=n}` stub, so retuning
-  `math.clamp(lvl * 160, 10, 4000)` there retunes kill xp for free.
-
-  Two knobs, now in the two places that own them:
-    KILL_LEVELS 2     the pot, in levels        (HumObj, by xpWorth)
-    MIN_SHARE   0.05  below this you did nothing (processXp). Also saves
-                      a packet, since giveExp applyPatches.
-
-  Self-damage (RPG blast, HitSelf) is excluded from the pot exactly like
-  the heal loop excludes it: nobody earns off someone else's suicide. An
-  already-dead killer still gets paid; a killer with no slot loaded is
-  skipped, not errored.
-
-  processXp only decides who gets how much; Progression.md owns everything
-  after the payout.
-
-  NPCs have no slot, so they are worth 0 until given `.xpLevel`. That is
-  the boss-bounty hook, one line: `humObj.xpLevel = 12`.
-
-  `/s xpdummy` is that hook's test rig: `dummy` plus `humObj.xpLevel = 1`,
-  so killing it pays exactly what killing a lvl 1 player pays. Solo == 2
-  levels, split == 1 each. Bump the number for a higher bracket.
-
-  Do NOT "simplify" this by faking a plrObj on the dummy. plrObj is the
-  is-a-player DISCRIMINATOR, not just a data bag: ChangeState branches
-  `if self.plrObj then FireClient(plrObj.Plr) else Hum:ChangeState()`,
-  so a fake without a real .Plr takes the player branch and the state
-  change goes nowhere, silently. FireVFXClient and two cards read it the
-  same way, and processElo would index .Data on the fake and throw
-  mid-onDeath, before isActive=false -- a stuck corpse. xpWorth cannot
-  lie about being a player; a fake plrObj can.
-
+`/s xpdummy` is `dummy` + `xpLevel = 1`: solo pays 2 levels, split 1 each.
+Never fake a plrObj on a dummy: plrObj IS the is-a-player discriminator
+(ChangeState, FireVFXClient, cards, processElo branch on it), so a fake
+without a real .Plr misroutes silently and can throw mid-onDeath.

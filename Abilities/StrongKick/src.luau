@@ -4,7 +4,7 @@ export type myself = baseClass.myself
 type humObj = baseClass.humObj
 
 local module = {
-	Name = "Impale"
+	Name = "StrongKick"
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -19,7 +19,7 @@ end
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
 local function useFunc(this:myself)
-	local cooldownID = "impale"
+	local cooldownID = "strongKick"
 	if this:canTriggerCD(cooldownID) ~= true then return end
 	local anim = this:PlayAnim(script.anim, 0, 1, 1)
 	local humObj = this._humObj

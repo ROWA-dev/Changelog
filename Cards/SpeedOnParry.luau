@@ -2,7 +2,6 @@
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
-	-- my own stuff here
 }
 
 local module = {}
@@ -10,31 +9,12 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	-- my own stuff here
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	
-	self:addConnection(
-		humObj.onAttacked:Connect(function(attack, returnValue: number) 
-			if attack:isParried() then
-				humObj.walkSpeed:SetMod("parry", 5)
-				task.wait(1) -- TODO why this hold heap?
-				if humObj and humObj.isActive then
-					humObj.walkSpeed:RemoveMod("parry")
-				end
-			end
-		end),
-		"speedOnParry"
-	)
-	
-	
+	self:addConnection(humObj.onAttacked:Connect(function(attack)
+		if attack:isParried() then self:timedMod(humObj.walkSpeed, 5, 1) end
+	end))
 	return self
-end
-
-function module.destroy(self:myself)
-	-- destroy my own stuff here
-	self:remConnection("speedOnParry")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

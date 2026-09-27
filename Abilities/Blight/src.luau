@@ -1,6 +1,5 @@
 --!strict
---- Blight - launch a blinding orb; it travels ~22 studs over 0.3s and detonates
---- in a 20-stud sphere. Weak damage, wide area, long cd -- a zoning poke.
+--- Blight - launch a blinding orb that travels TRAVEL_DIST over TRAVEL_TIME and detonates in a BLAST_RADIUS sphere. A zoning poke.
 --- THE ORB DOES NOT DAMAGE IN FLIGHT: the whole move is one delayed AoE at the
 --- end point, so it is NOT a projectile. Client draws the orb, server schedules
 --- one hitbox.
@@ -16,9 +15,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)

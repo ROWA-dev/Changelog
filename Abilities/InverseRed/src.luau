@@ -13,9 +13,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
@@ -32,17 +30,6 @@ local BLAST = table.freeze({
 	dmg      = 20,
 	stun     = 1,
 	posMult  = 1,
-})
-
--- !! contact resolves and deals nothing; a nil dmgTbl would skip entity queries entirely and fly through people.
-local PROXIMITY = table.freeze({
-	weight  = dmgUtils.weighEnum.Light,
-	type    = dmgFlag.magic,
-	dmg     = 0,
-	stun    = 0,
-	posMult = 0,
-	-- it should be parryable in flight
-	parryH  = 0.2,
 })
 
 -- centred on the impact and oriented back along the path, so it catches people the orb passed as well as the one it hit.
@@ -94,9 +81,7 @@ local ORB_CFG = table.freeze({
 	maxDistance = 900,
 	lifetime    = 2,
 	size        = Vector3.new(6, 6, 6),
-	dmgTbl      = PROXIMITY,
-	pierce      = 1,
-	stopOnWorld = true,
+	dmgTbl      = Projectile.PROXIMITY,
 	fxId        = "inverseRedProj",
 	onExpire    = detonate,
 
@@ -113,7 +98,7 @@ local ORB_CFG = table.freeze({
 		-- stamps EVERY body the sweep touches, hit or not, so a blocked or i-framed contact still puts the blast on the person. See detonate.
 		local enemy = attack.enemyEntity
 		proj.victimRoot = enemy and enemy.HRootPart or nil
-		Projectile.kill(proj)
+		proj:kill()
 	end,
 })
 

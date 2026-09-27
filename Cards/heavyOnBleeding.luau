@@ -5,14 +5,13 @@ local DmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)
 
 local HEAVY = DmgUtils.dmgFlags.weaponHeavy
 
-return function(conId: string, onBleeding: (humObj: any, victim: any, bleed: any) -> ())
+return function(onBleeding: (humObj: any, victim: any, bleed: any) -> ())
 	local module = {}
 	module.__index = module
 	setmetatable(module, { __index = baseClass })
 
 	function module.new(humObj)
-		local abstract = baseClass.new(humObj) :: baseClass.myself
-		local self = setmetatable(abstract, module) :: any
+		local self = setmetatable(baseClass.new(humObj), module) :: any
 
 		self:addConnection(humObj.onAttack:Connect(function(attack)
 			if not (attack:isHit() and attack:hasDmgFlag(HEAVY)) then return end
@@ -22,14 +21,9 @@ return function(conId: string, onBleeding: (humObj: any, victim: any, bleed: any
 			local bleed = victim.statusEffects:get(humObj.statusEffects.Bleed)
 			if bleed == nil then return end
 			onBleeding(humObj, victim, bleed)
-		end), conId)
+		end))
 
 		return self
-	end
-
-	function module.destroy(self: any)
-		self:remConnection(conId)
-		baseClass.destroy(self)
 	end
 
 	return table.freeze(module)

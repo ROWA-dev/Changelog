@@ -18,9 +18,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local Debris        = game:GetService("Debris")
@@ -97,15 +95,15 @@ local function useFunc(this:myself)
 	local function keep(inst: Instance?)
 		if inst then table.insert(spawned, inst) end
 	end
+	-- not "freeze": that is the Freeze status effect's root, and removing it here would thaw a frozen caster.
+	local SLOW_KEY = "freezeCast"
 	local function cleanup()
+		humObj.walkSpeed:RemoveMod(SLOW_KEY)
 		if anim then anim:Stop(0.1) end
 		for _, inst in ipairs(spawned) do
 			Debris:AddItem(inst, 0)
 		end
 	end
-	
-	-- not "freeze": that is the Freeze status effect's root, and removing it here would thaw a frozen caster.
-	local SLOW_KEY = "freezeCast"
 	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 
 	keep(attach("Flare1", castHost, 1))
@@ -115,11 +113,7 @@ local function useFunc(this:myself)
 	fireVFX("emit", arm or root, "backdrop", 10, 2)
 
 	-- WINDUP, split across three feintWaits: 0.22 + 0.05 + 0.45 = 0.72.
-	if this:feintWait(0.22) then
-		humObj.walkSpeed:RemoveMod(SLOW_KEY)
-		cleanup()
-		return
-	end
+	if this:feintWait(0.22) then return cleanup() end
 
 	this:useMana()
 	-- deliberately not cut the way IceBash's was: this lands a full freeze on everything in a 49-stud lane.
@@ -130,11 +124,7 @@ local function useFunc(this:myself)
 	keep(attach("IceHit", castHost))
 	fireVFX("emit", castHost, "Wind", 6, 4)
 
-	if this:feintWait(0.05) then
-		humObj.walkSpeed:RemoveMod(SLOW_KEY)
-		cleanup()
-		return
-	end
+	if this:feintWait(0.05) then return cleanup() end
 
 	-- the ground sheet under the caster, on a smaller radius than the line.
 	local params = RaycastParams.new()
@@ -152,11 +142,7 @@ local function useFunc(this:myself)
 		layIce(castHit.Position, castHit.Normal, 9, castHit.Instance :: BasePart)
 	end
 
-	if this:feintWait(0.45) then
-		humObj.walkSpeed:RemoveMod(SLOW_KEY)
-		cleanup()
-		return
-	end
+	if this:feintWait(0.45) then return cleanup() end
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 
 	-- measured off the root ONCE: the line does not re-aim, so turning mid-cast does not bend it.
@@ -208,30 +194,23 @@ local function useFunc(this:myself)
 		end)
 	end
 
-	-- Freeze's own length: past it k stops the rise (the base would lift off the ground), s grows the spike and the fan widens as s^2.
-	local BASE = module.steps
 	for i = 1, this.steps do
-		local k = math.min(i, BASE)
-		local s = 1 + math.max(0, i - BASE) / BASE
-		local w = s * s
-		local n = math.round(PER_STEP * w)
-		for j = 1, n do
-			-- one lane each across 10*w studs either side, so a wide fan fills evenly instead of clumping
-			local side = rootRight * (((j - math.random()) / n * 2 - 1) * 10)
-			local endp, norm, hitPart = ground(rootPos + rootLook * STEP_REACH * i + side * w)
-			-- every other lane, and the last, lays a sheet: that already covers the fan
-			if j % 2 == 1 or j == n then
-				layIce(endp, norm, SNOW_SIZE * s, hitPart)
+		for j = 1, PER_STEP do
+			-- one lane each across 10 studs either side, so the pair fills evenly instead of clumping
+			local side = rootRight * (((j - math.random()) / PER_STEP * 2 - 1) * 10)
+			local endp, norm, hitPart = ground(rootPos + rootLook * STEP_REACH * i + side)
+			-- every other lane, and the last, lays a sheet
+			if j % 2 == 1 or j == PER_STEP then
+				layIce(endp, norm, SNOW_SIZE, hitPart)
 			end
 
-			-- sits slightly BEHIND its ray, rises with the step index, aimed forward-and-up; s scales the shape about its ground point.
-			local org3 = endp + (Vector3.new(0, k / 1.6 - 3, 0) - rootLook * 4 - side / 2) * s
+			-- sits slightly BEHIND its ray, rises with the step index, aimed forward-and-up.
+			local org3 = endp + (Vector3.new(0, i / 1.6 - 3, 0) - rootLook * 4 - side / 2)
 			local aim = org3
-				+ (side * (k / 20) + rootRight * (math.random(-10, 10) / 10) + rootLook * 2 + Vector3.new(0, 1 + k / 2, 0)) * s
-			spike(CFrame.lookAt(org3, aim), s)
+				+ (side * (i / 20) + rootRight * (math.random(-10, 10) / 10) + rootLook * 2 + Vector3.new(0, 1 + i / 2, 0))
+			spike(CFrame.lookAt(org3, aim), 1)
 		end
 
-		-- fixed-rhythm channel, so the interrupt checks are hand-rolled between beats rather than going through feintWait.
 		task.wait(STEP_GAP)
 		if this:channelBreak() then
 			if anim then anim:Stop(0.1) end

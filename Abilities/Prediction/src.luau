@@ -16,9 +16,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj: humObj): myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self: myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)

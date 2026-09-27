@@ -16,9 +16,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
@@ -57,7 +55,6 @@ local CRESCENT = table.freeze({
 	--- crescent that is still visibly flying.
 	--- a block deflects, which refunds the pierce, so a blocked crescent bends away with its hit intact.
 	pierce      = 1,
-	stopOnWorld = true,
 	knockbackForce = 4.8,
 	fxId        = "iceSlashProj",
 
@@ -105,10 +102,6 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 10, true)
 
-	--[[ the two crescents are thrown at fixed yaw offsets, -30 and +10, so
-		they fan rather than overlap. The angle is purely visual -- the hit
-		volume travels along the throw direction either way -- so it is
-		handed to the fx and the projectile flies straight. ]]
 	this:projectile(CRESCENT, hurtbox.CFrame * CFrame.new(0, 0, -4))
 	fireVFX("hshock", humObj.HRootPart)
 

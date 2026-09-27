@@ -13,9 +13,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
@@ -86,17 +84,6 @@ local function detonate(proj: any, pos: Vector3, _hitWorld: boolean)
 	end
 end
 
--- !! THE ROCKET DOES NO CONTACT DAMAGE, the explosion is the whole payload; it carries a zeroed table because a nil dmgTbl skips entity queries and it would fly straight through its target.
-local PROXIMITY = table.freeze({
-	weight  = dmgUtils.weighEnum.Light,
-	type    = dmgFlag.magic,
-	dmg     = 0,
-	stun    = 0,
-	posMult = 0,
-	-- a parry must be able to reach it; that is the redirect window
-	parryH  = 0.2,
-})
-
 local ROCKET_CFG = table.freeze({
 	speed       = 200,
 	-- == TARGET_RANGE on purpose: never acquire what it cannot reach, and never fly past what it was allowed to acquire.
@@ -106,9 +93,7 @@ local ROCKET_CFG = table.freeze({
 	size        = Vector3.new(4, 4, 12),
 	-- a RATE, not a per-frame nudge, so it flies the same at 30 and 144fps.
 	steer       = 3.75,
-	dmgTbl      = PROXIMITY,
-	pierce      = 1,
-	stopOnWorld = true,
+	dmgTbl      = Projectile.PROXIMITY, -- the explosion is the payload; the parryH is the redirect window
 	fxId        = "rocketProj",
 
 	onHit = function(proj, attack)
@@ -129,7 +114,7 @@ local ROCKET_CFG = table.freeze({
 		end
 
 		-- anything else it touches sets it off
-		Projectile.kill(proj)
+		proj:kill()
 	end,
 
 	onExpire = detonate,

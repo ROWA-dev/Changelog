@@ -1,5 +1,5 @@
 --!strict
--- landing a weapon heavy locks the victim's current or last ability for 2s per damage, multi-hit heavies summed within WINDOW
+-- landing a weapon heavy locks the victim's current or last ability for 2s per damage (MIN_LOCK..MAX_LOCK), multi-hit heavies summed within WINDOW
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 local DmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)
 
@@ -72,14 +72,9 @@ function module.new(humObj):myself
 		layout(root)
 		if fresh then chain.chains_break:Play() end
 		game.Debris:AddItem(chain, lock)
-	end), "dispel")
+	end))
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection("dispel")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

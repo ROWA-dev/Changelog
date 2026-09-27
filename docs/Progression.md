@@ -27,7 +27,8 @@ Stats currently gate content; they do not directly scale combat values.
 Draft eligibility is rebuilt from the invested build; offers are not saved.
 A reward is granted before prog increments, so failed claims spend nothing.
 A rebalance is retroactive: draftOffer.audit revokes picks whose req tightened
-and refunds their prog, so the level is re-drafted rather than eaten.
+(and saved cards no longer draftable) and refunds their prog, so the level is
+re-drafted rather than eaten.
 An unclaimable pending draft is never consumed or skipped; it banks like a point.
 
 ## TWO-HAND TARGET — NOT IMPLEMENTED

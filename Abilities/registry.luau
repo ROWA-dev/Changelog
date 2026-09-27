@@ -138,7 +138,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { lightning = 2 },
 	},
 	[manifold.PiercingStab] = {
-		desc = "A rooted 0.65s telegraph. The slowest single hit.",
+		desc = "A rooted telegraph into one heavy stab.",
 		req = {
 			Or = {
 				{med = 4}, {lht = 2}
@@ -269,7 +269,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { ice = 3 }
 	},
 	[manifold.MassFreeze] = {
-		desc = "Freeze that keeps going: fans out, grows to twice the size and ends in a crown of ice.",
+		desc = "Freeze with no victim cap that ends in a crown of ice.",
 		req = { ice = 8, ability = 38 }, -- Freeze
 		replaces = 38,
 		tier = DraftTiers.RARE,
@@ -305,6 +305,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Tentacles] = {
 		desc = "Dark strands lash out of a portal down a long lane.",
 		req = { dark = 4 },
+	},
+	[manifold.WindSlash] = {
+		desc = "Heavy Slash, shoots out a boomerang projectile",
+		req = { wind = 2 },
 	},
 }
 table.freeze(abilityMeta)
@@ -374,10 +378,10 @@ function module.conflictsWithCard(id:number): {number}?
 	return conflictsWithCard[id]
 end
 
--- display name without an instance: one require, and callers cache. ablityItem.getName routes here.
+-- the ModuleScript's name, so naming requires nothing; every class is Name = script.Name
 function module.nameOf(id:number): string
-	local ok, class = pcall(module.getAbilityClass, id)
-	return (ok and class and class.Name) or ("ability_"..tostring(id))
+	local mod = abilityList[id]
+	return if mod then mod.Name else "ability_" .. tostring(id)
 end
 
 -- nil for a module on disk but not in abilityList. NOT a fault, so it warns rather than errors: callers must handle nil.
@@ -401,13 +405,6 @@ function module.newAbility(id:number, ...): anyAbility
 	return itmInst
 end
 
--- ModuleScript name, NOT nameOf: nameOf reads class.Name, so naming a whole catalogue
--- through it would require every module. They agree, every class is Name = script.Name.
-local function listName(id: number): string
-	local mod = abilityList[id]
-	return if mod then mod.Name else "ability_" .. tostring(id)
-end
-
 -- ARRAY, never KEYED by id: ids gap here too. Cards.catalogue's COLUMNS exactly, because
 -- the codex draws one page for both.
 local catalogue: {{any}}
@@ -418,15 +415,15 @@ function module.catalogue(): {{any}}
 			local meta = abilityMeta[abilityList[id]]
 			if meta == nil then continue end
 			-- replaces/excludes are NOT part of `req`, so describe never mentions them; the draft does.
-			local drops = if meta.replaces then listName(meta.replaces) else ""
+			local drops = if meta.replaces then module.nameOf(meta.replaces) else ""
 			local picks = {}
 			for _, other in ipairs(conflicts[id] or {}) do
-				table.insert(picks, listName(other))
+				table.insert(picks, module.nameOf(other))
 			end
 			-- DENSE: "" and {} never nil -- a nil gaps the row, and a nil req means INHERIT.
 			table.insert(built, {
 				id,
-				listName(id),
+				module.nameOf(id),
 				meta.desc or "",
 				Requirements.describe(meta.req),
 				meta.req or {},
@@ -439,8 +436,7 @@ function module.catalogue(): {{any}}
 	return catalogue
 end
 
--- `req = { ability = id }` prints a name instead of a number. Costs one ability
--- require, and only when a gate is actually described.
+-- `req = { ability = id }` prints a name instead of a number.
 Requirements.setNamer("ability", module.nameOf)
 
 return module

@@ -25,8 +25,8 @@ this is also used for things that would clobber up the network stream... instead
   heavy pre-clones 25 copies of `vfx2` into a ring buffer and cycles through
   them (`getVFX()`), then Debris-clears the pool at the end.
 
-  Cost: every Clone is real replication traffic. Several files carry a
-  "TODO move vfx to client?" for that reason.
+  Cost: every Clone is real replication traffic. Paid on purpose (anti-rip),
+  so the old "TODO move vfx to client?" notes are decided against (AGENTS.md).
 
 ## B) THE VFX QUIVER / MANIFOLD (networked, lazily loaded) design reasoning? vfx is sparse and not every vfx is ever loaded...
   For cosmetic effects that must run ON CLIENTS (camera shake, screen flash,

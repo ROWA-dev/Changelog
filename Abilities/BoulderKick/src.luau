@@ -14,9 +14,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils    = require(game.ServerScriptService.Utils.DmgUtils)
@@ -145,8 +143,6 @@ local function useFunc(this:myself)
 		lifetime    = LIFETIME,
 		size        = hitSize,
 		dmgTbl      = BLDR,
-		pierce      = 1,
-		stopOnWorld = true,
 		knockbackForce = 9.6,
 		knockbackTime  = 0.2,
 

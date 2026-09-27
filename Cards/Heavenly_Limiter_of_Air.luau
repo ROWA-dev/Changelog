@@ -9,8 +9,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 
 	if humObj and humObj.Hum and humObj.Hum.Parent and (humObj.Hum.Parent.Name == "Airzy_Az" or humObj.Hum.Parent.Name == "blazeshotgun111") then
@@ -24,8 +23,7 @@ function module.new(humObj):myself
 		humObj.beforeAttacked:Connect(function(attack)
 			-- take 10% more from all attacks
 			attack.dmgMult += 0.10
-		end),
-		"nerfAir"
+		end)
 	)
 
 
@@ -34,7 +32,6 @@ end
 
 function module.destroy(self:myself)
 	self._humObj.parryWindow.Value += 0.02
-	self:remConnection("nerfAir")
 	baseClass.destroy(self)
 end
 

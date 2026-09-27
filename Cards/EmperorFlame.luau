@@ -48,8 +48,7 @@ function module.new(humObj): myself
 			if force.Magnitude > KNOCK_THRESHOLD and (vroot.Position - aroot.Position).Magnitude < PROC_RANGE then
 				attack.emperorFlameForce = force
 			end
-		end),
-		"emperorMark"
+		end)
 	)
 
 	self:addConnection(
@@ -82,8 +81,7 @@ function module.new(humObj): myself
 			local flat = Vector3.new(force.X, 0, force.Z)
 			local recoilDir = if flat.Magnitude > 0 then -flat.Unit else -root.CFrame.LookVector
 			humObj:bodyForce(recoilDir * 10.8 + Vector3.new(0, 1.2, 0), 0.1, false, -1)
-		end),
-		"emperorProc"
+		end)
 	)
 
 	local char = humObj.Model
@@ -104,8 +102,6 @@ function module.new(humObj): myself
 end
 
 function module.destroy(self: myself)
-	self:remConnection("emperorMark")
-	self:remConnection("emperorProc")
 	if self._crown then
 		self._crown:Destroy()
 	end

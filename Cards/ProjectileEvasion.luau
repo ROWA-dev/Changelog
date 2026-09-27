@@ -28,8 +28,6 @@ local CLEAR = 1.3
 -- studs of run-up, purely how it reads; `speed * dt` below is the hard floor
 local ENGAGE = 70
 
-local CONN_ID = "projEvade"
-
 -- Turn `dir` aside until the forward ray grazes the sphere; nil if it already
 -- misses (one packet per shot, not per frame). asin(r/d) is a property of the
 -- line, so unlike a force it holds at any speed.
@@ -56,8 +54,7 @@ local function turnAside(pos: Vector3, dir: Vector3, toC: Vector3, d: number,
 end
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	self:addConnection(RunService.Heartbeat:Connect(function()
 		if Projectile.activeCount() == 0 then return end
@@ -83,16 +80,9 @@ function module.new(humObj):myself
 
 			p:deflect(newDir)
 		end)
-	end), CONN_ID)
+	end))
 
 	return self
-end
-
--- must run before baseClass.destroy clears the table, while _humObj and
--- randID still exist to name the connection with
-function module.destroy(self:myself)
-	self:remConnection(CONN_ID)
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

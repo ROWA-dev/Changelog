@@ -1,7 +1,5 @@
 --!strict
---[[ PiercingStab - the slowest single hit in the set. A 0.65s telegraph you are rooted
-	through, paid for with high damage and a -0.1 parry window. Needs a
-	weapon. ]]
+-- PiercingStab - a telegraph you are rooted through, paid off with one high-damage stab. Needs a weapon.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -14,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)

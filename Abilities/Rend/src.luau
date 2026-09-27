@@ -14,9 +14,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -30,9 +28,7 @@ local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local HOP_1 = 40 / 5
 local HOP_2 = 50 / 5
 
---[[ 14 + 14, and beat 1's 1.2s stun GUARANTEES beat 2 -- so this is really a
-	single 28 that cannot be interrupted between halves. Price it as one hit,
-	not two, and keep the two tables identical unless you mean to split them. ]]
+-- 14 + 14, and beat 1's 1.2s stun guarantees beat 2, so price it as one 28.
 local REND_1 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
@@ -44,7 +40,7 @@ local REND_1 = {
 		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit")
 	end,
 }
-local REND_2 = {
+local REND_2 = { -- no parryH on purpose, unlike REND_1
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.blunt,
 	dmg      = 14,

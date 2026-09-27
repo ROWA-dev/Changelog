@@ -15,9 +15,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -109,7 +107,6 @@ local function useFunc(this:myself)
 		return found
 	end
 
-	--- fixed-rhythm ride -> :channelBreak for the interrupt checks
 	while tick() < started + MAX_DIVE do
 		task.wait()
 		if humObj:inStun() then break end

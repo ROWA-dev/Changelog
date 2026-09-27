@@ -2,7 +2,6 @@
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
-	-- my own stuff here
 }
 
 local module = {}
@@ -10,9 +9,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	-- my own stuff here
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	
 	self:addConnection(
 		humObj.beforeAttacked:Connect(function(attack) -- under dog card
@@ -24,18 +21,11 @@ function module.new(humObj):myself
 				-- deal 15% less
 				attack.dmgMult = math.max(0, attack.dmgMult - 0.15)
 			end
-		end),
-		"underdog"
+		end)
 	)
 	
 	
 	return self
-end
-
-function module.destroy(self:myself)
-	-- destroy my own stuff here
-	self:remConnection("underdog")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

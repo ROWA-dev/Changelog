@@ -2,7 +2,7 @@
 local EXTEND = 8
 local CD_ID, COOLDOWN = "deepWound", 8
 
-return require(script.Parent:WaitForChild("heavyOnBleeding"))(CD_ID,
+return require(script.Parent:WaitForChild("heavyOnBleeding"))(
 	function(humObj, _victim, bleed)
 		local cooldowns = humObj.cooldowns
 		if cooldowns:canTrigger(CD_ID) == false then return end

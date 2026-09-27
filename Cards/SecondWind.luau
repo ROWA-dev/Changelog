@@ -9,7 +9,6 @@ export type myself = baseClass.myself & {
 --- regen multiple while under HALF posture
 local MULT = 2
 local HALF = 0.5
-local MOD = "secondWind"
 
 local module = {}
 module.__index = module
@@ -26,7 +25,7 @@ local function refresh(self: any, humObj: any)
 	if posture.Value >= half then
 		if self._on then
 			self._on = false
-			postureHeal:RemoveMod(MOD)
+			postureHeal:RemoveMod(self._key)
 		end
 		return
 	end
@@ -34,7 +33,7 @@ local function refresh(self: any, humObj: any)
 	if not self._on then
 		self._on = true
 		-- a multiple of the CURRENT rate, so other postureHeal mods still count
-		postureHeal:SetMod(MOD, postureHeal.Value * (MULT - 1))
+		self:setMod(postureHeal, postureHeal.Value * (MULT - 1))
 	end
 
 	-- ONE wake, timed for when regen should have carried us back over half. Nothing
@@ -48,26 +47,17 @@ local function refresh(self: any, humObj: any)
 end
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	self._gen = 0
 	self._on = false
 
 	-- regen rawsets on purpose, so Changed is exactly the damage/parry/break writes
 	self:addConnection(humObj.posture.Changed:Connect(function()
 		refresh(self, humObj)
-	end), MOD)
+	end))
 	refresh(self, humObj)
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection(MOD)
-	self._gen += 1 -- orphan any pending wake, the gen check drops it
-	local humObj = self._humObj
-	if humObj and humObj.postureHeal then humObj.postureHeal:RemoveMod(MOD) end
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

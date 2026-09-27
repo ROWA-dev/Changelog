@@ -2,8 +2,6 @@
 --- JoltKick - a charged lightning roundhouse. If the first kick connects it
 --- chains into a second animation and a second jolt on the SAME victim, with
 --- the caster dragged along behind them.
---- The windup is an honest 0.7: the trade logic reads it, so understating it
---- wins trades the move has no business winning.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -16,9 +14,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)

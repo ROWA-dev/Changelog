@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -81,7 +79,7 @@ local function useFunc(this:myself)
 	for _ = 1, TICKS do
 		task.wait(TICK_RATE)
 
-		--this:useMana()
+		-- drains 1 a tick instead of a useMana up front, and lets go under 4
 		local manaUse = 1
 		local manaNow = humObj:manaNow() - manaUse
 		humObj:setMana(manaNow)
@@ -113,7 +111,6 @@ local function useFunc(this:myself)
 	end
 
 	if anim then anim:Stop(0.2) end
-	--this:endLag(0.1)
 	stopLash()
 end
 

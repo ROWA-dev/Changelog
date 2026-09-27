@@ -21,8 +21,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	self._pending = false
 	self._spent = 0
 	self._chainUntil = 0
@@ -53,14 +52,9 @@ function module.new(humObj):myself
 			-- copied AFTER the max, so it is the window actually being ridden.
 			self._chainUntil = hobj.dodgeThreshold
 		end)
-	end), "quickstep")
+	end))
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection("quickstep")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

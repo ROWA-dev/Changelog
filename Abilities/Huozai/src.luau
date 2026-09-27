@@ -13,9 +13,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -38,18 +36,8 @@ local FIRE_NEAR = {
 		hitSfx(attack.enemyEntity.HRootPart, "HitSound")
 	end,
 }
-local FIRE_FAR = {
-	weight   = dmgUtils.weighEnum.Light,
-	type     = bit32.bor(dmgFlag.magic, dmgFlag.fire),
-	dmg      = 3,
-	stun     = 0.1,
-	posMult  = 0.5,
-	parryH   = 0.1,
-	stunMeOnParried = 0,
-	onHit    = function(attack)
-		hitSfx(attack.enemyEntity.HRootPart, "HitSound")
-	end,
-}
+local FIRE_FAR = table.clone(FIRE_NEAR)
+FIRE_FAR.dmg = 3
 
 local BANDS       = 6
 local CHANNEL     = 3

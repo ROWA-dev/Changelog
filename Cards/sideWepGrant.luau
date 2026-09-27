@@ -9,8 +9,7 @@ return function(sideWepId: number)
 	setmetatable(module, { __index = baseClass })
 
 	function module.new(humObj)
-		local abstract = baseClass.new(humObj) :: baseClass.myself
-		local self = setmetatable(abstract, module) :: any
+		local self = setmetatable(baseClass.new(humObj), module) :: any
 		self._granted = SideWeps.newSideWep(sideWepId, humObj)
 		humObj:EquipSideWep(self._granted)
 		return self

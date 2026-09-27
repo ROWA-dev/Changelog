@@ -399,11 +399,6 @@ next reader does not re-open them.
     UNVERIFIED alternative: crossed TwoAttachment AlignPositions converge
     the pair with zero per-frame writes -- but the force profile and
     YANK_STOP behaviour differ, so that is a FEEL change, not a refactor.
-  * EarthShot moving 15 anchored parts per frame. NOT REGISTERED --
-    Abilities.luau names it scratch in its own comment, so nothing can
-    cast it. Left as a landmine note: it is the purest form of the
-    anti-pattern and would need rewriting before promotion. Still uses
-    BodyVelocity too.
   * All bindFuncs inputs are key EDGES, not held streams. The sprint/slide
     C2S round trip has no echo back (the server sets no `sprint`
     walkSpeed mod). Posture DAMAGE goes through `.Value` while only regen

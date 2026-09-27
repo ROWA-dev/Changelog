@@ -11,9 +11,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local function getNear(Root)
@@ -41,6 +39,7 @@ local function useFunc(this:myself)
 	local root:any = humObj.HurtBox
 	local found,dist = getNear(root)
 	if found == nil then return end
+	this:useMana()
 	
 	humObj.dodgeThreshold = tick() + 0.2
 	
@@ -53,7 +52,9 @@ local function useFunc(this:myself)
 	if fplr then
 		game.ReplicatedStorage.RemoteEvents.VFX:FireClient(fplr, "clap", root)
 	end
-	game.ReplicatedStorage.RemoteEvents.VFX:FireClient(lplr, "clap",root)
+	if lplr then
+		game.ReplicatedStorage.RemoteEvents.VFX:FireClient(lplr, "clap",root)
+	end
 end
 
 function module.use(self:myself)

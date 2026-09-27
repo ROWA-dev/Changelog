@@ -4,7 +4,9 @@ local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
 export type card = {
 	name: string,
 	desc: string?,
-	module: ModuleScript,
+	module: ModuleScript?, -- nil = a bare cardBase, for cards that are only `mods`
+	-- AdditiveValue name on the humObj -> amount, set through the card so it comes off with it
+	mods: {[string]: number}?,
 	
 	innate: boolean?,
 	unObtainable: boolean?,
@@ -31,7 +33,7 @@ local manifold = script
 local cardList:clType = {
 	[1] = {
 		name = "Underdog",
-		desc = "take 20% less damage against higher hp opponents",
+		desc = "take 15% less damage from opponents with more health than you",
 		module = manifold.Underdog,
 		innate = true,
 	},
@@ -77,7 +79,7 @@ local cardList:clType = {
 	[9] = {
 		name = "Strength",
 		desc = "your basic attacks deal 5% more damage",
-		module = manifold.Strength,
+		mods = { wepDmgMult = 0.05 }, -- AttackClass reads it for weapon attacks only
 		req = {
 			strength = 6,
 			Or = {
@@ -87,7 +89,7 @@ local cardList:clType = {
 	},
 	[10] = {
 		name = "Haki",
-		desc = "+15% basic weapon damage, +10% weapon posture damage, +20 posture, +10 max health",
+		desc = "+10% basic weapon damage, +10% weapon posture damage, +20 posture, +10 max health",
 		module = manifold.Haki,
 		req = { strength = 6, fortitude = 4 },
 	},
@@ -99,7 +101,7 @@ local cardList:clType = {
 	},
 	[12] = {
 		name = "Frontliner",
-		desc = "1 in 5 weapon hits deal double damage, everything else deals 15% less. and a cape",
+		desc = "1 in 5 weapon hits deal 1.5x damage, non-weapon attacks deal 15% less. and a cape",
 		module = manifold.Frontliner,
 		req = { strength = 4, dexterity = 4 },
 	},
@@ -124,7 +126,7 @@ local cardList:clType = {
 	[16] = {
 		name = "Many-Handed",
 		desc = "+1 equippable weapons",
-		module = manifold.ManyHanded,
+		mods = { maxWeapons = 1 }, -- read on commit, so losing it trims nothing until the next wield
 		-- spread, not depth: 4 TOTAL across hvy/med/lht, however it is split.
 		req = { dexterity = 2, mind = 2, sum = { weaponStats = 4 } },
 	},
@@ -149,7 +151,7 @@ local cardList:clType = {
 	},
 	[20] = {
 		name = "Frenzied Form",
-		desc = "dealing damage will damage their posture, downside -15 less max posture",
+		desc = "hits you land also drain their posture by half the damage dealt. downside: -20 max posture",
 		module = manifold.FrenziedForm,
 		req = { strength = 4 },
 	},
@@ -213,7 +215,7 @@ local cardList:clType = {
 	[30] = {
 		name = "Composure",
 		desc = "posture recovers 25% faster",
-		module = manifold.Composure,
+		mods = { postureHeal = 0.5 }, -- 25% of the base 2
 		req = { fortitude = 4 },
 		excludes = { 29 }, -- Second Wind
 	},
@@ -225,7 +227,7 @@ local cardList:clType = {
 	},
 	[32] = {
 		name = "Dispel",
-		desc = "landing a heavy puts the ability they are using, or last used, on cooldown for 2 seconds per damage dealt, up to 4 minutes",
+		desc = "landing a weapon heavy puts the ability they are using, or last used, on cooldown for 2 seconds per damage dealt, 30 seconds to 4 minutes",
 		module = manifold.Dispel,
 		req = { dark = 8 },
 	},
@@ -246,47 +248,35 @@ table.freeze(cardList)
 
 local module = {}
 
-function module.getCardClass(id:number)
-	local sreq:any = require
+function module.newCard(id:number, humObj:any)
 	local card = cardList[id]
-	
 	if card == nil then
 		error("card_id["..tostring(id).."] does not exist")
 	end
-	
-	local cardClass = sreq(card.module)
-	return cardClass
+	local sreq:any = require
+	local obj = sreq(card.module or manifold.cardBase).new(humObj)
+	if card.mods then
+		for stat, n in card.mods do obj:setMod(humObj[stat], n) end
+	end
+	return obj
 end
 
+-- "unknown #id" for an id that left the registry: ids are persisted, so a stale one must not throw
 function module.getCardName(id:number): string
 	local card = cardList[id]
-	return card.name
+	return if card then card.name else "unknown #" .. tostring(id)
 end
 
--- nil-safe on purpose, unlike getCardName: UI asks for these by id and a card
--- without a desc is normal, not an error
-function module.getCardDesc(id:number): string?
+-- the frozen row, nil for an unknown id
+function module.get(id:number): card?
+	return cardList[id]
+end
+
+-- draftable == obtainable by playing: innate ones are granted at load, unObtainable ones are gifts
+function module.isDraftable(id:number): boolean
 	local card = cardList[id]
-	return card and card.desc
+	return card ~= nil and card.innate ~= true and card.unObtainable ~= true
 end
-
--- nil-safe like getCardDesc: an ungated card is normal, not an error.
-function module.getCardReq(id:number): Requirements.req?
-	local card = cardList[id]
-	return card and card.req
-end
-
-function module.getCardReplaces(id:number): number?
-	local card = cardList[id]
-	return card and card.replaces
-end
-
---- PICK ONE. One line per pair, read left-or-right; owning either hides the other for good.
-local EXCLUSIVE = {
-	{24, 25}, -- Bloodletting  | Deep Wound
-	{26, 27}, -- First Instinct | Adrenaline
-	{29, 30}, -- Second Wind   | Composure
-}
 
 -- reverse of replaces, built once from the registry. Requires NOTHING.
 local supersededBy: {[number]: number} = {}
@@ -318,31 +308,25 @@ function module.getCardSupersededBy(id:number): number?
 	return supersededBy[id]
 end
 
--- draftable == obtainable by playing: innate ones are granted at load, unObtainable
--- ones are gifts. Neither needs a new field to say so.
-function module.getDraftableCardIds(): {number}
-	local ids = {}
-
-	for id, card in pairs(cardList) do
-		if card.innate ~= true and card.unObtainable ~= true then
-			table.insert(ids, id)
-		end
+-- built once and frozen, ascending, like Abilities.getIds
+local draftable, innate = {}, {}
+for id, card in cardList do
+	if card.innate == true then
+		table.insert(innate, id)
+	elseif module.isDraftable(id) then
+		table.insert(draftable, id)
 	end
-	table.sort(ids)
+end
+table.sort(draftable)
+table.freeze(draftable)
+table.freeze(innate)
 
-	return ids
+function module.getDraftableCardIds(): {number}
+	return draftable
 end
 
 function module.getInnateCardIds(): {number}
-	local ids = {}
-
-	for id, card in pairs(cardList) do
-		if card.innate == true then
-			table.insert(ids, id)
-		end
-	end
-
-	return ids
+	return innate
 end
 
 -- ARRAY of {id, name, desc, reqText, req, replaces, excludes}, never KEYED by id: they

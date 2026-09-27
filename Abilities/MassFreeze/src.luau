@@ -1,5 +1,5 @@
 --!strict
--- MassFreeze - Freeze that keeps going: the same first 7 steps, 7 more fanning out and growing to 2x, then a crowned spire.
+-- MassFreeze - Freeze with a shorter line (6 steps, easier up close), no victim cap, and a crowned spire.
 local baseClass = require(script.Parent.Freeze)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj

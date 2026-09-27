@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -23,11 +21,7 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---[[ stun is 0.1 -- see the header. Shipping the meter AND a real stun gives you
-	both problems at once.
-
-	stunMeOnParried 0: at 19 ticks, parrying one should not stun the caster for
-	the other eighteen. ]]
+-- stun 0.1: the Freeze meter carries the control. stunMeOnParried 0: parrying one tick should not stun the caster for the rest.
 local ICE = {
 	weight   = dmgUtils.weighEnum.Light,
 	type     = dmgFlag.ice,

@@ -2,6 +2,7 @@
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
+	_scale: number,
 }
 
 local module = {}
@@ -9,8 +10,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	
 	if humObj.plrObj == nil then
 		error(tostring(humObj).." does not have a player to measure...")
@@ -22,7 +22,8 @@ function module.new(humObj):myself
 	end
 	
 	local scale = 0.04 * (1 - (plrData.wins / 30))
-	humObj.parryWindow.Value += scale--0.04
+	humObj.parryWindow.Value += scale
+	self._scale = scale
 	
 	if plrData.wins < 2 then
 		self:addConnection(
@@ -38,16 +39,15 @@ function module.new(humObj):myself
 					end
 					stepper:Wait()
 				end
-			end),
-			"heavenlyEqualizer"
+			end)
 		)
 	end
 	return self
 end
 
+-- parryWindow is a plain value, not an AdditiveValue, so the bump is undone by hand
 function module.destroy(self:myself)
-	--local humObj = self._humObj
-	--humObj.parryWindow.Value -= 0.04
+	self._humObj.parryWindow.Value -= self._scale
 	baseClass.destroy(self)
 end
 

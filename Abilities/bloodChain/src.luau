@@ -13,14 +13,11 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag    = dmgUtils.dmgFlags
-local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 local Targeting  = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
@@ -102,7 +99,6 @@ local CHAIN_CFG = table.freeze({
 	maxDistance = 220,
 	size        = Vector3.new(3, 3, 3),
 	dmgTbl      = CHAIN,
-	pierce      = 1,
 	-- a chain crosses cover
 	stopOnWorld = false,
 	-- !! NO fxId: the beam needs the CASTER'S ARM for its near end, and without Attachment0 a Beam renders nothing. bchain is fired by hand below.
@@ -163,7 +159,7 @@ local function useFunc(this:myself)
 		if attack:isParried() then
 			local proot = attack.enemyEntity.HRootPart
 			if proot == nil then
-				Projectile.kill(proj)
+				proj:kill()
 				return
 			end
 			local look = proot.CFrame.LookVector
@@ -177,7 +173,7 @@ local function useFunc(this:myself)
 
 		if not attack:isHit() then
 			-- only a DODGE keeps it flying; anything else ends it
-			if not attack:isDodged() then Projectile.kill(proj) end
+			if not attack:isDodged() then proj:kill() end
 			return
 		end
 
@@ -186,7 +182,7 @@ local function useFunc(this:myself)
 
 		-- a DEFLECTED chain can run back into its own thrower, and there is nothing to yank in that case, so it takes its damage and drops.
 		if eroot == myRoot then
-			Projectile.kill(proj)
+			proj:kill()
 			return
 		end
 

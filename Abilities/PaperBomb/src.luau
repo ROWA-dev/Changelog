@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
@@ -53,10 +51,6 @@ aimParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 local function vecRand(r: number): Vector3
 	return Vector3.new(math.random(-r, r), math.random(-r, r), math.random(-r, r))
 end
-local function vecAbs(v: Vector3): Vector3
-	return Vector3.new(math.abs(v.X), math.abs(v.Y), math.abs(v.Z))
-end
-
 --- `bomb.p` is local to `bomb.at` (the limb it is stuck in), world space when nil
 local function blast(action: any, bomb: any, fallbackDir: Vector3)
 	if action == nil or action._humObj == nil then return end
@@ -99,7 +93,6 @@ local function makeCast()
 		maxDistance = 220,
 		size        = Vector3.new(3, 3, 4),
 		dmgTbl      = nil,
-		stopOnWorld = true,
 		stickInBody = true,
 		fxId        = "kunaiProj",
 
@@ -131,7 +124,7 @@ local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number):
 
 	local wall = workspace:Raycast(predicted, baseDir * 12, aimParams)
 	if wall then
-		local p = wall.Position + vecRand(20) / 2 * (Vector3.one - vecAbs(wall.Normal))
+		local p = wall.Position + vecRand(20) / 2 * (Vector3.one - wall.Normal:Abs())
 		return (p - origin).Unit
 	end
 
@@ -139,7 +132,7 @@ local function aimAt(origin: Vector3, baseDir: Vector3, target: any, i: number):
 	if falling.Y > 0 then falling *= Vector3.new(1, -1, 1) end
 	local ground = workspace:Raycast(predicted, Vector3.new(0, -8, 0) + falling, aimParams)
 	if ground then
-		local p = ground.Position + vecRand(20) / 2 * (Vector3.one - vecAbs(ground.Normal))
+		local p = ground.Position + vecRand(20) / 2 * (Vector3.one - ground.Normal:Abs())
 		return (p - origin).Unit
 	end
 

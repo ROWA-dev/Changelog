@@ -11,14 +11,14 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local function bhit(attack) fireVFX("bhit", attack.enemyEntity.HRootPart) end
+
 local function useFunc(this:myself)
 	local cooldownID = "Barrage"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -62,7 +62,7 @@ local function useFunc(this:myself)
 		posMult  = 0.5,
 		parryH   = 0.1,
 		stunMeOnParried = 0,
-		onHit    = require(script.punch),
+		onHit    = bhit,
 	}
 
 	local Char = hurtbox.Parent
@@ -79,7 +79,6 @@ local function useFunc(this:myself)
 				hurtbox.CFrame.LookVector
 			)
 
-			--this:executeAttack(attack)
 			task.spawn(function()
 				this:executeAttack(attack)
 				if attack:isHit() then

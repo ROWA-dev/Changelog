@@ -11,9 +11,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -82,18 +80,19 @@ local function useFunc(this:myself&any)
 		if scythe then scythe.Transparency = 1; game.Debris:AddItem(scythe,4) end
 	end
 
-	humObj.walkSpeed:SetMod("stopMoving", -100)
+	humObj.walkSpeed:SetMod(cooldownID, -100)
 	-- guarded: drawScythe returns nil on an armless rig, and a throw here abandons the restore inside use()'s pcall.
 	local committed = this:windup(0.5, function(dt)
 		if scythe then scythe.BD:Emit(1) end
 	end)
-	humObj.walkSpeed:RemoveMod("stopMoving")
+	humObj.walkSpeed:RemoveMod(cooldownID)
 
 	if not committed then
 		if anim then anim:Stop() end
 		restore()
 		return
 	end
+	this:useMana()
 	this:triggerCD(cooldownID, 6, true)
 	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*12, 0.2)
 

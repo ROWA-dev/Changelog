@@ -10,8 +10,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	self:addConnection(humObj.onAttack:Connect(function(attack)
 		if not attack:isHit() then return end
@@ -19,14 +18,9 @@ function module.new(humObj):myself
 		-- never refresh or steal a live charm; that's Charisma's rule, not Charm's
 		if victim == nil or victim.statusEffects:get(humObj.statusEffects.Charm) then return end
 		victim.statusEffects:apply(humObj.statusEffects.Charm, DURATION, CUT, humObj)
-	end), "charisma")
+	end))
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection("charisma")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

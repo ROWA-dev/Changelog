@@ -20,8 +20,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	humObj.cooldowns:setCooldown(CD_ID, COOLDOWN)
 
 	self:addConnection(humObj.onAttacked:Connect(function(attack)
@@ -50,16 +49,9 @@ function module.new(humObj):myself
 				AttackClass.new(DMG, humObj, victim, dir):Execute()
 			end
 		end
-		
-		print("SPLINTER RAH")
-	end), "splinterGuard")
+	end))
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection("splinterGuard")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

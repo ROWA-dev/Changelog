@@ -1,5 +1,5 @@
 --!strict
---- Lightning - ~100 stud radius tp that strikes lightning at the endpos
+--- Lightning - strikes lightning at the aimed point, up to STRIKE_RANGE away
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)
@@ -113,7 +111,7 @@ local function useFunc(this:myself)
 				lightning family. Fulminate was the only source; this is the
 				other blue one, so it gets it too. Deliberately NOT given to
 				the yellow pair, BoltPunch and JoltKick. ]]
-			enemy.statusEffects:apply(enemy.statusEffects.Shock, 3)
+			enemy.statusEffects:apply(enemy.statusEffects.Shock, 3, 1)
 
 			if enemy.HRootPart then
 				fireVFX("pauseF2", char, enemy.HRootPart.Parent)

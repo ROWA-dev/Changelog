@@ -1,12 +1,10 @@
 --!strict
--- reduces ur max posture by 10
--- but every successful hit also drains the enemys posture by a percentage of the damage dealt.
+-- cuts max posture by MAX_POSTURE_CUT, but every hit also drains the victim's posture by POSTURE_PER_DMG of the damage.
 
 -- TODO give this card a visual.. maybe ur posture bar becomes orange instead of red?
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
-	_modKey: string,
 }
 
 local MAX_POSTURE_CUT = 20
@@ -18,11 +16,8 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	self._modKey = "frenzy:" .. tostring(self.randID)
-
-	humObj.maxPosture:SetMod(self._modKey, -MAX_POSTURE_CUT)
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
+	self:setMod(humObj.maxPosture, -MAX_POSTURE_CUT)
 	humObj.posture.Value = math.min(humObj.posture.Value, humObj.maxPosture.Value)
 
 	-- a landed hit never touched posture before this card: the block branch was the only
@@ -34,18 +29,9 @@ function module.new(humObj):myself
 		-- Combatant guarantees an inert `posture`, so a non-posture defender is safe.
 		victim.posture.Value = math.max(0,
 			victim.posture.Value - attack:CalculateDamage() * POSTURE_PER_DMG)
-	end), "frenzy")
+	end))
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection("frenzy")
-	local humObj = self._humObj
-	if humObj then
-		humObj.maxPosture:RemoveMod(self._modKey)
-	end
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

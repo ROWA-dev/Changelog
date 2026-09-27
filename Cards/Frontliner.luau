@@ -15,8 +15,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	-- rolled per HIT, not per swing, and the crit is carried ON the attack: one
 	-- swing can land on several victims and each is its own roll.
@@ -28,7 +27,7 @@ function module.new(humObj):myself
 		if math.random() >= CRIT_CHANCE then return end
 		attack.dmgMult += CRIT_BONUS
 		attack.frontlinerCrit = true
-	end), "frontliner")
+	end))
 
 	-- feedback waits for resolution: a parried or blocked crit never landed.
 	self:addConnection(humObj.onAttack:Connect(function(attack)
@@ -46,7 +45,7 @@ function module.new(humObj):myself
 		sound.Parent = at
 		sound:Play()
 		Debris:AddItem(sound, 4)
-	end), "frontlinerCrit")
+	end))
 
 	local char = humObj.Hum and humObj.Hum.Parent
 	local torso = char and char:FindFirstChild("Torso")
@@ -63,8 +62,6 @@ function module.new(humObj):myself
 end
 
 function module.destroy(self:myself)
-	self:remConnection("frontliner")
-	self:remConnection("frontlinerCrit")
 	if self._cape then self._cape:Destroy() end
 	baseClass.destroy(self)
 end

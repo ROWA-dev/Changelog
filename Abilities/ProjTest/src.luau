@@ -19,9 +19,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
@@ -52,8 +50,6 @@ local BASE = table.freeze({
 	lifetime    = 6,
 	size        = Vector3.new(2, 2, 2),
 	dmgTbl      = PELLET,
-	pierce      = 1,
-	stopOnWorld = true,
 	knockbackForce = 3,
 	knockbackTime  = 0.15,
 	fxId        = "testBall",

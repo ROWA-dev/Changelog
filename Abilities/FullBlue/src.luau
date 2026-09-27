@@ -13,9 +13,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils    = require(game.ServerScriptService.Utils.DmgUtils)
@@ -35,7 +33,6 @@ local BLUE = table.freeze({
 	stunMeOnParried = 0,
 })
 
--- LIFETIME is 4: the field's own `tick() + 4` is the truth, not any declared 8.
 local LIFETIME     = 4
 local BLUE_RADIUS  = 23             -- damage + pull radius
 -- projectiles are caught 4x further out than bodies: a shot only has to be BENT.
@@ -225,11 +222,6 @@ local function useFunc(this:myself)
 				if attack:isHit() then
 					-- stopOnGround means a victim dragged at floor level pops back up and reads as no ragdoll; the PULL lifting them is what saves it.
 					enemy.ragdoll:ragdoll(60, true, -delta.Unit * 10)
-
-					-- the setup half of the purple combo; the flag is all that ships. See InverseRed's header.
-					if enemy.Hum and enemy.Hum.Health <= 0 then
-						field:SetAttribute("PurpleReady", true)
-					end
 				end
 			end
 		end
@@ -245,8 +237,6 @@ local function useFunc(this:myself)
 	field:RemoveTag(gravWells.TAG)
 	-- the pulse stops with the loop; kill the light and let what is in the air finish its lifetime.
 	if light then light.Enabled = false end
-	-- `Finished` is the "well is spent" marker checked before the purple nuke, not a VFX flag.
-	field:SetAttribute("Finished", true)
 	-- the longest emitter Lifetime on MaxBlue is 0.5.
 	game.Debris:AddItem(field, 0.5)
 

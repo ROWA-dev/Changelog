@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -60,7 +58,7 @@ local function useFunc(this:myself)
 
 	local anim2 = this:PlayAnim(script.Anim2, 0, 1, 1)
 
-	-- PER CAST AND MUTABLE: parryH escalates on first contact, see the header.
+	-- PER CAST AND MUTABLE: parryH escalates on first contact.
 	local FD = {
 		weight   = dmgUtils.weighEnum.Medium,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.fire),

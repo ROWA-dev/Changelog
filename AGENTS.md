@@ -38,4 +38,11 @@ in `BUILDING.md`. Read it before touching the map.
 
 ## Tests
 NEVER RUN dynamic tests like simulating a humObj, since its destructive.
-Those will be playtested manually
+Those will be playtested manually. edit/write will output syntax error if any is found so no need for loadstring checks
+
+## Decided against (do not re-propose)
+- A cleanup never changes how abilities look or play.
+- VFX: `:Emit` is deliberate, never `Rate`. It is served server-side on purpose (anti-rip): never move it to the client, don't refactor VFX code.
+- StrongShove, StrongKick, Blaze are WIP: don't touch them, their commented lines are intent markers.
+- Keep Abilities/Template. MassFreeze `steps = 6` is intentional. bloodChain keeps its own drag, not pinTo.
+- A shared sfx helper, a cardBase factory, the FullBlue asset fixup, reverting Cards `mods`, restoring FullBlue PurpleReady/Finished or Barrage/punch.

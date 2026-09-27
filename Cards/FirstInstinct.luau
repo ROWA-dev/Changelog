@@ -8,8 +8,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	-- beforeAttacked is the last point before HandleAttack asks isDodge, and inCombat
 	-- still answers about the state this blow is about to change (addEntry is in resolveHit).
@@ -30,14 +29,9 @@ function module.new(humObj):myself
 		-- entry is the honest fix -- you are in the fight, you just took nothing.
 		local attacker = attack.myEntity
 		if attacker then humObj.dmgRecord:addEntry(attacker, 0) end
-	end), "firstInstinct")
+	end))
 
 	return self
-end
-
-function module.destroy(self:myself)
-	self:remConnection("firstInstinct")
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

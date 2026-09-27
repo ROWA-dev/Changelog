@@ -9,8 +9,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	humObj.parryWindow.Value += 0.04
 	self:addConnection(
@@ -26,17 +25,14 @@ function module.new(humObj):myself
 				end
 				stepper:Wait()
 			end
-		end),
-		"nickCompensator"
+		end)
 	)
 	
 	return self
 end
 
 function module.destroy(self:myself)
-	local humObj = self._humObj
-	self:remConnection("nickCompensator")
-	humObj.parryWindow.Value -= 0.04
+	self._humObj.parryWindow.Value -= 0.04
 	baseClass.destroy(self)
 end
 

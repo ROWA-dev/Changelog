@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -53,7 +51,6 @@ local SHARD = table.freeze({
 	maxDistance = 300,
 	size        = Vector3.new(2, 2, 4),
 	dmgTbl      = ICE_SHARD,
-	stopOnWorld = true,
 	--- each hit re-arms the mover, so a volley reads as one steady shove
 	knockbackForce = 4,
 

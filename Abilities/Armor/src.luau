@@ -1,7 +1,6 @@
 --!strict
 -- Armor - rip the ground up, wear it, and shove everyone off you as it goes on.
--- THE ABILITY IS THE SMALL HALF: damage reduction, erosion, shedding plates and blood suppression all live in Class/StatusEffects/EarthArmour.
--- HOW MUCH GROUND YOU RIP UP IS HOW MUCH ARMOUR YOU GET, and the plates ARE the ground -- nine real carved chunks keeping their own colour and material.
+-- the armour lives in StatusEffects/EarthArmour; how much ground you rip is how much armour you get.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -15,15 +14,12 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
-local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 local hitSfx = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
@@ -89,34 +85,17 @@ local function useFunc(this:myself)
 
 	-- dig FIRST: the pieces decide how much armour there is and what colour, so the suit and the shove land together.
 	-- Grab hands back a DESCRIPTION of the chunks and withholds them from dbri; DATA, NOT PARTS, since server-owned parts converging would stutter for everyone but the host.
-	local _, chunks = Destruction.Grab(
-		nil,
-		CFrame.new(origin),
-		DIG_SIZE,
-		DIG_MINSZ,
-		nil,
-		GRAB_COUNT
-	)
+	local _, chunks = Destruction.Grab(nil, CFrame.new(origin), DIG_SIZE, DIG_MINSZ, nil, GRAB_COUNT)
 
 	-- the pool is really "how many chunks did I actually get": bare floor gives scraps, open rock gives a full suit.
 	local pool = math.clamp(#chunks * POOL_PER_PIECE, POOL_MIN, POOL_MAX)
 
-	humObj.statusEffects:apply(
-		statusEffects.EarthArmour,
-		ARMOUR_TIME,
-		pool,
-		chunks
-	)
+	humObj.statusEffects:apply(humObj.statusEffects.EarthArmour, ARMOUR_TIME, pool, chunks)
 
 	fireVFX("camShake", origin, 400, 1, 0.1)
 
 	-- query the box, then reject anything outside the real 10-stud sphere
-	local _, hits = this:hitbox(
-		CFrame.new(origin),
-		BOX_SIZE,
-		nil,
-		true -- world space
-	)
+	local _, hits = this:hitbox(CFrame.new(origin), BOX_SIZE, nil, true) -- world space
 
 	local landed = 0
 	for _, enemy in pairs(hits) do
@@ -135,12 +114,7 @@ local function useFunc(this:myself)
 		local attack = this:makeAtk(KNOCK, enemy, dir)
 
 		-- decayT -1: no linear decay, so there is no snap-back at the end of the shove.
-		attack.knockback = this:knockback(
-			dir * 24 + Vector3.new(0, 5, 0),
-			0.1,
-			false,
-			-1
-		)
+		attack.knockback = this:knockback(dir * 24 + Vector3.new(0, 5, 0), 0.1, false, -1)
 
 		this:executeAttack(attack)
 		if attack:isHit() then

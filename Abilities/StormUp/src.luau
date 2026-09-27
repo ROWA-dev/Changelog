@@ -16,9 +16,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)
@@ -27,8 +25,7 @@ local Targeting = require(game.ServerStorage.ROWA.Modules.Targeting)
 local fireVFX   = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx    = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
---- BLUE lightning, so the flag is `lightning` and it carries Shock. The yellow
---- pair (BoltPunch, JoltKick) is `magic` and deliberately does not.
+--- BLUE lightning, so the flag is `lightning`; the yellow pair (BoltPunch, JoltKick) is `magic`.
 local STORM = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.lightning,

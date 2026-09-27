@@ -413,7 +413,8 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
 ## 9. Other server classes
   Class/StatusEffects.luau   :apply(effect, duration, ...) / :remove(effect),
                              auto-cleanup keyed by effect NAME, so applying
-                             twice refreshes instead of stacking.
+                             twice calls onStack on the live one (default:
+                             refresh) instead of making a second.
                              `debuffMult` scales a DEBUFFS entry's duration
                              + amp on the way in; that set is the one
                              "is it harmful" list.
@@ -424,6 +425,9 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              beats fire). Nothing else cross-cancels.
   Class/HumObj/cardLoader    :addCard(id) / :hasCard(id) / :remCard(id),
                              card definitions listed in ROWA/Cards.luau.
+                             A card's addConnection/setMod/timedMod are undone
+                             by cardBase.destroy; a stat-only card is just a
+                             `mods` row with no module.
                              Entries are {id, card}, and `card` is the error
                              STRING when a load failed -- bin one through
                              destroyCard, never `v:destroy()`.

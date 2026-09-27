@@ -2,7 +2,6 @@
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
-	_modKey: string,
 	_healthApplied: boolean,
 	_low: boolean?,
 }
@@ -21,13 +20,11 @@ local function refresh(self:myself, hum:Humanoid)
 	local low = hum.Health <= LOW_HP
 	if low == self._low then return end
 	self._low = low
-	self._humObj.healthHeal:SetMod(self._modKey, if low then RCT_BONUS else HEAL_BONUS)
+	self:setMod(self._humObj.healthHeal, if low then RCT_BONUS else HEAL_BONUS)
 end
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	self._modKey = "sixeye:" .. tostring(self.randID)
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	self._healthApplied = false
 
 	local hum:Humanoid? = humObj.Hum
@@ -39,23 +36,17 @@ function module.new(humObj):myself
 		refresh(self, hum)
 		self:addConnection(hum.HealthChanged:Connect(function()
 			refresh(self, hum :: Humanoid)
-		end), "sixeye")
+		end))
 	end
 
 	return self
 end
 
 function module.destroy(self:myself)
-	self:remConnection("sixeye")
-	local humObj = self._humObj
-	if humObj then
-		humObj.healthHeal:RemoveMod(self._modKey)
-
-		local hum:Humanoid? = humObj.Hum
-		if self._healthApplied and hum and hum.Parent then
-			hum.MaxHealth = math.max(1, hum.MaxHealth - MAX_HEALTH)
-			hum.Health = math.min(hum.Health, hum.MaxHealth)
-		end
+	local hum:Humanoid? = self._humObj.Hum
+	if self._healthApplied and hum and hum.Parent then
+		hum.MaxHealth = math.max(1, hum.MaxHealth - MAX_HEALTH)
+		hum.Health = math.min(hum.Health, hum.MaxHealth)
 	end
 	baseClass.destroy(self)
 end

@@ -30,9 +30,6 @@ Footguns, silent failures and "why is this not working" traps.
 ## IDS ARE PERSISTED, NEVER RENUMBER
   * `ROWA/Weps.luau` wepList and `ROWA/Abilities.luau` abilityList map numeric
     ids to modules. Those ids are saved on player items. Only APPEND.
-  * Several abilities are not registered (EarthShot, HitSelf, StrongKick,
-    StrongShove), so `getAbilityClass` ERRORs on them. Require the
-    module directly, or add it to the list.
 
 ## STATS: AdditiveValue on BOTH now
   * WepBase AND AbilityBase: atkRate / range / atkRateOffset / knockbackMult

@@ -2,7 +2,6 @@
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
-	_modKey: string,
 	_healthApplied: boolean,
 	_hardened: {[Instance]: {any}},
 }
@@ -43,14 +42,12 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	self._modKey = "haki:" .. tostring(self.randID)
+	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
 	self._healthApplied = false
 	self._hardened = {}
 
-	humObj.wepDmgMult:SetMod(self._modKey, WEAPON_DAMAGE)
-	humObj.maxPosture:SetMod(self._modKey, MAX_POSTURE)
+	self:setMod(humObj.wepDmgMult, WEAPON_DAMAGE)
+	self:setMod(humObj.maxPosture, MAX_POSTURE)
 	humObj.posture.Value = math.min(humObj.posture.Value + MAX_POSTURE, humObj.maxPosture.Value)
 
 	local hum:Humanoid? = humObj.Hum
@@ -67,41 +64,33 @@ function module.new(humObj):myself
 	-- (Weps id 1), so the hardened arms are covered and abilities are not.
 	self:addConnection(humObj.beforeAttack:Connect(function(attack)
 		if attack:isWep() then attack.postureMult += WEAPON_POSTURE end
-	end), "hakiPosture")
+	end))
 
 	-- whatever is already on the body, then anything wielded later.
 	for _, w in ipairs(humObj.equippedWeapons) do hardenWeapon(self, w) end
 	hardenWeapon(self, humObj.heldWeapon)
 	self:addConnection(humObj:wieldChanged():Connect(function(weapon)
 		hardenWeapon(self, weapon)
-	end), "hakiWield")
+	end))
 
 	return self
 end
 
 function module.destroy(self:myself)
-	self:remConnection("hakiWield")
-	self:remConnection("hakiPosture")
 	for inst, was in pairs(self._hardened) do
 		local target = inst :: any -- BasePart or Trail, both restore off .Color
 		target.Color = was[1]
 		if was[2] then target.Material = was[2] end
 	end
-	table.clear(self._hardened)
 
 	local humObj = self._humObj
-	if humObj then
-		humObj.wepDmgMult:RemoveMod(self._modKey)
-		humObj.maxPosture:RemoveMod(self._modKey)
-		humObj.posture.Value = math.min(humObj.posture.Value, humObj.maxPosture.Value)
-
-		local hum:Humanoid? = humObj.Hum
-		if self._healthApplied and hum and hum.Parent then
-			hum.MaxHealth = math.max(1, hum.MaxHealth - MAX_HEALTH)
-			hum.Health = math.min(hum.Health, hum.MaxHealth)
-		end
+	local hum:Humanoid? = humObj.Hum
+	if self._healthApplied and hum and hum.Parent then
+		hum.MaxHealth = math.max(1, hum.MaxHealth - MAX_HEALTH)
+		hum.Health = math.min(hum.Health, hum.MaxHealth)
 	end
-	baseClass.destroy(self)
+	baseClass.destroy(self) -- mods come off here, so the posture clamp follows it
+	humObj.posture.Value = math.min(humObj.posture.Value, humObj.maxPosture.Value)
 end
 
 return table.freeze(module)

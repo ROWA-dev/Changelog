@@ -1,5 +1,5 @@
 --!strict
--- HollowPurple - 4.25s charge (1.22 cancellable + 3.03 committed and untouchable), then a 350 studs/s beam that carves the lane and ignores world geometry.
+-- HollowPurple - CHARGE_OPEN cancellable + CHARGE_LOCKED committed and untouchable, then a beam that carves the lane and ignores world geometry.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -14,9 +14,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils  = require(game.ServerScriptService.Utils.DmgUtils)

@@ -12,9 +12,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
@@ -31,7 +29,7 @@ local function useFunc(this:myself)
 	
 	local anim = this:PlayAnim(script.Init, 0, 1, 1)
 
-	humObj.walkSpeed:SetMod("stopMoving", -100)
+	humObj.walkSpeed:SetMod(cooldownID, -100)
 	this:useMana()
 	this:triggerCD(cooldownID, 20, true)
 	this:atkWait(0.1)
@@ -57,7 +55,7 @@ local function useFunc(this:myself)
 	
 	if triggeredBy == nil then
 		this:atkWait(0.7) -- 0.7s time to punish this guy lol
-		humObj.walkSpeed:RemoveMod("stopMoving")
+		humObj.walkSpeed:RemoveMod(cooldownID)
 		return
 	end
 
@@ -65,7 +63,7 @@ local function useFunc(this:myself)
 		triggeredBy:TrueStun(0.7)
 	end
 	if triggeredBy.walkSpeed then
-		triggeredBy.walkSpeed:SetMod("stopMoving", -100)
+		triggeredBy.walkSpeed:SetMod(cooldownID, -100)
 	end
 	
 	local char = humObj.Hum.Parent
@@ -77,6 +75,7 @@ local function useFunc(this:myself)
 	local sound = script.counter:Clone()
 	sound.Parent = humObj.HRootPart
 	sound:Play()
+	game.Debris:AddItem(sound, 4)
 	
 	this:atkWait(0.6)
 	
@@ -120,8 +119,6 @@ local function useFunc(this:myself)
 		end
 		
 		if attack:isHit() then
-			-- hits are entities now; triggeredBy is still a HumObj, so compare
-			-- through .Hum rather than against the entity itself
 			if enemy.Hum == triggeredBy.Hum then
 				victimWasHit = true
 			end
@@ -132,12 +129,14 @@ local function useFunc(this:myself)
 				attackActualVictimNow:Stun(0.4)
 			end
 			
+			-- not in the Combatant contract: a non-HumObj victim just isn't held
 			local grabClass = attackActualVictimNow.grab
-			local grab = grabClass:grab(humObj)
-			grab.C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0,3.5)
+			if grabClass then
+				grabClass:grab(humObj).C1 = CFrame.Angles(0, math.rad(180),0) * CFrame.new(0,0,3.5)
+			end
 			
 			task.wait(0.2)
-			grabClass:release()
+			if grabClass then grabClass:release() end
 			local dmgTbl2 = {
 				weight   = dmgUtils.weighEnum.Heavy,
 				type     = bit32.bor(dmgFlag.blunt),
@@ -166,9 +165,6 @@ local function useFunc(this:myself)
 			attack2.knockback = newkb
 
 			this:executeAttack(attack2)
-			--[[if attack2:isHit() then
-				attack2.enemyEntity.ragdoll:ragdoll(60, true, attack2.atkDir*10)
-			end]]
 		elseif anim then
 			anim:Stop(0.2)
 			if victimAnim then victimAnim:Stop(0.1) end
@@ -180,9 +176,9 @@ local function useFunc(this:myself)
 		if victimAnim then victimAnim:Stop(0.1) end
 	end
 	if triggeredBy.walkSpeed then
-		triggeredBy.walkSpeed:RemoveMod("stopMoving")
+		triggeredBy.walkSpeed:RemoveMod(cooldownID)
 	end
-	humObj.walkSpeed:RemoveMod("stopMoving")
+	humObj.walkSpeed:RemoveMod(cooldownID)
 	humObj.canAtkThreshold = tick() + 0.24
 	this:endLag(0.1)
 end

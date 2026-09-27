@@ -1,9 +1,5 @@
 --!strict
---- LionFall - a COUNTER, not the leaping slam the doc describes. Stand for
---- 0.6s; if someone attacks you in that window their damage is CANCELLED and
---- you answer with one enormous punch. The 2.5s is the STANCE, not a windup.
---- Built on ToshiCounter's shape (subscribe to beforeAttacked, abort, remember
---- who threw it). Half the cooldown is charged on a whiff.
+-- LionFall - a counter: an attack inside the STANCE window is cancelled and answered with one huge punch. Half the cooldown on a whiff.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -17,9 +13,7 @@ module.__index = module
 setmetatable(module, { __index = baseClass })
 
 function module.new(humObj:humObj):myself
-	local abstract = baseClass.new(humObj) :: baseClass.myself
-	local self:myself = setmetatable(abstract, module) :: any
-	return self
+	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)

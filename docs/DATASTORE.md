@@ -220,8 +220,8 @@ lives on the slot.
   The payload is assembled server-side because SparseBitSet, ROWA/Cards and
   PlrStats/StatPair all live in ServerStorage. Resolving there is what keeps
   the client from needing any of them. Keep that shape if you extend it.
-  Card ids are persisted and Cards.getCardName THROWS on an id that left the
-  registry, so that lookup is pcall'd.
+  Card ids are persisted, so Cards.getCardName answers "unknown #id" for one
+  that left the registry instead of throwing.
 
 ## 8. GOTCHAS
   * NO SESSION LOCKING. Two servers holding the same player will both
