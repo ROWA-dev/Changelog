@@ -170,7 +170,7 @@ local function useFunc(this:myself)
 		end
 
 		-- the catch box CLOSES as the rush goes on, so it sweeps people onto the ball rather than pushing them ahead of it.
-		local reach = 9 - i / 3
+		local reach = 7 - i / 5
 		local _, hits = this:hitbox(CFrame.new(0, 0, -reach), Vector3.new(5, 5, 6))
 
 		for _, enemy in pairs(hits) do

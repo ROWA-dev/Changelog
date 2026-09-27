@@ -102,7 +102,7 @@ local function useFunc(this:myself)
 
 	local function sweepAhead(from: BasePart, dir: Vector3)
 		local rpos = from.Position
-		local cf = CFrame.new(rpos + dir.Unit * 3, rpos + dir.Unit * 6)
+		local cf = CFrame.new(rpos + dir.Unit, rpos + dir.Unit * 6)
 		local _, found = this:sweep(cf, Vector3.new(7,7,7), DIVE)
 		return found
 	end
@@ -165,7 +165,7 @@ local function useFunc(this:myself)
 	if hits and not humObj:inStun() then
 		for _, enemy in pairs(hits) do
 			local attack = this:makeAtk(DROP_KICK, enemy, dir)
-			attack.knockback = this:knockback(dir * 20, 0.2, false, -1)
+			attack.knockback = this:knockback(dir * 17, 0.2, false, -1)
 			this:executeAttack(attack)
 			if attack:isHit() then
 				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir*10)

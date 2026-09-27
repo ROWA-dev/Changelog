@@ -58,6 +58,7 @@ local function useFunc(this: myself)
 	this:triggerCD(cooldownID, 50, true)
 	fireVFX("saringan", bill)
 	humObj.statusEffects:apply(statusEffects.Saringan, DURATION, recentVictims(humObj))
+	humObj.statusEffects:apply(statusEffects.Bleed, 10, 1) -- downside: 10 self-bleed
 	this:endLag(0.6)
 end
 
