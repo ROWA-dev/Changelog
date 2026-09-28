@@ -3,6 +3,20 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.21.2 - Test Batch
+
+### Added ✅
+- Using Saringan now applies 10 bleed to self
+
+### Changes 🛠️
+- Dropkick has a later hitbox or something
+  - Air said it
+- Decreased Dropkick knockback
+- Burst also has a later hitbox
+  - Air said it too
+
+<br><sub>2026-09-27</sub>
+
 ## 1.21.1 - Clean Up
 
 ### Changes 🛠️
