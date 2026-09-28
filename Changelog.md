@@ -3,6 +3,19 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.21.1 - Clean Up
+
+### Changes 🛠️
+- Cleaned up code
+  - Simple cards are now one liners in the registry rather than having their own file
+  - There was a whole lot of stuff but I didn't want to read all of it so good luck
+
+### Removed ❌
+- Removed Earth Shot
+- Removed test abilities/cards
+
+<br><sub>2026-09-27</sub>
+
 ## 1.21.0 - Ok
 
 ### Added ✅
@@ -22,7 +35,7 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - A bunch of tiny move changes
 - Ice move requirements changed
 
-<br><sub>2026-09-24</sub>
+<br><sub>2026-09-26</sub>
 
 ## 1.20.0 - The Limit As X Approaches Negative One From The Right Side
 
