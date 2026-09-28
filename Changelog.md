@@ -3,6 +3,27 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.21.0 - Ok
+
+### Added ✅
+- New ice ability: Mass Freeze
+- New mind card: Charisma
+- Ice shards is good now
+- Paper Bomb is now sticky
+- Blocking Divide not send you up anymore
+
+### Changes 🛠️
+- Increased Divide posture multiplier (3x -> 3.5x)
+- Increased Huozai mana cost (0 -> 40)
+- Huozai not super destruction
+- Inverse Red Thing
+- Increased Streak destruction
+- Increased Deep Wound extend duration (4s -> 8s)
+- A bunch of tiny move changes
+- Ice move requirements changed
+
+<br><sub>2026-09-24</sub>
+
 ## 1.20.0 - The Limit As X Approaches Negative One From The Right Side
 
 ### Added ✅
@@ -16,7 +37,6 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Decreased Claymore M1 hitbox size (-1.5 studs)
 - Adjusted Claymore M1 hitbox offset (+0.5 studs Z)
 - Decreased Katana M1 hitbox size (-0.5 studs)
-
 - Cleaned up code
 
 <br><sub>2026-09-24</sub>
