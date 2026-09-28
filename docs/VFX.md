@@ -116,6 +116,9 @@ this is also used for things that would clobber up the network stream... instead
     `self.plrObj == nil`, i.e. on NPCs. Use FireAllClients directly if an
     NPC needs to produce the effect.
 
+  ### FIRE IS TINTED, NOT COPIED
+    A fire fx calls `fireTint(clone, casterPart)` after its Clone; AzureFlames' `fireHue` attribute turns it azure. New fire fx owe that one line, and the caster must be passed.
+
   ### A SUSTAINED EFFECT IS CANCELLED WITH duration <= 0
     A channel ENDS EARLY -- on stun, on feint, on the first connect -- and a
     duration fixed at cast time keeps drawing an ability that already

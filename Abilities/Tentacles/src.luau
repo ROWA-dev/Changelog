@@ -80,7 +80,7 @@ local function useFunc(this:myself)
 		task.wait(TICK_RATE)
 
 		-- drains 1 a tick instead of a useMana up front, and lets go under 4
-		local manaUse = 1
+		local manaUse = this:manaCost(1)
 		local manaNow = humObj:manaNow() - manaUse
 		humObj:setMana(manaNow)
 		if manaNow < 4 then

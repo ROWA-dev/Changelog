@@ -3,12 +3,14 @@ local baseClass = require(script.Parent:WaitForChild("cardBase"))
 local AttackClass = require(game.ServerStorage.ROWA.Class.AttackClass)
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local fireTint = require(game.ReplicatedStorage.Modules.fireTint)
 
 export type myself = baseClass.myself & { _crown: BasePart? }
 
 local KNOCK_THRESHOLD = 9.6
 local PROC_RANGE = 15
 local MANA_DRAIN = 8
+local MANA_REQ = 10
 local BURN_TIME, BURN_DAMAGE = 10, 2
 
 local EXPLOSION = table.freeze({
@@ -20,9 +22,9 @@ local EXPLOSION = table.freeze({
 	onHit = function(attack: any)
 		local owner = attack.myEntity
 		local victim = attack.enemyEntity
-		owner.statusEffects:apply(owner.statusEffects.Burn, BURN_TIME, BURN_DAMAGE)
-		victim.statusEffects:apply(owner.statusEffects.Burn, BURN_TIME, BURN_DAMAGE)
-		fireVFX("emperorFlame", victim.HRootPart.Position, attack.atkDir)
+		owner.statusEffects:apply(owner.statusEffects.Burn, BURN_TIME, BURN_DAMAGE, owner)
+		victim.statusEffects:apply(owner.statusEffects.Burn, BURN_TIME, BURN_DAMAGE, owner)
+		fireVFX("emperorFlame", victim.HRootPart.Position, attack.atkDir, owner.Model)
 	end,
 })
 
@@ -30,12 +32,35 @@ local module = {}
 module.__index = module
 setmetatable(module, { __index = baseClass })
 
+-- rebuilt rather than repainted, since fireTint only maps one way and losing the hue must restore it
+local function wearCrown(self: myself)
+	if self._crown then
+		self._crown:Destroy()
+		self._crown = nil
+	end
+	local char = self._humObj.Model
+	local head = char and char:FindFirstChild("Head")
+	if not (head and head:IsA("BasePart")) then
+		return
+	end
+	local crown = script.emperor:Clone()
+	local weld = crown:FindFirstChild("Weld")
+	if not (weld and weld:IsA("Weld")) then
+		crown:Destroy()
+		return
+	end
+	weld.Part1 = head
+	fireTint(crown, char)
+	crown.Parent = char
+	self._crown = crown
+end
+
 function module.new(humObj): myself
 	local self: myself = setmetatable(baseClass.new(humObj), module) :: any
 
 	self:addConnection(
 		humObj.beforeAttack:Connect(function(attack: any)
-			if attack.myEntity ~= humObj or attack.knockback == nil then
+			if attack.myEntity ~= humObj or attack.knockback == nil or attack.dmgTbl.stunMeOnParried == 0 then
 				return
 			end
 			local victim = attack.enemyEntity
@@ -62,7 +87,7 @@ function module.new(humObj): myself
 			end
 
 			local victim = attack.enemyEntity
-			if victim == nil or victim.isActive ~= true then
+			if victim == nil or victim.isActive ~= true or humObj:manaNow() < MANA_REQ then
 				return
 			end
 			humObj:setMana(humObj:manaNow() - MANA_DRAIN)
@@ -84,18 +109,13 @@ function module.new(humObj): myself
 		end)
 	)
 
+	wearCrown(self)
+	-- cards load in pick order, so AzureFlames can set the hue after this
 	local char = humObj.Model
-	local head = char and char:FindFirstChild("Head")
-	if head and head:IsA("BasePart") then
-		local crown = script.emperor:Clone()
-		local weld = crown:FindFirstChild("Weld")
-		if weld and weld:IsA("Weld") then
-			weld.Part1 = head
-			crown.Parent = char
-			self._crown = crown
-		else
-			crown:Destroy()
-		end
+	if char then
+		self:addConnection(char:GetAttributeChangedSignal("fireHue"):Connect(function()
+			wearCrown(self)
+		end))
 	end
 
 	return self

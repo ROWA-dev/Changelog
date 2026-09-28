@@ -84,8 +84,8 @@ destroys all four; `table.clear` alone leaks their mod lists.
 
 1. false if `humObj.attacking` or `:canAttack() == false`
 2. false if `notWepClass` matches the wielded weapon **family**
-3. false if `:manaNow() < manaUse`, and broadcasts the `noMana` tell, throttled to
-   one per 0.3s because UseAbility retry-loops
+3. false if `:manaNow() < :manaCost(manaUse)` (scaled by the caster's `manaCostMult`),
+   and broadcasts the `noMana` tell, throttled to one per 0.3s because UseAbility retry-loops
 4. `using_ability = self`, `attacking = true`, `ChangeBlocking(false)`
 5. **pcalls** useFunc and *warns* on error — your errors are not crashes
 6. clears `using_ability`, `attacking = false`, returns true

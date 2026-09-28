@@ -79,7 +79,7 @@ local function useFunc(this:myself)
 		local id = enemy.entityId
 		if burned[id] then return end
 		burned[id] = true
-		enemy.statusEffects:apply(humObj.statusEffects.Burn, 6, 3)
+		enemy.statusEffects:apply(humObj.statusEffects.Burn, 6, 3, humObj)
 	end
 
 	-- fixed-rhythm channel, so the interrupt checks are hand-rolled: feintWait would fight the cadence.

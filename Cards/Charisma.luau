@@ -3,7 +3,7 @@ local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself
 
-local DURATION, CUT = 10, 0.15
+local DURATION, CUT = 10, 0.10
 
 local module = {}
 module.__index = module

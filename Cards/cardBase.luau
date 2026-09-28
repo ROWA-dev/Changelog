@@ -5,10 +5,12 @@ export type myself = {
 	_cons: {any}?,
 	_avs: {any}?,
 	_until: number?,
+	_hp: number?,
 
 	addConnection: (self:myself, con:any) -> (),
 	setMod: (self:myself, av:any, n:number) -> (),
 	timedMod: (self:myself, av:any, n:number, t:number) -> (),
+	addMaxHealth: (self:myself, n:number) -> (),
 
 	new: (humObj:any)->myself,
 	destroy: (self:myself)->(),
@@ -23,8 +25,14 @@ function module.new(humObj:any):myself
 	return setmetatable({ _humObj = humObj, _key = "card" .. nextKey }, module) :: any
 end
 
--- undoes everything handed to addConnection/setMod, so most cards need no destroy of their own
+-- undoes everything handed to addConnection/setMod/addMaxHealth, so most cards need no destroy of their own
 function module.destroy(self:myself)
+	local hp = self._hp
+	local hum:Humanoid? = hp and self._humObj.Hum
+	if hp and hum and hum.Parent then
+		hum.MaxHealth = math.max(1, hum.MaxHealth - hp)
+		hum.Health = math.min(hum.Health, hum.MaxHealth)
+	end
 	if self._cons then
 		for _, con in self._cons do con:Disconnect() end
 	end
@@ -47,6 +55,15 @@ function module.setMod(self:myself, av:any, n:number)
 	local avs = self._avs
 	if avs == nil then avs = {} self._avs = avs end
 	if not table.find(avs, av) then table.insert(avs, av) end
+end
+
+-- +n MaxHealth and Health now, taken back by destroy
+function module.addMaxHealth(self:myself, n:number)
+	local hum:Humanoid? = self._humObj.Hum
+	if hum == nil or hum.Parent == nil then return end
+	hum.MaxHealth += n
+	hum.Health = math.min(hum.Health + n, hum.MaxHealth)
+	self._hp = (self._hp or 0) + n
 end
 
 -- setMod that comes off t seconds after the LAST call, so a re-trigger extends instead of being cut short

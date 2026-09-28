@@ -78,7 +78,7 @@ local cardList:clType = {
 	},
 	[9] = {
 		name = "Strength",
-		desc = "your basic attacks deal 5% more damage",
+		desc = "your basic attacks deal 5% more weapon damage",
 		mods = { wepDmgMult = 0.05 }, -- AttackClass reads it for weapon attacks only
 		req = {
 			strength = 6,
@@ -89,7 +89,7 @@ local cardList:clType = {
 	},
 	[10] = {
 		name = "Haki",
-		desc = "+10% basic weapon damage, +10% weapon posture damage, +20 posture, +10 max health",
+		desc = "+10% weapon damage, +10% weapon posture damage, +20 posture, +10 max health",
 		module = manifold.Haki,
 		req = { strength = 6, fortitude = 4 },
 	},
@@ -107,7 +107,7 @@ local cardList:clType = {
 	},
 	[13] = {
 		name = "Six Eyes",
-		desc = "+10 max health and 20% faster healing, quadrupled while nearly dead. Exclusive with Saringan",
+		desc = "+10 max health and 20% faster healing, 4x faster knockdown recovery. Abilities cost HALF mana. Exclusive with Saringan",
 		module = manifold.SixEye,
 		req = { mind = 6 },
 	},
@@ -147,7 +147,7 @@ local cardList:clType = {
 		name = "Mana Pores",
 		desc = "regain mana upon blocking an attack",
 		module = manifold.ManaPores,
-		req = { mind = 4 },
+		req = { mind = 2 },
 	},
 	[20] = {
 		name = "Frenzied Form",
@@ -223,7 +223,7 @@ local cardList:clType = {
 		name = "Emperor Flame",
 		desc = "Strong knockback burns both fighters and detonates on the victim.",
 		module = manifold.EmperorFlame,
-		req = { flame = 10 },
+		req = { flame = 9, strength = 1 },
 	},
 	[32] = {
 		name = "Dispel",
@@ -239,9 +239,21 @@ local cardList:clType = {
 	},
 	[34] = {
 		name = "Charisma",
-		desc = "all your hits charm, charmed enemies deal 15% less damage to you",
+		desc = "all your hits charm, charmed enemies deal 10% less damage to you",
 		module = manifold.Charisma,
 		req = { mind = 3 },
+	},
+	[35] = {
+		name = "Azure Flames",
+		desc = "your fire moves deal 20% more damage, your burns are 50% stronger, and your fire burns bright blue",
+		module = manifold.AzureFlames,
+		req = { flame = 4, mind = 4 },
+	},
+	[36] = {
+		name = "Will Power",
+		desc = "+20 max health. immune to charm from anyone with equal or less mind than you",
+		module = manifold.WillPower,
+		req = { mind = 2, fortitude = 3 },
 	},
 }
 table.freeze(cardList)

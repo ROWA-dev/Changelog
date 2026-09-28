@@ -23,7 +23,7 @@ local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local EXPLO3 = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = dmgFlag.fire,
-	dmg      = 10, -- too op bro
+	dmg      = 8,
 	stun     = 0.2,
 	posMult  = 0.5,
 	parryH   = 0.2,
@@ -34,7 +34,7 @@ local KUNAI_COUNT  = 4
 local BLAST_RADIUS = 16
 local TARGET_RANGE = 200
 --- seconds between blasts in one cast
-local BLAST_GAP    = 0.1
+local BLAST_GAP    = 0.2
 local PAPERBOMB_CONE = table.freeze({
 	distWeight = 4, maxAngle = 0.8, closeRange = 20, closeBonus = 1.5,
 	requireLOS = true, useHead = true,
@@ -56,7 +56,7 @@ local function blast(action: any, bomb: any, fallbackDir: Vector3)
 	if action == nil or action._humObj == nil then return end
 
 	local pos = if bomb.at then bomb.at.CFrame:PointToWorldSpace(bomb.p) else bomb.p
-	fireVFX("kunaiBoom", pos)
+	fireVFX("kunaiBoom", pos, action._humObj.Model)
 
 	--- full extent, so RADIUS * 2
 	local _, hits = action:hitbox(

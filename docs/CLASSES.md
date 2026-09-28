@@ -175,8 +175,8 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                   an entity that never goes down holds nothing.
   GETTING UP is the health regen crossing back over KNOCK_HP. There is no
   timer and no extra loop: the check lives inside the health regenLoop step
-  that already runs once a second, and KNOCKED_REGEN is the only knob
-  deciding how long you lie there.
+  that already runs once a second, and KNOCKED_REGEN (times the lazy
+  getupMult, Six Eyes) is the only knob deciding how long you lie there.
   TWO THINGS HOLD YOU DOWN, and they fail differently. The ragdoll loop
   RE-ISSUES ChangeState(Physics) whenever the humanoid has slipped out of
   it, because Physics is not sticky -- the state machine returns to Running
@@ -417,15 +417,19 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              refresh) instead of making a second.
                              `debuffMult` scales a DEBUFFS entry's duration
                              + amp on the way in; that set is the one
-                             "is it harmful" list.
+                             "is it harmful" list. `resist` (one fn, WillPower
+                             sets it) vetoes an effect before it builds, so
+                             apply may return nil.
                              Burn / Shock / Bleed / Blind / Hemorrhage /
                              HyperArmour / Reflect / EarthArmour / Saringan /
-                             Charm / Freeze. Freeze is the odd one: a BUILDUP METER,
+                             Charm / BurningResolve (a Burn subclass, own key, so
+                             dodge and ice never douse it) /
+                             Freeze. Freeze is the odd one: a BUILDUP METER,
                              and the full encase CLEARS Burn (one-way, ice
                              beats fire). Nothing else cross-cancels.
   Class/HumObj/cardLoader    :addCard(id) / :hasCard(id) / :remCard(id),
                              card definitions listed in ROWA/Cards.luau.
-                             A card's addConnection/setMod/timedMod are undone
+                             A card's addConnection/setMod/timedMod/addMaxHealth are undone
                              by cardBase.destroy; a stat-only card is just a
                              `mods` row with no module.
                              Entries are {id, card}, and `card` is the error

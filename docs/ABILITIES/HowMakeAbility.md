@@ -131,7 +131,7 @@ output and an ability that silently does nothing. Check the console first.
 | hold-to-charge | `this:chargeWait(max, min)` after the commit | CombatAction header |
 | a counter | `beforeAttacked` + `humObj:canCounter()` | §8 |
 | an AoE at a point | world-space hitbox (4th arg `true`), then reject by distance | §6 |
-| burn / freeze / shock / bleed | `enemy.statusEffects:apply(effect, t, n)` | Class/StatusEffects |
+| burn / freeze / shock / bleed | `enemy.statusEffects:apply(effect, t, n)`, Burn takes `humObj` last | Class/StatusEffects |
 | to break the map | `Destruction.Sphere / OBB / Cylinder / Ellipsoid` | DESTRUCTION.md |
 | to freeze / scorch the map for a while | `partFx.apply(part, partFx.Burn, t)` | Modules/partFx |
 | ice on the ground | `layIce(pos, normal, size, partHit)` | Modules/layIce, VFXQuiver/placeSnow |
@@ -139,6 +139,7 @@ output and an ability that silently does nothing. Check the console first.
 | to knock them down | `enemy.ragdoll:ragdoll(t, stopOnGround, dir)` | CLASSES.md |
 | a cheaper price for a whiff | tiers: short first, full at the commit | §5 |
 | a screen shake, a flash, anything seen | `fireVFX(id, ...)` | VFX.md |
+| fire, in that effect | `fireTint(clone, casterPart)` after the Clone | Modules/fireTint |
 
 ## Naming your cooldown
 

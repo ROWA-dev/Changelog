@@ -335,7 +335,7 @@ anything there.
   !! THIS IS A BALANCE CHANGE, NOT JUST A FIX. The old line never
   touched the anchor, so :manaNow never saw it and the channel was
   effectively FREE after the flat :useMana(). It now really costs
-  MANA_PER_SEC 13/s. Playtest before shipping; if it bites, the dial is
+  MANA_PER_SEC per second. Playtest before shipping; if it bites, the dial is
   MANA_PER_SEC, not the batching.
 
   THE BANDWIDTH IS THE SYMPTOM, NOT THE DISEASE. `v` changes every frame,

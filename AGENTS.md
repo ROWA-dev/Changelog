@@ -26,7 +26,7 @@ comments rather than leaving a second copy to drift.
 ## Preferred call shape
 How StatusEffects is CALLED. One line, no ceremony:
 
-    enemy.statusEffects:apply(humObj.statusEffects.Burn, 10, 3)
+    enemy.statusEffects:apply(humObj.statusEffects.Burn, 10, 3, humObj)
 
 No nil check (Combatant guarantees an inert stub), no handle to keep, no
 cleanup, safe to spam every hit (apply dedupes -> onStack).

@@ -6,8 +6,8 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "HollowPurple",
-	-- a third of the pool, scaled like Armor's.
-	manaUse = 60,
+	-- 2x, over the 100 pool: only Six Eyes' half (60) can cast it.
+	manaUse = 120,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module

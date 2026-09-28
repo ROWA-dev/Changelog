@@ -1,10 +1,11 @@
-# testing batched commits
-Update 1.7.8
+# more slop
+Update 1.8.0
 
-later dropkick hitbox (so its abit eaasier to parry)
-similar with burst hitbox abit later (so it abit easier to parry)
-saringan has downside of 10 bleed on self
+burning resolve ability
+azure flames card (some of the vfx turn green cuz textures defauly orange and hue rotates it to green instead of blue so it looks ahh TODO fix)
+willpower card
 
-just testing batched commits
+bostaff heavy now has procedural animation on the throw instead of freezing it mid air
+sixeyes now make all your abilities cost half as much (2x mana cost for red blue purple to balance it out)
 
-and i can see diffs in roblox now so i dont have to say "and more"
+and more balancing

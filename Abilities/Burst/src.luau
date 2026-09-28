@@ -95,7 +95,7 @@ local function detonate(this:myself, caught:{any}, seen:{[number]:boolean})
 				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir * 12)
 			end
 			attack.enemyEntity.statusEffects:apply(
-				humObj.statusEffects.Burn, BURN_TIME, BURN_DMG)
+				humObj.statusEffects.Burn, BURN_TIME, BURN_DMG, humObj)
 		end
 	end
 end
@@ -113,7 +113,7 @@ local function useFunc(this:myself)
 
 	local function bail()
 		if anim then anim:Stop() end
-		fireVFX("igniteBall", 0)
+		fireVFX("igniteBall", 0, rightArm)
 	end
 
 	-- windup, then the shockwave, then 0.2 more
@@ -208,12 +208,12 @@ local function useFunc(this:myself)
 
 	if #caught == 0 then
 		humObj.walkSpeed:RemoveMod(cooldownID)
-		fireVFX("igniteBall", 0)
+		fireVFX("igniteBall", 0, rightArm)
 		this:endLag(0.25)
 		return
 	end
 
-	fireVFX("igniteBall", 3)
+	fireVFX("igniteBall", 3, rightArm)
 	-- consume a feint that lands in the TAIL so it cannot leak into the next action, then detonate anyway.
 	this.isFeinted = false
 

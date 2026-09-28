@@ -547,7 +547,7 @@ large against a 0.3 window; -10 is a statement, i-frames do not answer it.
     weapons scale knockback by character size, abilities do not
 
 8.8 ABILITIES
-    manaUse 10 by default, 6 to 60 overridden, spent at the commit
+    manaUse 10 by default, 6 to 120 overridden, spent at the commit
     cooldowns mostly 6 to 22s, the big moves 40 to 60s
     no whiff penalty (4.6), no air hitbox growth (4.11), cheap feints (4.7)
 

@@ -2,7 +2,6 @@
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 
 export type myself = baseClass.myself & {
-	_healthApplied: boolean,
 	_hardened: {[Instance]: {any}},
 }
 
@@ -43,19 +42,15 @@ setmetatable(module, { __index = baseClass })
 
 function module.new(humObj):myself
 	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
-	self._healthApplied = false
 	self._hardened = {}
 
 	self:setMod(humObj.wepDmgMult, WEAPON_DAMAGE)
 	self:setMod(humObj.maxPosture, MAX_POSTURE)
 	humObj.posture.Value = math.min(humObj.posture.Value + MAX_POSTURE, humObj.maxPosture.Value)
 
+	self:addMaxHealth(MAX_HEALTH)
 	local hum:Humanoid? = humObj.Hum
 	if hum and hum.Parent then
-		hum.MaxHealth += MAX_HEALTH
-		hum.Health = math.min(hum.Health + MAX_HEALTH, hum.MaxHealth)
-		self._healthApplied = true
-
 		local char = hum.Parent
 		for _, name in ipairs(ARMS) do harden(self, char:FindFirstChild(name)) end
 	end
@@ -84,12 +79,7 @@ function module.destroy(self:myself)
 	end
 
 	local humObj = self._humObj
-	local hum:Humanoid? = humObj.Hum
-	if self._healthApplied and hum and hum.Parent then
-		hum.MaxHealth = math.max(1, hum.MaxHealth - MAX_HEALTH)
-		hum.Health = math.min(hum.Health, hum.MaxHealth)
-	end
-	baseClass.destroy(self) -- mods come off here, so the posture clamp follows it
+	baseClass.destroy(self) -- mods and health come off here, so the posture clamp follows it
 	humObj.posture.Value = math.min(humObj.posture.Value, humObj.maxPosture.Value)
 end
 

@@ -7,6 +7,7 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "FullBlue",
+	manaUse = 20, -- 2x, as is the drain: Six Eyes halves both back
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -50,7 +51,7 @@ local AIM_RANGE    = 30             -- raycast ahead of the caster
 local AIM_LIFT     = 7              -- the orb chases 7 studs above the aim point
 local SPAWN_AHEAD  = 8
 local SPAWN_UP     = 12
-local MANA_PER_SEC = 5
+local MANA_PER_SEC = 10
 
 -- !! the pull is a TARGET VELOCITY, not an accumulating impulse: without the damping bound the speed diverges and flings everything it touches.
 local PULL_SPEED   = 35             -- studs/s of INWARD pull, before the field's own
@@ -166,7 +167,7 @@ local function useFunc(this:myself)
 
 		-- !! NEVER write mana.Value; :setMana restamps the anchor clock, and it is batched onto the damage tick because it replicates (~15 packets a channel, not ~240).
 		local canHurt = frame % HURT_EVERY == 0
-		manaOwed += dt * MANA_PER_SEC
+		manaOwed += this:manaCost(dt * MANA_PER_SEC)
 		if canHurt then
 			-- test the computed value, NOT a second :manaNow: re-reading right after setMana(0) returns ~3e-6 and the channel never ends.
 			local left = humObj:manaNow() - manaOwed

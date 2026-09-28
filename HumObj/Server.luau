@@ -50,6 +50,9 @@ export type myself = baseClass.myself & {
 	knockedHp: number?,
 	-- scales the parrier's half of the posture trade in resolveParry. nil unless a card (Counterweight) sets it.
 	parryPostureMult: number?,
+	-- LAZY card knobs (Six Eyes), nil = 1: scales KNOCKED_REGEN / every ability's mana cost.
+	getupMult: number?,
+	manaCostMult: number?,
 	canAtkThreshold: number,
 	dodgeThreshold: number,
 
@@ -145,7 +148,7 @@ setmetatable(module, { __index = baseClass })
 local KNOCK_HP   = baseClass.KNOCK_HP -- shared with the client so both sides derive knocked from replicated Health. SINGLE SOURCE: HumObjClient.
 local KNOCKED_HP = 20 -- damage needed to finish someone while they are down.
 local HEALTH_REGEN  = 0.5 -- hp/sec, upright.
-local KNOCKED_REGEN = 0.5 -- hp/sec, down. THE GETUP CLOCK, and the only thing setting how long you lie there: 1 -> past KNOCK_HP.
+local KNOCKED_REGEN = 0.5 -- hp/sec, down. THE GETUP CLOCK, and with getupMult the only thing setting how long you lie there: 1 -> past KNOCK_HP.
 
 
 local function landSpeed(humObj:any)
@@ -501,8 +504,8 @@ function module.new(hum: Humanoid): myself
 		local knocked = self:isKnocked()
 		-- BEING DRAGGED PAUSES THE CLOCK. Getting up IS health crossing KNOCK_HP, so freezing regen freezes the getup; no separate "cannot stand" flag exists or is needed.
 		if not (knocked and self.draggedBy) then
-			-- healthHeal scales the UPRIGHT rate only: KNOCKED_REGEN is the getup clock, and a heal card must not shorten a knockdown.
-			hum.Health = math.min(hum.Health + dt * (if knocked then KNOCKED_REGEN else HEALTH_REGEN * self.healthHeal.Value), hum.MaxHealth)
+			-- healthHeal scales the UPRIGHT rate only: a heal card must not shorten a knockdown, only getupMult does.
+			hum.Health = math.min(hum.Health + dt * (if knocked then KNOCKED_REGEN * (self.getupMult or 1) else HEALTH_REGEN * self.healthHeal.Value), hum.MaxHealth)
 		end
 		-- upright entities pay one nil check a second and stop here.
 		if self.knockedHp then

@@ -85,7 +85,10 @@ return function(this:wepBase.myself)
 		print("THROW UP! bostaff")
 		
 		victimHumObj:TrueStun(2)
+		local air = (3.867 - anim.TimePosition) / anim.Speed -- 3.867 = the anim's catch key
+		game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("bostaffToss", this._model.mtr, air)
 		disableMotor()
+		task.delay(air, enableMotor)
 		
 		local swiftKick = this:makeAtk(
 			dmgConfig.heavyPunch,
@@ -131,11 +134,6 @@ return function(this:wepBase.myself)
 		end)
 		
 		task.wait(0.8)
-		
-		print("grab back")
-		enableMotor()
-		
-		
 		humObj.walkSpeed:RemoveMod("stopMoving")
 		this:endLag(0.15)
 	else

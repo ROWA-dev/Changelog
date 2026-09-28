@@ -61,6 +61,7 @@ local abilityList:list = {
 	[49] = manifold.Tentacles,
 	[50] = manifold.WindSlash,
 	[51] = manifold.MassFreeze,
+	[52] = manifold.BurningResolve,
 }
 table.freeze(abilityList)
 
@@ -309,6 +310,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.WindSlash] = {
 		desc = "Heavy Slash, shoots out a boomerang projectile",
 		req = { wind = 2 },
+	},
+	[manifold.BurningResolve] = {
+		desc = "Set yourself ablaze: +15% weapon damage",
+		req = { flame = 3, fortitude = 2 },
 	},
 }
 table.freeze(abilityMeta)
