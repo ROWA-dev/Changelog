@@ -3,6 +3,29 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.22.0 - I'm Playing Risk Of Rain 2
+
+### Added ✅
+- New flame/fortitude ability: Burning Resolve
+- New flame/mind card: Azure Flames
+- New mind/fortitude card: Willpower
+- Bo Staff heavy attack now has procedural animation on the throw
+
+### Changes 🛠️
+- Increased Full Blue mana drain
+- Increased Hollow Purple mana cost
+- Increased Inverse Red mana cost
+- Decreased Paper Bomb damage (10 -> 8)
+- Increased time between Paper Bomb explosions (0.1s -> 0.2s)
+- Decreased Charisma cut (0.15s -> 0.1s)
+- Decreased Mana Pores requirement (4 mnd -> 2 mnd)
+- Adjusted Emperor Flame (10 flm -> 9 flm, 1 str)
+- Six Eyes now makes abilities cost half as much
+  - why this is the most stupid thing ever 😡😡😡
+- Cleaned up code
+
+<br><sub>2026-09-28</sub>
+
 ## 1.21.2 - Test Batch
 
 ### Added ✅
