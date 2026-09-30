@@ -16,11 +16,11 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 ### Added ✅
 - En now has All For One so watch out
-- Burning Resolve gives +2 walkspeed when active
 
 ### Changes 🛠️
 - Decreased Burning Resolve tick burn damage (1 -> 0.5)
-- Burning Resolve gives a +15% damage buff or +20% if player also has Azure Flames
+- Burning Resolve now gives a +15% damage buff or +20% if player also has Azure Flames
+- Burning Resolve gives +2 walkspeed when active
 - Changed Harvest VFX
 
 <br><sub>2026-09-30</sub>
