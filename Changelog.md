@@ -3,6 +3,28 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.22.2 - Better Mobile Support
+
+### Changes 🛠️
+- Decreased Burning Resolve damage buff (15% base, 20% with Azure Flames -> 10% base, 15% with Azure Flames)
+- Increased Burning Resolve walkspeed buff (2 -> 4)
+- Mobile support is better now
+
+<br><sub>2026-09-30</sub>
+
+## 1.22.1 - Burning Resolved
+
+### Added ✅
+- En now has All For One so watch out
+- Burning Resolve gives +2 walkspeed when active
+
+### Changes 🛠️
+- Decreased Burning Resolve tick burn damage (1 -> 0.5)
+- Burning Resolve gives a +15% damage buff or +20% if player also has Azure Flames
+- Changed Harvest VFX
+
+<br><sub>2026-09-30</sub>
+
 ## 1.22.0 - I'm Playing Risk Of Rain 2
 
 ### Added ✅
