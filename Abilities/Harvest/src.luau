@@ -82,7 +82,12 @@ local function useFunc(this:myself&any)
 
 	humObj.walkSpeed:SetMod(cooldownID, -100)
 	-- guarded: drawScythe returns nil on an armless rig, and a throw here abandons the restore inside use()'s pcall.
+	local sharp = true
+	local sharpt = tick() + this:scaledTime(0.3)
 	local committed = this:windup(0.5, function(dt)
+		if tick() > sharpt and sharp == true then sharp = false
+			scythe.st.sharp:Emit(1)
+		end
 		if scythe then scythe.BD:Emit(1) end
 	end)
 	humObj.walkSpeed:RemoveMod(cooldownID)

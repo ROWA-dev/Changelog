@@ -25,8 +25,9 @@ this is also used for things that would clobber up the network stream... instead
   heavy pre-clones 25 copies of `vfx2` into a ring buffer and cycles through
   them (`getVFX()`), then Debris-clears the pool at the end.
 
-  Cost: every Clone is real replication traffic. Paid on purpose (anti-rip),
-  so the old "TODO move vfx to client?" notes are decided against (AGENTS.md).
+  Cost: every Clone is real replication traffic, and a sustained one emits
+  over the wire every tick. Those belong in the quiver (B): its lazy fetch
+  keeps assets off a client until first use.
 
 ## B) THE VFX QUIVER / MANIFOLD (networked, lazily loaded) design reasoning? vfx is sparse and not every vfx is ever loaded...
   For cosmetic effects that must run ON CLIENTS (camera shake, screen flash,
@@ -136,6 +137,11 @@ this is also used for things that would clobber up the network stream... instead
     ReplicatedStorage/Modules/fxFollow: icelasers and tentacles.
     Server side is one local -- `local function stopX() fireVFX(id, root, 0) end`
     called on every early-exit branch. IceBeam and FlameDance are the models.
+
+  ### A TOGGLE WITH NO END IS A TAG
+    A one-off fire misses late joiners and stream-ins, so the server tags the
+    model with the quiver id and LocalCore/VFX calls it (model, true/false) on
+    tag add/remove. Add the id to its list there. burningResolve is the model.
 
   ### A PROJECTILE'S DRAWN COPY IS CORRECTED, NOT RE-SENT
     Class/Projectile holds no Instance, so every client integrates its own

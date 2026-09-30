@@ -255,6 +255,12 @@ local cardList:clType = {
 		module = manifold.WillPower,
 		req = { mind = 2, fortitude = 3 },
 	},
+	[37] = {
+		name = "All For One",
+		desc = "your weapon hits take a random card from whoever you hit, once a second",
+		module = manifold.AllForOne,
+		unObtainable = true
+	},
 }
 table.freeze(cardList)
 

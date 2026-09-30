@@ -18,7 +18,7 @@ end
 
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
-local BURN_DMG = 1 -- per 0.4s, halved while you cannot dash
+local BURN_DMG = 0.5 -- per 0.4s, halved while you cannot dash
 -- LIT_CD also stops UseAbility's retry loop putting it straight back out
 local LIT_CD, OUT_CD = 2, 4
 
