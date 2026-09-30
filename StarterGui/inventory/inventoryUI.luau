@@ -296,6 +296,11 @@ end)
 
 local remoteFunc = game.ReplicatedStorage:WaitForChild("RemoteFunction")
 
+-- the charge release (CombatAction:chargeWait). EVERY way of pressing a hotbar slot must send it, or a charge runs to full
+local function hotbarRelease(index:number)
+	inventoryRemote:FireServer(inventoryEnums.releaseHotbar, index)
+end
+
 local function hotbarUse(index:number)	
 	--equipItem(hotbarObj:GetItem(number))
 	inventoryRemote:FireServer(inventoryEnums.selectHotbar, index)
@@ -337,11 +342,8 @@ local keybindEnums = require(modules.keybindEnums)
 local bindFuncs    = require(modules.bindFuncs)
 for i = 1, 10 do
 	bindFuncs[keybindEnums["hotbar"..i]] = function(down) -- lambda
-		-- key UP. Dropped entirely before, which meant nothing downstream
-		-- could ever tell a tap from a hold -- the release never left the
-		-- machine. Charge-style abilities need it; everything else ignores it.
 		if not down then
-			inventoryRemote:FireServer(inventoryEnums.releaseHotbar, i)
+			hotbarRelease(i)
 			return
 		end
 		if hotbarSwap(i) then return end -- bag open + cursor on a slot: swap, don't equip
@@ -537,6 +539,7 @@ local TAP_TIME   = 0.3
 local DOUBLE_TAP = 0.35
 local touchDown:{t:number, index:number?, container:any}? = nil
 local lastTap = {t = 0, index = 0, container = nil::any}
+local hotbarPress:{input:InputObject, index:number}? = nil -- a closed-bag press: its lift is the charge release
 
 uis.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean) 
 	local inputType = input.UserInputType
@@ -562,8 +565,8 @@ uis.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 
 			local hotbarIndex = hotbarUI:getGridIndex(p)
 			if hotbarIndex ~= 0 then
-				--print(hotbarIndex)
 				hotbarUse(hotbarIndex)
+				hotbarPress = {input = input, index = hotbarIndex}
 			end
 		end
 	end
@@ -572,6 +575,13 @@ uis.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 	local inputType = input.UserInputType
 	local isTouch = inputType == Enum.UserInputType.Touch
 	if inputType == Enum.UserInputType.MouseButton1 or isTouch then
+		-- that finger, wherever it lifts (a mouse may not hand back the same object)
+		local press = hotbarPress
+		if press and (press.input == input or (not isTouch and press.input.UserInputType == inputType)) then
+			hotbarPress = nil
+			hotbarRelease(press.index)
+		end
+
 		local down = touchDown
 		touchDown = nil
 		if isTouch and down and down.index ~= nil
@@ -588,6 +598,7 @@ uis.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 				quickMove(down.container, down.index)
 			elseif down.container == hotbarContainer then
 				hotbarUse(down.index)
+				hotbarRelease(down.index) -- cast on the lift, so it's already a tap
 			end
 			return
 		end

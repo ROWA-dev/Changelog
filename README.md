@@ -1,9 +1,10 @@
-# burning resolved
-Update 1.8.1
+# better mobile support
+Update 1.8.3
 
-burning resolve does half as much self dmg as before and 15% outgoing or 20% if azure flames, and give +2 walkspeed on active
+buurning resolve
+from dmg boost 15% -> 10% for speed 2 -> 4
 
-small vfx on harvest
-
-En(Chant) now has All For One ❤️
-
+in mobile
+the shift lock button and run threshold is configurable
+better UI UX on the edit mode
+dedicated button for side wepons

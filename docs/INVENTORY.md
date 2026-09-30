@@ -182,7 +182,7 @@ Ownership chain:
       -> RE selectHotbar(i)
     Core.luau: needs loadedSlot AND humObj.isActive, else silently returns.
       item.equipped     -> item:unEquip()
-      item is an ability-> item:equip(humObj), return (abilities do not
+      item is an ability-> item:cast(humObj), return (abilities do not
                            occupy the single equipped-item slot; they
                            self-unequip after use). "is an ability" is
                            `item.aId ~= nil`, NOT `item.ability`, which is
@@ -190,6 +190,7 @@ Ownership chain:
       otherwise         -> unEquip the current plrObj.equippedItem (BAIL if
                            it refuses), then item:equip(humObj), store it.
     Clicking a hotbar cell with the mouse routes into the same hotbarUse.
+    E (keybindEnums.ability) casts the first ablityItem:isReady ability, left to right, and nothing while one is queued/casting (Core/Inputs startAbility).
     With the BAG OPEN the same keys mean something else first: see
     `hotbarSwap` in §6 (minecraft's hover-a-slot-press-a-number).
 

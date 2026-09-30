@@ -31,6 +31,7 @@ export type myself = {
 	isFeinted: boolean,
 
 	use:     (self: myself, useFunc: useFunc) -> boolean,
+	hasAction: (self: myself) -> boolean,
 	attach:  (self: myself) -> (),
 	detach:  (self: myself) -> (),
 	armPart: (self: myself) -> BasePart?,
@@ -130,6 +131,11 @@ end
 
 --- only Shield cares; the base is inert so nothing else has to implement it.
 function module.onWieldChanged(self: any, weapon: any?) end
+
+--- something for the bind to fire. Shield keeps the base use (no body); every armed off-hand overrides it
+function module.hasAction(self: any): boolean
+	return self.use ~= module.use
+end
 
 --- THE action, same guards as AbilityBase.use minus mana. Subclasses pass their body in.
 function module.use(self: any, useFunc: useFunc): boolean

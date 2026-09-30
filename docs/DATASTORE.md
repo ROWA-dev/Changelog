@@ -185,7 +185,8 @@ lives on the slot.
   had no entry for it and the consumers -- which walk the SAVED table -- silently
   dropped it: a new bind was unpressable AND unrebindable (setupBinds skips it,
   the settings list `continue`s past it) until a keybind reset. Same for a new
-  touch button or wheel slot. Adding one now needs a default and nothing else.
+  touch button or wheel slot. Adding one now needs a default and nothing else
+  (a touch button: append to loadButtonsData ORDER and raise defaultTouchButtons' count; each default is {0,0,0,0} = "authored UI").
   On LOAD the fallback is the SAVE, not the defaults: a load must never wipe.
   (On SAVE the fallback is refusal, which is why that side webhooks instead.)
 
@@ -241,9 +242,9 @@ lives on the slot.
   * Save zeroes self.sessionTime. A second save in the same session
     contributes 0 playtime, by design.
   * migrateData sets `upToDateReference.touchData = module.cloneDefaultKeybinds()`
-    (KEYBINDS, not cloneDefaultTouchButtons). Looks like a copy-paste bug; it
-    only affects the "did touchData change from default" comparison, but
-    verify before touching it.
+    (KEYBINDS, not cloneDefaultTouchButtons). Copy-paste bug, but verified
+    harmless: the merge mutates that same table, so deepEqual is always true
+    and touchData always passes through untouched.
   * Slots type declares `deSerialize: (plr, data)` but the implementation is
     `deSerialize(data)`. Call it with one arg (PlrData does).
   * Slots.deSerialize silently returns a BRAND NEW slot set if the stored

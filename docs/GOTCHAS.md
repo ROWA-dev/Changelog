@@ -300,6 +300,7 @@ Footguns, silent failures and "why is this not working" traps.
     on shift + a RenderPriority.Last step that out-writes MouseBehavior and
     RotationType) rather than turning it off. Anything that needs the
     cursor back goes through `shiftLock.block(reason, true)`.
+  * PlayerModule is FORKED: `ControlModule/TouchJump` ignores JumpPower (CharController zeroes it every block/attack/stun, which hid the button). Re-apply if you ever replace PlayerModule.
   * `stun` / `dodgeThreshold` / `canAtkThreshold` / `attackAt` / `_hyperUntil`
     are absolute `tick()` timestamps, not durations.
   * CLIENT `trueStun` USED TO BE PERMANENTLY 0. `:TrueStun` routes through

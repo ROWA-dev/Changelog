@@ -72,6 +72,7 @@ local function beginCapture(slot: TextButton, noneBtn: TextButton, apply: (Input
 	end
 
 	captureConn = uis.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean)
+		if input.UserInputType == Enum.UserInputType.Touch then return end -- a tap is not a key: it would bind the action to EVERY touch
 		if gameProcessedEvent == true and input.UserInputType == Enum.UserInputType.Keyboard then return end
 		if input.UserInputType == Enum.UserInputType.Keyboard then
 			task.wait(0.1)
@@ -179,6 +180,7 @@ end)
 
 return {
 	order = 100,
+	available = uis.KeyboardEnabled, -- nothing to bind on a phone
 	open = open,
 	close = close,
 }

@@ -664,7 +664,11 @@ function module.EquipSideWep(self:myself&any, sideWep: any?)
 	if old == sideWep then return end
 	self.sideWep = sideWep
 	if old then old:destroy() end
-	if sideWep then sideWep:attach() end
+	if sideWep then
+		sideWep:attach()
+		-- tells the owner's client this off-hand DOES something, so mobile shows its Off-hand button (MobileEnable). The tag rides the model: replicates with it, gone when it's destroyed, no remote
+		if sideWep._model and sideWep:hasAction() then game:GetService("CollectionService"):AddTag(sideWep._model, "offhandAct") end
+	end
 end
 
 --- the `sideWep` bind lands here. Inert without one, so the bind is always safe to press.

@@ -312,7 +312,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { wind = 2 },
 	},
 	[manifold.BurningResolve] = {
-		desc = "Set yourself ablaze: +15% weapon damage (20% with Azure Flames), +2 speed",
+		desc = "Set yourself ablaze: +10% weapon damage (15% with Azure Flames), +4 speed",
 		req = { flame = 3, fortitude = 2 },
 	},
 }
