@@ -25,7 +25,7 @@ local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
 
 local JOLT = {
 	weight   = dmgUtils.weighEnum.Heavy,
-	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
+	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic, dmgFlag.static),
 	dmg      = 16,
 	stun     = 0.9,
 	posMult  = 2,

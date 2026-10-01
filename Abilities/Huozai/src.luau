@@ -175,7 +175,7 @@ local function useFunc(this:myself)
 					attack.knockback = this:knockback(
 						forward * (near and 10.8 or 3.6), 0.15, false, -1)
 					this:executeAttack(attack)
-					if attack:isHit() then ignite(enemy) end
+					if attack:isHit() then ignite(attack.enemyEntity) end
 				end)
 			end
 		end

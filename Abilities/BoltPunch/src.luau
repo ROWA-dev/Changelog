@@ -22,7 +22,7 @@ local hitSfx  = require(game.ServerStorage.ROWA.Modules.hitSfx)
 
 local BOLT = {
 	weight   = dmgUtils.weighEnum.Heavy,
-	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic),
+	type     = bit32.bor(dmgFlag.blunt, dmgFlag.magic, dmgFlag.static),
 	dmg      = 20,
 	stun     = 1,
 	posMult  = 2,

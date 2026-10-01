@@ -1417,6 +1417,11 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 		remoteEvent:FireClient(plr, S2C.combatEdge, enemyModel, joined, remaining)
 	end
 
+	-- statusEdge -- (effect key, seconds left), 0 = gone. Same field shape as above; statusEffects:destroy clears it.
+	self.statusEffects.onEdge = function(key: string, remaining: number)
+		remoteEvent:FireClient(plr, S2C.statusEdge, key, remaining)
+	end
+
 
 	-- C2S: its OWN id space, see replIds.
 	self.SubscribedEventCB = function(id:number, value: any)

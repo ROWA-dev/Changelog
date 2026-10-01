@@ -427,6 +427,10 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              Freeze. Freeze is the odd one: a BUILDUP METER,
                              and the full encase CLEARS Burn (one-way, ice
                              beats fire). Nothing else cross-cancels.
+                             `onEdge` (nil for NPCs) feeds the owner's HUD,
+                             StarterGui/statusEffects. An effect ending
+                             itself calls `self:retire()`, never a bare
+                             `duration = 0`, or the HUD row lingers.
   Class/HumObj/cardLoader    :addCard(id) / :hasCard(id) / :remCard(id),
                              card definitions listed in ROWA/Cards.luau.
                              A card's addConnection/setMod/timedMod/addMaxHealth are undone

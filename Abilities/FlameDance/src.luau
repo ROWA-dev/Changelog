@@ -130,7 +130,7 @@ local function useFunc(this:myself)
 				if attack:isHit() then
 					FD.parryH = 1
 					-- standing in the fire is what should set you on fire.
-					ignite(enemy)
+					ignite(attack.enemyEntity)
 				elseif attack:isParried() then
 					FD.parryH = 1
 				end

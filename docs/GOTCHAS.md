@@ -127,6 +127,9 @@ Footguns, silent failures and "why is this not working" traps.
   * `parryH` / `dodgeH` are ADDED to the defender's window. NEGATIVE = harder
     to parry. Sign errors here make heavies parry-food.
   * `dmgTbl.onHit` only fires on the HIT branch, not on block, parry or dodge.
+  * After `:executeAttack`, whoever got hit is `attack.enemyEntity`, NOT your
+    hitbox's `enemy`: Reflect swaps it to the attacker. Apply on-hit effects to
+    `attack.enemyEntity` or a reflected Freeze freezes the reflector.
   * dmgConfig tables are deep-frozen. Mutating one at runtime throws. Use
     `attack.dmgMult` or build a fresh table.
   * `:Damage(amt)` bypasses every resolution step. Use it only for

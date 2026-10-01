@@ -22,7 +22,7 @@ local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destructi
 
 local SHOCK = {
 	weight   = dmgUtils.weighEnum.Medium,
-	type     = dmgFlag.slash,
+	type     = bit32.bor(dmgFlag.slash, dmgFlag.static),
 	dmg      = 24,
 	stun     = 0.9,
 	posMult  = 2,

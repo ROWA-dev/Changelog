@@ -108,6 +108,9 @@ export type myself = baseClass.entity & {
 	combatants: { [Instance]: RBXScriptConnection }?,
 	combatDeadline: number,
 	onCombatChanged: Signal.Signal<Instance, boolean>?,
+
+	-- S2C.statusEdge's one reader, (key, seconds left) with 0 = gone. Set by StarterGui/statusEffects; nil = dropped.
+	onStatus: ((key: string, remaining: number) -> ())?,
 }
 
 local module = {
@@ -841,6 +844,8 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 			-- (enemyModel, joined, remaining?). Edge, not a snapshot.
 			local joined, remaining = ...
 			setCombatant(value, joined, remaining)
+		elseif id == S2C.statusEdge then
+			if self.onStatus then self.onStatus(value, ...) end
 		end
 	end)
 	self:AddConnection(rcon, "repliClient")

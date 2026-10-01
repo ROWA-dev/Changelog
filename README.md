@@ -1,10 +1,14 @@
-# better mobile support
-Update 1.8.3
+# static lightning and more cards
+Update 1.8.5
 
-buurning resolve
-from dmg boost 15% -> 10% for speed 2 -> 4
+new cards
+- Callus 20% less dmg on hit during attack
+- Greed breaker 20% more  dmg on hitting attacking enemy
+- Surge all static dmg now chains < 30 studs nearby enemies (OP)
+>yeah deepwoken  cards lol...
 
-in mobile
-the shift lock button and run threshold is configurable
-better UI UX on the edit mode
-dedicated button for side wepons
+yellow lightning are now do "static" dmg
+
+freeze and other abilities now follow the actual shape for applying effects so prediction(Reflect) actually work
+
+status effects have a bare minimum UI on the top right now

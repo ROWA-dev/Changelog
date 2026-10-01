@@ -121,7 +121,8 @@ Ownership chain:
 
   `Container:initReplicateServer` is the ONLY thing that writes to the wire:
   it stamps `self.replicationId` and connects all four server signals to
-  `FireClient(plr, containerID, <enum>, ...)`. The ItemUpdated payload goes
+  `FireClient(plr, containerID, <enum>, ...)`, returning a handle whose
+  `:Disconnect()` drops all four. The ItemUpdated payload goes
   through `itm:ToClient()` first. onEquipped carries no index, so it LINEAR
   SCANS slots to find the item: O(sz) per equip, flagged TODO in source.
   onCooldown carries the item too and scans the same way.
@@ -141,6 +142,8 @@ Ownership chain:
   loaded or open. That lookup IS the auth model here, and it is sound. It
   used to be copy-pasted into each verb; a new verb calls `resolve.all` +
   `resolve.byId` and does NOT grow a fourth copy.
+  `resolve.canHold` keeps ability items (`aId`) in the slot's own hotbar/
+  inventory; transferItem checks both legs of a swap, quickMoveItem its dest.
 
   `quickMoveItem` names NO destination. The server routes it:
     chest open : hotbar/inventory -> chest,  chest -> inventory then hotbar
@@ -312,20 +315,23 @@ Ownership chain:
     player had. See ReplicatedStorage/Modules/ShiftLock.
 
   ### Opening a chest
-    Workspace/{Chest,SmallChes}/chest.luau builds ONE NamedContainer at
-    server start and stuffs it. ProximityPrompt (16 stud recheck) ->
+    Workspace/MAP/IslandMain/Systems/Chest/chest builds ONE NamedContainer
+    and is THE weapon source: every open restocks any missing wepList id,
+    at most once per REGEN seconds (lazy, no timer), and destroys anything
+    put in that isn't a first copy of a weapon. ProximityPrompt (16 stud recheck) ->
     plrObj:openChest(container)
       -> closeChest() first, slot.openContainer = container,
          container.replicationId = 3 (HARDCODED),
       -> S2C newContainer with containerID=nil + container:ToClient()
-      -> container:initReplicateServer(remote, 3, plr)
+      -> container:initReplicateServer(remote, 3, plr), handle kept as
+         plrObj connection "chest"
     Client builds a fresh ContainerClient at the serialized w/h, calls
     initReplicateClient(remote, 3), ALSO hardcoded 3, opens the backpack
     if closed, and builds an InventoryUI over `otherContainerFrame`.
     Closing (exit button / backpack toggle / new account data) -> C2S
     closeContainer -> plrObj:closeChest() -> calls `container.OnClosed()` if
-    present (the chest scripts hang their lid-close tween off it) and nils
-    openContainer.
+    present (the chest scripts hang their lid-close tween off it), drops the
+    "chest" connection and nils openContainer.
 
 ## 7. AUTHORING
   ### A new item type
@@ -377,12 +383,8 @@ Ownership chain:
     `plrObj:openChest(it)` from your prompt. Set `.OnClosed` for lid VFX.
 
 ## 8. GOTCHAS
-  * SHARED CHESTS LEAK CONNECTIONS. `openChest` calls `initReplicateServer`
-    EVERY time ANY player opens the chest, and `closeChest` disconnects
-    NOTHING. Open a chest N times and its signals fire N times, to every
-    player who ever opened it, forever. The container is one server-wide
-    instance; two players inside it edit the same slots with no locking.
-    Fix this before shipping chests widely.
+  * A chest is one server-wide container; two players inside it edit the
+    same slots with no locking.
   * replicationId 3 is hardcoded in THREE places (plrObj.openChest,
     plrObj.replicateChestOpen, inventoryUI.openOutsideContainer). Only one
     outside container can exist per player because of it.

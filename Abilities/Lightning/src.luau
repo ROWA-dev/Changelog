@@ -1,5 +1,5 @@
 --!strict
---- Lightning - strikes lightning at the aimed point, up to STRIKE_RANGE away
+-- Lightning - strikes lightning at the aimed point, up to STRIKE_RANGE away
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -58,9 +58,7 @@ local function useFunc(this:myself)
 
 	fireVFX("lstrike", FX_UP, char)
 
-	--[[ the flash-step. ONE module owns both halves -- the hide and the unhide
-		0.4s later -- so a dropped second packet cannot leave the caster
-		permanently invisible. ]]
+	-- one packet owns hide + unhide so a dropped send can't leave the caster invisible.
 	fireVFX("ststep", char, 0.4)
 
 	if this:feintWait(0.4) then
@@ -72,9 +70,6 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)
 
-	--[[ point at whoever is in front, else straight ahead, then raycast so
-		the bolt lands on the first thing in the way rather than inside it. ]]
-	--- SOFT: no angle limit.
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, hurtbox.CFrame.LookVector, humObj, STRIKE_RANGE,
 		Targeting.SOFT)
@@ -103,19 +98,14 @@ local function useFunc(this:myself)
 
 	for _, enemy in pairs(hits) do
 		local attack = this:makeAtk(LNING, enemy, Vector3.new(0, 1, 0))
-		-- no knockback in the original: the 1.2s stun is the whole effect.
 		this:executeAttack(attack)
 
 		if attack:isHit() then
-			--[[ Shock marks the BLUE lightning specifically, not the whole
-				lightning family. Fulminate was the only source; this is the
-				other blue one, so it gets it too. Deliberately NOT given to
-				the yellow pair, BoltPunch and JoltKick. ]]
-			enemy.statusEffects:apply(enemy.statusEffects.Shock, 3, 1)
+			-- Shock = blue lightning only (Fulminate, Lightning, StormUp).
+			attack.enemyEntity.statusEffects:apply(enemy.statusEffects.Shock, 3, 1)
 
 			if enemy.HRootPart then
 				fireVFX("pauseF2", char, enemy.HRootPart.Parent)
-				--- the hit effect goes on the VICTIM, not the caster's emitter.
 				fireVFX("emit", enemy.HRootPart, "lvfx3", 20, 1)
 			end
 		end

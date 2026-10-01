@@ -261,6 +261,28 @@ local cardList:clType = {
 		module = manifold.AllForOne,
 		unObtainable = true
 	},
+	[38] = {
+		name = "Surge",
+		desc = "your static lightning hits chain to enemies ahead within 30 studs, 5 less damage per arc, until it fizzles",
+		module = manifold.Surge,
+		req = { lightning = 6 },
+	},
+	[39] = {
+		name = "Greedbreaker",
+		desc = "your weapon hits deal 20% more damage to opponents who are attacking",
+		module = manifold.Greedbreaker,
+		req = {
+			Or = {
+				{hvy = 4}, {med = 4}, {lht = 4}
+			} :: {Requirements.req}
+		},
+	},
+	[40] = {
+		name = "Callus",
+		desc = "take 20% less damage while attacking, after the first 0.1 seconds of the attack",
+		module = manifold.Callus,
+		req = { fortitude = 5 },
+	},
 }
 table.freeze(cardList)
 

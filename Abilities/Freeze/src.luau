@@ -185,7 +185,7 @@ local function useFunc(this:myself)
 				this:executeAttack(attack)
 
 				if attack:isHit() then
-					enemy.statusEffects:apply(statusEffects.Freeze, 4, FREEZE_FILL)
+					attack.enemyEntity.statusEffects:apply(statusEffects.Freeze, 4, FREEZE_FILL)
 				else
 					-- shatter the spike on any defended result
 					fireVFX("iceSpike", 1, spikeId)
