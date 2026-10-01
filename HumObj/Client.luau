@@ -34,6 +34,7 @@ export type myself = baseClass.entity & {
 	maxPosture:  AdditiveValue.myself,
 	maxMana:     AdditiveValue.myself,
 	manaRegenMult: number,
+	onManaLost: ((n: number) -> ())?, -- server: setMana's real drops (spends, drains, steals). ManaPoisoning sets it
 	dashPower:   AdditiveValue.myself,
 	postureHeal: AdditiveValue.myself,
 	charSize:    AdditiveValue.myself,
@@ -290,10 +291,14 @@ function module.setMana(self:myself, v: number)
 	local mana:any = self.mana
 	local m = self.maxMana.Value
 	local newV = math.clamp(v, 0, m)
+	local onLost = self.onManaLost
+	-- off the OLD anchor since manaNow re-enters here; unclamped v so a shrinking max is no loss
+	local lost = if onLost then manaCurve(mana.a, mana.t, mana.m, tick(), self.manaRegenMult) - math.max(v, 0) else 0
 	rawset(mana, "a", newV)
 	rawset(mana, "t", tick())
 	rawset(mana, "m", m)
 	mana.Value = newV
+	if onLost and lost > 0.01 then onLost(lost) end -- 0.01: a same-value re-anchor still reads a tick of regen
 end
 
 function module.setManaRegenMult(self:myself, mult: number): boolean

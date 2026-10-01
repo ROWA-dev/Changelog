@@ -53,7 +53,7 @@ local GRAB_COUNT = 9
 -- nine chunks is a full suit.
 local POOL_PER_PIECE = 12
 local POOL_MIN, POOL_MAX = 20, 100
-local ARMOUR_TIME = 30
+local ARMOUR_TIME = 60
 
 local function useFunc(this:myself)
 	local cooldownID = "armor"

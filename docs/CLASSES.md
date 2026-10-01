@@ -91,6 +91,8 @@ Adds the state both sides need to read/predict.
                            the oldest when full. Defaults to heldWeapon, which
                            is how M1 turns holding into wielding.
     :canWield(wep)      -- (ok, reason). NPCs (no plrObj) always pass.
+    :DropWeapon(wep)    -- forget it from every pose, set included. For a
+                           weapon leaving the player.
     :UnwieldWeapon() / :UseAbility(ability)
     :ChangeBlocking, :ChangeState, :stopAbilityAnims, :bodyForce
     :FireVFXClient(...)  -- only fires if self.plrObj exists (NPCs are no-ops)
@@ -422,7 +424,8 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              apply may return nil.
                              Burn / Shock / Bleed / Blind / Hemorrhage /
                              HyperArmour / Reflect / EarthArmour / Saringan /
-                             Charm / BurningResolve (a Burn subclass, own key, so
+                             Charm / ManaPoisoning (rides HumObj.onManaLost) /
+                             BurningResolve (a Burn subclass, own key, so
                              dodge and ice never douse it) /
                              Freeze. Freeze is the odd one: a BUILDUP METER,
                              and the full encase CLEARS Burn (one-way, ice

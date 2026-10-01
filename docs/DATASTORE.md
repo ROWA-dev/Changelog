@@ -66,7 +66,10 @@ UNUSED (there is no session lock, see GOTCHAS).
 
 Account-level stuff (elo/wins/loss/flags/keybinds) lives on PlrData.
 Per-character stuff (inventory, hotbar, lvl/exp, baseStats, cards, lives)
-lives on the slot.
+lives on the slot. `snap` {hp, mana, x, y, z, yaw, effects?} is parked by plrObj:snapChar on
+an out-of-combat unload and consumed by loadChar; server-only, never in ToClient. An
+effect over 30s persists as {name, secondsLeft or -1 = infinite, last numeric amp}; see
+GOTCHAS "IDS ARE PERSISTED".
 
 ## 3. LOAD PATH
   Players.PlayerAdded  (ServerScriptService/Core.luau OnPlrAdd)
@@ -258,7 +261,8 @@ lives on the slot.
     GOTCHAS "IDS ARE PERSISTED, NEVER RENUMBER". Same rule for
     flagEnums: only append.
   * The zstd path (Slots, ZstdUtil) round-trips through JSON, so it can't
-    preserve sparse/mixed array keys, NaN, inf, or non-string table keys.
+    preserve sparse/mixed array keys, NaN, or non-string table keys. inf survives but as a
+    36-byte object, so snap writes -1.
     Slot ids survive only because they're re-indexed after decompression, so
     don't lean on numeric key identity there.
   * The commented-out msgpack + EncodingService block in DataStore.Save is a

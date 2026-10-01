@@ -28,7 +28,9 @@ local wepList:list = {
 table.freeze(wepList)
 
 local module = {
-	wepList = wepList
+	wepList = wepList,
+	-- the fallback weapon: Modules/defaultWep grants it while nothing else is wieldable; the chest never stocks it.
+	DEFAULT = 1,
 }
 
 function module.getWepClass(id:number)

@@ -115,6 +115,7 @@ export type myself = baseClass.myself & {
 	reholster:     (self: myself) -> (),
 	UseAbility:    (self: myself, newAbility: abilityTyp) -> boolean,
 	UnwieldWeapon: (self: myself) -> boolean,
+	DropWeapon:    (self: myself, wep: weaponBase.myself) -> (),
 
 	stopAbilityAnims: (self:myself)->(),
 	ChangeBlocking:   (self:myself, setTo:boolean) -> boolean,
@@ -806,6 +807,14 @@ end
 
 function module:UnwieldWeapon(): boolean
 	return _clearWieldedWeapon(self)
+end
+
+-- forget `wep` from every pose, for a weapon leaving the player while it may still be committed.
+function module.DropWeapon(self:myself&any, wep: weaponBase.myself)
+	local i = table.find(self.equippedWeapons, wep)
+	if i then table.remove(self.equippedWeapons, i) end
+	releaseWep(wep)
+	self:reholster()
 end
 
 --

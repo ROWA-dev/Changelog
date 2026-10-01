@@ -79,7 +79,7 @@ shared with Cards, and not restated here.
 
 `req = {}` is FREE. `req = nil` is **not** — it inherits the family's through
 `__index`. Fist is the one opt-out, so a fresh character is never locked out of
-their own hands.
+their own hands; `Modules/defaultWep` hands it out while nothing else is wieldable.
 
 Enforced **only** in `HumObj:canWield`, i.e. only on the commit. Selecting a
 weapon you cannot wield still draws it; it just never becomes usable.

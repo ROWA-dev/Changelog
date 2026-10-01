@@ -318,7 +318,11 @@ Ownership chain:
     Workspace/MAP/IslandMain/Systems/Chest/chest builds ONE NamedContainer
     and is THE weapon source: every open restocks any missing wepList id,
     at most once per REGEN seconds (lazy, no timer), and destroys anything
-    put in that isn't a first copy of a weapon. ProximityPrompt (16 stud recheck) ->
+    put in that isn't a first copy of a weapon. Fist (`Weps.DEFAULT`) is the
+    exception: never stocked, destroyed if put in, because
+    ROWA/Modules/defaultWep grants it to a slot exactly while nothing else
+    in its hotbar/inventory passes `req` (re-checked on load, item change,
+    stat patch). ProximityPrompt (16 stud recheck) ->
     plrObj:openChest(container)
       -> closeChest() first, slot.openContainer = container,
          container.replicationId = 3 (HARDCODED),
