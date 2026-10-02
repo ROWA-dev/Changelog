@@ -64,6 +64,7 @@ local abilityList:list = {
 	[52] = manifold.BurningResolve,
 	[53] = manifold.ImbueMana,
 	[54] = manifold.Umbrage,
+	[55] = manifold.Meteor,
 }
 table.freeze(abilityList)
 
@@ -300,6 +301,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.BoulderKick] = {
 		desc = "Rip a chunk of the map out and punt it.",
 		req = { earth = 4 },
+	},
+	[manifold.Meteor] = {
+		desc = "Call a meteor down where you aim, up to 140 studs. It comes in at an angle and leaves a crater.",
+		req = { earth = 6 },
+		tier = DraftTiers.RARE,
 	},
 	[manifold.HollowPurple] = {
 		desc = "long windup unparryable undodgeable projectile",

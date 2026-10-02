@@ -131,6 +131,7 @@ output and an ability that silently does nothing. Check the console first.
 | hold-to-charge | `this:chargeWait(max, min)` after the commit | CombatAction header |
 | a counter | `beforeAttacked` + `humObj:canCounter()` | §8 |
 | an AoE at a point | world-space hitbox (4th arg `true`), then reject by distance | §6 |
+| to aim at the cursor | `aimLock` quiver id in the windup, `aimPoint.ask` + `.clamp` at release | Meteor, Modules/aimPoint |
 | burn / freeze / shock / bleed | `enemy.statusEffects:apply(effect, t, n)`, Burn takes `humObj` last | Class/StatusEffects |
 | to break the map | `Destruction.Sphere / OBB / Cylinder / Ellipsoid` | DESTRUCTION.md |
 | to freeze / scorch the map for a while | `partFx.apply(part, partFx.Burn, t)` | Modules/partFx |

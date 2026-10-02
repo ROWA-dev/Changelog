@@ -1,4 +1,4 @@
-# 2 abilities
-imbue mana, imbues your element into your weapon
+# earth meteor
+giant earth meteor move (maybe il make it unparryable unblockable undodgeable- like hollow purp)
 
-umbrage dark gap closer
+and a new aimlock system used by ^ and other future stuff
