@@ -62,6 +62,8 @@ local abilityList:list = {
 	[50] = manifold.WindSlash,
 	[51] = manifold.MassFreeze,
 	[52] = manifold.BurningResolve,
+	[53] = manifold.ImbueMana,
+	[54] = manifold.Umbrage,
 }
 table.freeze(abilityList)
 
@@ -91,6 +93,12 @@ export type meta = {
 
 -- weapon FAMILY, not an id: the instance path, so this gains no require on Weps.
 local FISTS = game.ServerStorage.ROWA.Weps.Light.Fists
+-- "n in ANY of these": one Or branch per stat
+local function anyOf(names: {string}, n: number): Requirements.req
+	local branches = {}
+	for _, name in names do table.insert(branches, { [name] = n }) end
+	return { Or = branches :: any }
+end
 
 -- these descriptions and reqs are ai generated TODO human write them?
 -- THESE REQS ARE LOW (reason: not enough content) will scale them accordingly in the future - air
@@ -311,9 +319,21 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		desc = "Heavy Slash, shoots out a boomerang projectile",
 		req = { wind = 2 },
 	},
+	[manifold.Umbrage] = {
+		desc = "Lock on within 100 studs, dive at them as a shadow wraith, then hold them for a flurry of shadow cuts.",
+		req = { dark = 4 },
+	},
 	[manifold.BurningResolve] = {
 		desc = "Set yourself ablaze: +10% weapon damage (15% with Azure Flames), +4 speed",
 		req = { flame = 3, fortitude = 2 },
+	},
+	[manifold.ImbueMana] = {
+		desc = "20 mana imbues your weapon: its hits become your top element and drain 0.4x their damage in mana until you drop under 10. Recast to end it.",
+		req = {
+			mind = 1,
+			creation = 4,
+			And = { anyOf({ "hvy", "med", "lht" }, 2), anyOf(require(game.ReplicatedStorage.Modules.ElementRegistry), 9) },
+		},
 	},
 }
 table.freeze(abilityMeta)

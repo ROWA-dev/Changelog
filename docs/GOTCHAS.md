@@ -133,6 +133,7 @@ Footguns, silent failures and "why is this not working" traps.
     `attack.enemyEntity` or a reflected Freeze freezes the reflector.
   * dmgConfig tables are deep-frozen. Mutating one at runtime throws. Use
     `attack.dmgMult` or build a fresh table.
+  * An imbued swing is NOT `isWep()`: AttackClass.new swaps `attack.dmgTbl` for StatusEffects/Imbue's element copy.
   * `:Damage(amt)` bypasses every resolution step. Use it only for
     self-damage / DoT.
     It is a raw `Hum.Health -= amt` on EntityBase ONLY. HumObj OVERRIDES it
@@ -274,6 +275,7 @@ Footguns, silent failures and "why is this not working" traps.
   * The lazy fetch parents a clone of the module INTO the requesting player and
     Debris-removes it after a few seconds. The client has already re-parented
     and required it. Don't "fix" the cleanup.
+  * `Clone()` copies tags, so a tag-driven client effect follows every clone of its host (corpse, dropped weapon, shells). VFXQuiver/imbue gates on a living character and untags its own clones.
 
 ## MISC
   * Sub-modules are frozen with `table.freeze(module)`. No runtime
