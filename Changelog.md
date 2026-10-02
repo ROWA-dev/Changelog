@@ -3,6 +3,52 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.23.3 - More New Things
+
+### Added ✅
+- New earth ability: Meteor
+- New aim lock system for moves like Meteor
+
+<br><sub>2026-10-02</sub>
+
+## 1.23.2 - More New Things
+
+### Added ✅
+- New mind/creation/weapon ability: Imbue Mana
+- New dark ability: Umbrage
+
+### Changes 🛠️
+- Increased Armor mana cost (40 -> 60)
+
+<br><sub>2026-10-01</sub>
+
+## 1.23.1 - Mana Poisoning
+
+### Added ✅
+- Health, mana, status effects, and character position now save
+- New status effect: Mana poisoning
+- Mana poisoning and Saringan recolor mana bar
+
+### Changes 🛠️
+- Increased Armor duration (30s -> 60s)
+- Fist is the default weapon if you cannot wield anything
+
+<br><sub>2026-10-01</sub>
+
+## 1.23.0 - Cool New Thing
+
+### Added ✅
+- New fortitude card: Callus
+- New lightning card: Surge
+- New weapon card: Greedbreaker
+- Yellow lightning attacks do static damage
+- Added barebones status effect UI
+
+### Changes 🛠️
+- Fixed status effect application
+
+<br><sub>2026-10-01</sub>
+
 ## 1.22.2 - Better Mobile Support
 
 ### Changes 🛠️
