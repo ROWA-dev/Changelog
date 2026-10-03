@@ -295,8 +295,9 @@ function module.new(hum: Humanoid): myself
 		local enemyEntity = attack.enemyEntity
 		local enemyhum = enemyEntity.Hum
 
-		-- continue air combo
-		if enemyEntity.floating and enemyhum.FloorMaterial == Enum.Material.Air and myEntity.Hum and myEntity.Hum.FloorMaterial == Enum.Material.Air and myEntity:isSwimming() == false and enemyEntity:isSwimming() == false then
+		-- continue air combo, only up close: a ranged hit landing on two jumpers is not one
+		if enemyEntity.floating and enemyhum.FloorMaterial == Enum.Material.Air and myEntity.Hum and myEntity.Hum.FloorMaterial == Enum.Material.Air and myEntity:isSwimming() == false and enemyEntity:isSwimming() == false
+			and (myEntity.HRootPart.Position - enemyEntity.HRootPart.Position).Magnitude <= 15 then
 			local keepfloating = 0.2 + attack.dmgTbl.stun
 
 			-- maybe seperate this int oa module or uppercut class? cuz im using this in here and uppercut attack too...

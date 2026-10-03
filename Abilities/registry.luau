@@ -65,6 +65,7 @@ local abilityList:list = {
 	[53] = manifold.ImbueMana,
 	[54] = manifold.Umbrage,
 	[55] = manifold.Meteor,
+	[56] = manifold.Quake,
 }
 table.freeze(abilityList)
 
@@ -305,6 +306,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Meteor] = {
 		desc = "Call a meteor down where you aim, up to 140 studs. It comes in at an angle and leaves a crater.",
 		req = { earth = 6 },
+		tier = DraftTiers.RARE,
+	},
+	[manifold.Quake] = {
+		desc = "aka Strongest Left. Tears 55 studs down the lane.",
+		req = { strength = 10 },
 		tier = DraftTiers.RARE,
 	},
 	[manifold.HollowPurple] = {

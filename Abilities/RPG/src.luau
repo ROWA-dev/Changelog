@@ -134,7 +134,7 @@ local function useFunc(this:myself)
 
 	if this:feintWait(0.72) then
 		if anim then anim:Stop() end
-		fireVFX("rpgLauncher", nil, 0) -- tell the client to bin it early
+		fireVFX("rpgLauncher", rightArm, 0) -- bin this caster's launcher early
 		return
 	end
 

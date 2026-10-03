@@ -32,10 +32,11 @@ local Projectile    = require(game.ServerStorage.ROWA.Class.Projectile)
 local METEOR = table.freeze({
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.blunt, dmgFlag.earth),
-	dmg      = 26,
-	stun     = 0.8,
+	dmg      = 50,
+	stun     = 1,
 	posMult  = 3,
 	parryH   = -0.1,
+	dodgeH   = -0.2,
 	onHit    = function(attack)
 		local enemy = attack.enemyEntity
 		hitSfx(enemy.HRootPart, "HitCrush")
@@ -46,12 +47,12 @@ local METEOR = table.freeze({
 })
 
 local WINDUP   = 0.85 -- the anim's hit marker: the arm hauls it down
-local RANGE    = 140
+local RANGE    = 200
 local RADIUS   = 48
 local CRUSH    = 56   -- width of the column it crushes on the way down
 local FALLOFF  = 0.4  -- damage lost at the rim
-local KNOCK    = 22
-local SKY      = 170  -- studs up the line it falls along
+local KNOCK    = 30
+local SKY      = 200  -- studs up the line it falls along
 local ASK_T    = 0.3  -- longest wait on the caster's cursor
 local CRATER   = 16   -- the rock's own size: a roof hole it fits through
 local SCORCH_T = 30
@@ -185,7 +186,7 @@ local function useFunc(this:myself)
 	end
 
 	this:useMana()
-	this:triggerCD(cooldownID, 20)
+	this:triggerCD(cooldownID, 30)
 
 	local to, normal
 	if cursor then to, normal = aimPoint.ask(plrObj.Plr, ASK_T) end

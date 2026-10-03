@@ -1,4 +1,10 @@
-# earth meteor
-giant earth meteor move (maybe il make it unparryable unblockable undodgeable- like hollow purp)
+# the strongest
+rpg lockon effect
 
-and a new aimlock system used by ^ and other future stuff
+armour manause back to 40 but its cd is 60s
+
+meteor 50 damage and cooldwon
+
+new abilitu Quake
+
+air combos continuue on hits < 15 studs away instead of inf distance

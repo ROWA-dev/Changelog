@@ -347,6 +347,8 @@ Footguns, silent failures and "why is this not working" traps.
     it down to tick()+0.1), a STAMP of when it happened cannot be.
   * `floating` is a duration-ish NumberValue used for air combos, and it also
     inflates weapon hitboxes. Leaving it set makes hitboxes permanently larger.
+    Any hit with both sides airborne arms it, and while it ticks down it
+    unragdolls every frame. Only hits within 15 studs arm it.
   * Both hitbox helpers add `AssemblyLinearVelocity/14` to the CFrame when
     running on the CLIENT (`RunService:IsClient()`), for lag compensation.
     Server and client hitboxes are deliberately not identical.

@@ -110,7 +110,7 @@ Adds the state both sides need to read/predict.
                   blood emission scaled by damage (slash flag = double count),
                   land-hit walkspeed buff (+4 for ~2s) and dash cooldown reset,
                   air-combo `floating` handoff (both entities float, each one's
-                  targetFloatY points at the other's HurtBox)
+                  targetFloatY points at the other's HurtBox; within 15 studs only)
 
 ## 2. THE REGISTRY - ServerScriptService/Entities.luau
   `Entities.Get(inst)` -> entity (lazily registers, memoized).

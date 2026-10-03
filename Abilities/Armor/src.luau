@@ -7,7 +7,7 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "Armor",
-	manaUse = 60,
+	manaUse = 40,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -79,7 +79,7 @@ local function useFunc(this:myself)
 	humObj.walkSpeed:RemoveMod(SLOW_KEY)
 	
 	this:useMana()
-	this:triggerCD(cooldownID, 40, true)
+	this:triggerCD(cooldownID, 60, true)
 
 	local origin = hurtbox.Position
 
