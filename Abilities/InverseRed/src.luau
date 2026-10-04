@@ -104,7 +104,7 @@ local ORB_CFG = table.freeze({
 })
 
 -- an air cast pays more, because aerialAim hangs you there and the extra time is aim.
-local WINDUP, AIR_WINDUP = 0.5, 0.8
+local WINDUP, AIR_WINDUP = 0.6, 0.8
 
 local function useFunc(this:myself)
 	local cooldownID = "inverseRed"

@@ -107,7 +107,7 @@ local cardList:clType = {
 	},
 	[13] = {
 		name = "Six Eyes",
-		desc = "+10 max health and 20% faster healing, 4x faster knockdown recovery. Abilities cost HALF mana. Exclusive with Saringan",
+		desc = "+10 max health and 20% faster healing, 3x faster knockdown recovery. Abilities 25% cheaper. Exclusive with Saringan",
 		module = manifold.SixEye,
 		req = { mind = 6 },
 	},
@@ -125,9 +125,8 @@ local cardList:clType = {
 	},
 	[16] = {
 		name = "Many-Handed",
-		desc = "+1 equippable weapons",
-		mods = { maxWeapons = 1 }, -- read on commit, so losing it trims nothing until the next wield
-		-- spread, not depth: 4 TOTAL across hvy/med/lht, however it is split.
+		desc = "+2 equippable weapons",
+		mods = { maxWeapons = 2 }, -- read on commit, so losing it trims nothing until the next wield
 		req = { dexterity = 2, mind = 2, sum = { weaponStats = 4 } },
 	},
 	[17] = {
@@ -175,7 +174,7 @@ local cardList:clType = {
 	},
 	[24] = {
 		name = "Bloodletting",
-		desc = "heavy attacking a bleeding enemy ends the bleed and heals you 2x the bleed dmg",
+		desc = "heavy attacking a bleeding enemy ends the bleed and heals you 3x the bleed dmg",
 		module = manifold.Bloodletting,
 		-- the ELEMENT is spelled `blood`; an unknown name is unsatisfiable, not skipped.
 		req = { blood = 8 },

@@ -7,10 +7,10 @@ export type myself = baseClass.myself & {
 
 local MAX_HEALTH = 10
 local HEAL_BONUS = 0.2 -- 1.2x upright regen
-local RCT_BONUS  = 3   -- 4x under LOW_HP, rowa1's "REVERSE CURSED TECHNIQUE"
+local RCT_BONUS  = 2   -- 3x under LOW_HP, rowa1's "REVERSE CURSED TECHNIQUE"
 local LOW_HP     = 10 -- live band is KNOCK_HP(5) < hp <= 10: below that you are down and GETUP owns the rate
-local GETUP      = 4   -- knockdowns 4x shorter
-local MANA_COST  = 0.5 -- every ability at half mana
+local GETUP      = 3   -- knockdowns 3x shorter
+local MANA_COST  = 0.75 -- every ability
 
 local module = {}
 module.__index = module

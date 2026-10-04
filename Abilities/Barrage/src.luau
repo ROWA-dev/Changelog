@@ -60,7 +60,7 @@ local function useFunc(this:myself)
 		dmg      = 4,
 		stun     = 0.6,
 		posMult  = 0.5,
-		parryH   = 0.1,
+		--parryH   = 0.1,
 		stunMeOnParried = 0,
 		onHit    = bhit,
 	}

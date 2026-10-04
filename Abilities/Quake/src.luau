@@ -41,7 +41,6 @@ local QUAKE = table.freeze({
 	dmg      = 40,
 	stun     = 1,
 	posMult  = 4,
-	parryH   = -0.04,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "HitCrush")
 		-- a long CAP, ended by landing
@@ -121,7 +120,7 @@ local function useFunc(this:myself)
 	local _, hits = this:hitbox(CFrame.new(0, 0, -LANE.Z / 2), LANE)
 	for _, enemy in hits do
 		local attack = this:makeAtk(QUAKE, enemy, forward)
-		attack.knockback = this:knockback(forward * 50 + Vector3.new(0, 10, 0), 0.25, false, -1)
+		attack.knockback = this:knockback(forward * 40 + Vector3.new(0, 8, 0), 0.2, false, -1)
 		this:executeAttack(attack)
 	end
 
