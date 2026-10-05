@@ -3,6 +3,29 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.24.0 - Quake
+
+### Added ✅
+- New strength ability: Quake
+  - Strongest Left >:)
+
+### Changes 🛠️
+- Decreased Armor mana cost (60 -> 40)
+- Increased Armor cooldown (40s -> 60s)
+- Increased Meteor damage (26 -> 50)
+- Increased Meteor stun duration (0.8s -> 1s)
+- Decreased Meteor dodge window (-0.1 -> -0.2)
+  - Still don't know what dodge window is please Air I need this
+- Increased Meteor range (140 -> 200)
+- Increased Meteor knockback (22 -> 30)
+- Increased Meteor height thing (170 studs -> 200 studs)
+- Increased Meteor cooldown (20s -> 30s)
+- Fixed RPG lock on VFX
+- Air combos only continue on hits less than 15 studs away instead of infinite distance
+
+
+<br><sub>2026-10-03</sub>
+
 ## 1.23.3 - More New Things
 
 ### Added ✅
