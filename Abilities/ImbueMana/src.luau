@@ -1,12 +1,12 @@
 --!strict
--- no anim, no windup: 20 mana lights an infinite StatusEffects/Imbue that hits pay for; recast puts it out, free.
+-- no anim, no windup:lights an infinite StatusEffects/Imbue that hits pay for; recast puts it out, free.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
 
 local module = {
 	Name = "ImbueMana",
-	manaUse = 20,
+	manaUse = 10,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module

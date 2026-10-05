@@ -131,6 +131,9 @@ local module = {
 
 	-- at or below this health you are KNOCKED DOWN. Lives on the shared tier so the CLIENT can gate its own movement: Humanoid.Health already replicates, so both sides derive the same answer for zero wire cost and zero stored state. HumObj owns the mechanic, CLASSES 3.5.
 	KNOCK_HP = 5,
+
+	-- unmodded walkSpeed; CharController strips speed above it from backpedalling.
+	BASE_WALK = 13,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -163,7 +166,7 @@ function module.new(hum: Humanoid):myself
 	self.sprintSpeed = AdditiveValue.new(14)
 	self.maxPosture  = AdditiveValue.new(80)
 	self.maxMana     = AdditiveValue.new(100)
-	self.walkSpeed   = AdditiveValue.new(13)
+	self.walkSpeed   = AdditiveValue.new(module.BASE_WALK)
 	self.dashPower   = AdditiveValue.new(50)
 	self.postureHeal = AdditiveValue.new(2)
 	self.charSize    = AdditiveValue.new(1)

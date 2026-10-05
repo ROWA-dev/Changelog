@@ -4,9 +4,11 @@ local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
 export type card = {
 	name: string,
 	desc: string?,
-	module: ModuleScript?, -- nil = a bare cardBase, for cards that are only `mods`
+	module: ModuleScript?, -- nil = a bare cardBase, for cards that are only `mods`/`knobs`
 	-- AdditiveValue name on the humObj -> amount, set through the card so it comes off with it
 	mods: {[string]: number}?,
+	-- nil-until-set humObj field -> value (howIsaveRuntimeRAM #5), nilled by cardBase.destroy
+	knobs: {[string]: number}?,
 	
 	innate: boolean?,
 	unObtainable: boolean?,
@@ -109,6 +111,7 @@ local cardList:clType = {
 		name = "Six Eyes",
 		desc = "+10 max health and 20% faster healing, 3x faster knockdown recovery. Abilities 25% cheaper. Exclusive with Saringan",
 		module = manifold.SixEye,
+		knobs = { getupMult = 3, manaCostMult = 0.75 },
 		req = { mind = 6 },
 	},
 	[14] = {
@@ -163,7 +166,7 @@ local cardList:clType = {
 	[22] = {
 		name = "Counterweight",
 		desc = "parrying restores 25% more posture",
-		module = manifold.Counterweight,
+		knobs = { parryPostureMult = 1.25 },
 		req = { fortitude = 4 },
 	},
 	[23] = {
@@ -282,6 +285,12 @@ local cardList:clType = {
 		module = manifold.Callus,
 		req = { fortitude = 5 },
 	},
+	[41] = {
+		name = "Sure Footing",
+		desc = "speed debuffs on you are half as strong",
+		knobs = { slowMult = 0.5 }, -- HumObj:slow does the scaling
+		req = { dexterity = 2, fortitude = 2 },
+	},
 }
 table.freeze(cardList)
 
@@ -296,6 +305,10 @@ function module.newCard(id:number, humObj:any)
 	local obj = sreq(card.module or manifold.cardBase).new(humObj)
 	if card.mods then
 		for stat, n in card.mods do obj:setMod(humObj[stat], n) end
+	end
+	if card.knobs then
+		for k, v in card.knobs do humObj[k] = v end
+		obj._knobs = card.knobs -- the row itself, nothing allocated
 	end
 	return obj
 end

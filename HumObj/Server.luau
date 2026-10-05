@@ -53,6 +53,8 @@ export type myself = baseClass.myself & {
 	-- LAZY card knobs (Six Eyes), nil = 1: scales KNOCKED_REGEN / every ability's mana cost.
 	getupMult: number?,
 	manaCostMult: number?,
+	-- LAZY card knob (Sure Footing), nil = 1: scales slows others put on me through :slow.
+	slowMult: number?,
 	canAtkThreshold: number,
 	dodgeThreshold: number,
 
@@ -102,6 +104,7 @@ export type myself = baseClass.myself & {
 	wepDmgMult: AdditiveValue.myself,
 	-- UPRIGHT health regen multiplier. Server-only (health regen is), so unlike postureHeal it never replicates.
 	healthHeal: AdditiveValue.myself,
+	slow: (self:myself, key:string, n:number)->(),
 	-- drawn but NOT committed: in the right hand, roblox-Tool style, unusable.
 	heldWeapon: weaponBase.myself?,
 	-- THE OFF HAND. One left arm, so one side weapon; not part of the wielded set.
@@ -996,6 +999,11 @@ function module.Stun(self:myself, stunTime:number, bypassArmour:boolean?)
 		self.wielding_weapon:stopLastAnim()
 	end
 	baseClass.Stun(self, stunTime, bypassArmour)
+end
+
+-- THE way to slow someone else, scaled by their slowMult. Roots (yours or theirs) stay plain walkSpeed:SetMod; RemoveMod as usual.
+function module.slow(self:myself, key:string, n:number)
+	self.walkSpeed:SetMod(key, n * (self.slowMult or 1))
 end
 
 function module.GuardBreak(self:myself)

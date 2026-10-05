@@ -8,6 +8,8 @@ local module = {
 	arialCD = 2,
 	postureGain = 6,
 	Name = "Slayer",
+	
+	req = { hvy = 4 }
 }
 module.__tostring = baseWep.__tostring
 module.__index = module

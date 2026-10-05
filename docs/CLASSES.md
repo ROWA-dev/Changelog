@@ -83,6 +83,7 @@ Adds the state both sides need to read/predict.
     :canAttack / :canBlock / :canCounter(t?)
     :isParry(atk?) / :isBlock(atk?) / :isDodge(atk?, offset?)
     :GuardBreak, :feint, :Heal, :Die, :setTransparency, :GetBlade
+    :slow(key, n)      -- THE way to slow someone else; scaled by slowMult (nil = 1). Roots stay plain walkSpeed:SetMod
     :isKnocked()       -- derived from health, never stored. see 3.5
     :Damage(amt)       -- OVERRIDES EntityBase: carries the death stall
     :EquipWeapon(wep)   -- SELECT. never fails. in the set -> active; not in
@@ -438,7 +439,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              card definitions listed in ROWA/Cards.luau.
                              A card's addConnection/setMod/timedMod/addMaxHealth are undone
                              by cardBase.destroy; a stat-only card is just a
-                             `mods` row with no module.
+                             `mods`/`knobs` row with no module.
                              Entries are {id, card}, and `card` is the error
                              STRING when a load failed -- bin one through
                              destroyCard, never `v:destroy()`.

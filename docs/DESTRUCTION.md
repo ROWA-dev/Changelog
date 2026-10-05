@@ -66,6 +66,7 @@ Blocks under minSz are decided by their centre, so misclassified volume scales w
 - A star goes home with its root fragment's record, or the swallowed part's. Parts that fell into
   the void are gone for good.
 - Regen waits while a character stands inside the carved part's box.
+- Carve never cuts a plate under 1 stud: its window snaps to a face that close. Parts built that thin (TrainTrack, 0.2) still make thin pieces.
 - Re-hit fragments are destroyed immediately, never via Debris: a deferred removal leaves the old
   piece bridging the gap while the flood fill runs.
 - Fragments are parented straight into the world. StreamingEnabled is on, so a ReplicatedStorage hop

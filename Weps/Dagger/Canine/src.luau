@@ -6,6 +6,8 @@ export type myself = baseWep.myself & {
 
 local module = {
 	Name = "canine",
+	
+	req = { lht = 3 }
 }
 module.__tostring = baseWep.__tostring
 module.__index = module

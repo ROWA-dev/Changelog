@@ -257,7 +257,7 @@ this fire per second per player". That question alone kills most designs.
   Card ids go through SparseBitSet -> EliasFano, ~2 + log2(U/k) bits per
   element with k in 16 bits and L in 6 as a packed header. That buffer
   sits INSIDE slot:ToClient, so it is a wire win as well as a save win
-  (howIsaveRuntimeRAM #5, DATASTORE).
+  (DATASTORE).
   msgPack is still in Packages but is NOT on this path: Container's
   header records it going in 3/13/2026 and coming back out 3/24/2026 in
   favour of zstd higher up. Do not re-add a second encoder.

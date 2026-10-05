@@ -8,9 +8,7 @@ export type myself = baseClass.myself & {
 local MAX_HEALTH = 10
 local HEAL_BONUS = 0.2 -- 1.2x upright regen
 local RCT_BONUS  = 2   -- 3x under LOW_HP, rowa1's "REVERSE CURSED TECHNIQUE"
-local LOW_HP     = 10 -- live band is KNOCK_HP(5) < hp <= 10: below that you are down and GETUP owns the rate
-local GETUP      = 3   -- knockdowns 3x shorter
-local MANA_COST  = 0.75 -- every ability
+local LOW_HP     = 10 -- live band is KNOCK_HP(5) < hp <= 10: below that you are down and getupMult owns the rate
 
 local module = {}
 module.__index = module
@@ -26,9 +24,6 @@ end
 
 function module.new(humObj):myself
 	local self:myself = setmetatable(baseClass.new(humObj), module) :: any
-	humObj.getupMult = GETUP
-	humObj.manaCostMult = MANA_COST
-
 	self:addMaxHealth(MAX_HEALTH)
 	local hum:Humanoid? = humObj.Hum
 	if hum and hum.Parent then
@@ -39,13 +34,6 @@ function module.new(humObj):myself
 	end
 
 	return self
-end
-
-function module.destroy(self:myself)
-	local humObj = self._humObj
-	humObj.getupMult = nil
-	humObj.manaCostMult = nil
-	baseClass.destroy(self)
 end
 
 return table.freeze(module)

@@ -8,7 +8,9 @@ local module = {
 	Name = "Mace",
 	blockAnim = script:WaitForChild("block"),
 	parryAnim = script:WaitForChild("parry"),
-	idleAnim = script:WaitForChild("idle")
+	idleAnim = script:WaitForChild("idle"),
+	
+	req = { hvy = 6 }
 }
 module.__tostring = baseWep.__tostring
 module.__index = module

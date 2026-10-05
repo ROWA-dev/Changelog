@@ -6,6 +6,7 @@ export type myself = {
 	_avs: {any}?,
 	_until: number?,
 	_hp: number?,
+	_knobs: {[string]: number}?,
 
 	addConnection: (self:myself, con:any) -> (),
 	setMod: (self:myself, av:any, n:number) -> (),
@@ -25,7 +26,7 @@ function module.new(humObj:any):myself
 	return setmetatable({ _humObj = humObj, _key = "card" .. nextKey }, module) :: any
 end
 
--- undoes everything handed to addConnection/setMod/addMaxHealth, so most cards need no destroy of their own
+-- undoes everything handed to addConnection/setMod/addMaxHealth and the row's knobs, so most cards need no destroy of their own
 function module.destroy(self:myself)
 	local hp = self._hp
 	local hum:Humanoid? = hp and self._humObj.Hum
@@ -38,6 +39,9 @@ function module.destroy(self:myself)
 	end
 	if self._avs then
 		for _, av in self._avs do av:RemoveMod(self._key) end
+	end
+	if self._knobs then
+		for k in self._knobs do self._humObj[k] = nil end
 	end
 	table.clear(self)
 	setmetatable(self, nil)

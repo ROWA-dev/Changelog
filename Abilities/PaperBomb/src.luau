@@ -5,7 +5,8 @@ export type myself = baseClass.myself
 type humObj = baseClass.humObj
 
 local module = {
-	Name = "PaperBomb"
+	Name = "PaperBomb",
+	manaUse = 20
 }
 module.__tostring = baseClass.__tostring
 module.__index = module

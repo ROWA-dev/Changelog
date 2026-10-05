@@ -10,9 +10,9 @@ every number in this file used to miss them.
     PAY WITH ARITHMETIC TO AVOID HOLDING STATE.
 
 A timestamp instead of a timer. A running sum instead of a modifier list.
-One shared frozen stub instead of a per-entity object. A packed buffer
-instead of a table. Nearly everything below is an O(1) read whose cost was
-pushed to write-time or to first-use. When you add a subsystem, the question
+One shared frozen stub instead of a per-entity object. A nil instead of a
+knob most entities never touch. Nearly everything below is an O(1) read
+whose cost was pushed to write-time or to first-use. When you add a subsystem, the question
 is not "is this clean", it is "what does this hold, per entity, forever".
 That question alone lets you reject a design.
 
@@ -45,15 +45,9 @@ That question alone lets you reject a design.
   already-running LONG one. Cooldowns are created LAZILY; `trigger` with a
   customCD makes the entry on first use, they are not pre-registered at
   construction. An entity that never blocks never allocates a block cd.
-  This is the shape AGENTS.md means by "conserve ram as seen by
-  the shape of the cooldowns".
-  TRUE OF HEAP TOO, since the fold: an id is 3 hash slots across three
-  parallel {[id]: number} maps, 64B registered / 96B once fired, MEASURED,
-  down from 624B when each was a table + Signal + forwarding closure +
-  connection. CooldownTriggered fires straight from :trigger, which is all
-  the per-entry Signal ever did. cooldown.luau is deleted.
-  The holder costs 224B more (two extra maps) and pays that back at the
-  first entry. 94% of call sites never held the object anyway.
+  This is the model AGENTS.md points at.
+  Measured: an id is 3 hash slots across three parallel {[id]: number}
+  maps, 64B registered / 96B once fired (624B as a per-entry object).
 
 ### 2. StatusEffects allocates only while an effect is ACTIVE.
   ROWA/Class/StatusEffects.luau
@@ -73,9 +67,9 @@ That question alone lets you reject a design.
   ReplicatedStorage/Class/Combatant.luau
   applyInertDefaults patches a CLASS TABLE (explicitly not a base class, not
   an inheritance tier). The inert ragdoll / statusEffects / isParry /
-  GuardBreak stubs are table.freeze'd and built ONCE AT MODULE LOAD, then
-  shared by every entity lacking the real subsystem. A prop or a critter pays
-  ZERO allocation for all eleven OPTIONAL_MEMBERS.
+  GuardBreak stubs are table.freeze'd and built once (per class at most),
+  then shared by every entity lacking the real subsystem. A prop or a
+  critter pays ZERO allocation for every OPTIONAL_MEMBER.
   Same trick on the logging: warnedOnce[className.."/"..what] means one
   dev-warn per CLASS, not per hit, so logging survives a 60Hz hitbox instead
   of getting itself switched off.
@@ -92,66 +86,55 @@ That question alone lets you reject a design.
   HumObj.new). A client mirror connects NONE of them.
   Each mod costs one hash slot, 32B. That is why there is no clever packing
   here and should not be: at the 0-2 mods a value actually holds, any key
-  registry costs more than the slots it saves. Compare #5, which pays off at
-  hundreds of elements.
+  registry costs more than the slots it saves.
   Reading `.onSet` ALLOCATES it -- test with rawget, never `if v.onSet then`.
   Declared tradeoff, in its own header: float drift. Prefer integer mods.
   (It says it should have been named AdditiveInteger.)
 
-### 5. Elias-Fano packed integer sets for saved flags.
-  ROWA/Class/SparseBitSet.luau  ->  Packages/EliasFano
-  In memory it is a plain {[number]: true}. Serialize() sorts the keys and
-  packs them near information-theoretic optimum (~2 + log2(U/k) bits per
-  element) into a `buffer`, with k in 16 bits and L in 6 bits as a packed
-  header, buffer.copy'd in front of the payload.
-  This is a SAVE-SIZE win first (see DATASTORE), but it is here because
-  it states the house style clearly: the compact form is the serialized form,
-  the ergonomic form is the in-memory one, and you convert at the boundary
-  rather than living in either extreme.
+### 5. A knob only some entities use is NIL until set, not an object.
+  HumObj getupMult / manaCostMult / parryPostureMult / slowMult
+  Read as `self.x or 1`; a card sets it via its Cards.luau `knobs` row, cardBase.destroy nils it.
+  Holders pay one field, everyone else nothing. An AdditiveValue (#4) is
+  144B on EVERY entity, so it is only right when nearly every entity reads
+  it or several sources stack into it.
+  Cost: two setters overwrite instead of stacking. Fine until a second exists.
 
 ### 6. Demand-paged CODE, not just data. (the Quiver)
   ReplicatedFirst/LocalCore/VFX  +  ROWA/VFXQuiver  +  ReplicatedStorage/VFXQuiver
   Three tiers, in order:
     1. Manifold[id] already required            -> call it
-    2. ReplicatedStorage/VFXQuiver (11 modules) -> require, cache, call
+    2. ReplicatedStorage/VFXQuiver              -> require, cache, call
     3. RemoteFunction:InvokeServer(1, id)       -> server clones it out of
-       ServerStorage/ROWA/VFXQuiver (41 modules), client parents the clone
-       into its local quiver, requires, caches, calls
-  So 41 VFX modules of bytecode + closures never enter a client's VM unless
-  that client SEES the effect. You avoid the compile + closure cost, not the
-  source bytes.
+       ServerStorage/ROWA/VFXQuiver, client parents the clone into its
+       local quiver, requires, caches, calls
+  So a server-quiver module's bytecode + closures never enter a client's VM
+  unless that client SEES the effect. You avoid the compile + closure cost,
+  not the source bytes.
   Full mechanism and the inline-vs-quiver decision table: VFX.
 
 ### 7. Uniform teardown so nothing outlives its owner.
-  ROWA/Class/ClassTemplate.luau sets the shape; ~100 `table.clear` and ~62
-  `setmetatable(self, nil)` follow it.
+  ROWA/Class/ClassTemplate.luau sets the shape.
       table.clear      -> drops every reference, KEEPS allocated capacity
       setmetatable nil -> post-destroy use fails LOUDLY instead of
                           silently resurrecting a zombie object
   Copy `destroy` from ClassTemplate. Do not invent a new teardown shape.
 
 ### 8. debug.setmemorycategory on the classes that can actually leak.
-  Seven sites, all deliberate:
-      WepBase, HumObj, AttackClass, plrObj, PlrStats,
-      PlrHandler, Entities
-  These are the per-entity / per-player / per-swing allocators, so the
-  Developer Console memory pane attributes growth to a CLASS rather than to
-  one anonymous Luau bucket. If you add a class that allocates per entity
-  or per swing, tag it too. An untagged leak is a bisect.
+  The per-entity / per-player / per-swing allocators tag themselves (grep
+  setmemorycategory), so the Developer Console memory pane attributes
+  growth to a CLASS rather than to one anonymous Luau bucket. If you add a
+  class that allocates per entity or per swing, tag it too. An untagged
+  leak is a bisect.
 
 ## WEAK TABLES: READ THIS BEFORE YOU ADD ONE
-Seven `__mode` sites exist. THREE OF THEM ARE COMMENTED OUT ON PURPOSE and
-the reasoning is written at the site (Entities.luau, "THE WEAK-MAP
-QUESTION, ANSWERED"). Do not re-enable them:
+Three are COMMENTED OUT ON PURPOSE, reasoning at the site (Entities.luau,
+"THE WEAK-MAP QUESTION, ANSWERED"). Do not re-enable them:
 
-    Entities.entityMap    __mode="v"  COMMENTED OUT, deliberate
-    PlrHandler.plrMap     __mode="v"  COMMENTED OUT, same answer
-    LocalCore._G.hides    __mode="k"  COMMENTED OUT
-    damageRecord.contributions  __mode="k"  ACTIVE
-    damageRecord.memberships    __mode="k"  ACTIVE, the reverse index
-    HumObjClient.CharController.Animate     ACTIVE
+    Entities.entityMap    __mode="v"
+    PlrHandler.plrMap     __mode="v"
+    LocalCore._G.hides    __mode="k"
 
-A FOURTH was REMOVED, not disabled: `cooldowns.cooldowns` had __mode="k"
+One was REMOVED, not disabled: `cooldowns.cooldowns` had __mode="k"
 while every key is a STRING, and strings are never removed from weak tables.
 It collected nothing, allocated a fresh metatable per entity, and put the
 table on the collector's weak list every cycle. Proven with a control (an
@@ -168,42 +151,22 @@ Weak is for caches you can afford to lose, not for registries you own.
 ## THE ANTI-PATTERN (measured, in this codebase)
     require(x) ... x:Destroy()   DOES NOT FREE ANYTHING.
 
-RFQuiver/clientInfo.luau does this with CountryCodes, and CountryCodes' own
-header endorses it ("use it temporarily"). It does not work. Destroy()
-unparents the Instance; it does NOT evict Luau's require cache, and the
-returned table is pinned by the module registry.
+Destroy() unparents the Instance; it does NOT evict Luau's require cache.
+Measured clone+require+Destroy in a loop: +38 KB per cycle, never reclaimed
+(caveat: collectgarbage("collect") is blocked, so "not within ~10 frames").
 
-Measured by clone+require+Destroy in a loop, waiting for the incremental
-GC between cycles:
-    cycle 1  52464 KB     cycle 4  52578 KB
-    cycle 2  52502 KB     cycle 5  52616 KB
-    cycle 3  52540 KB     cycle 6  52654 KB
-    => +38 KB per cycle, monotonic, never reclaimed.
-(Caveat on the method: collectgarbage("collect") is BLOCKED in Roblox --
-only "count" is allowed -- so this is "not reclaimed within ~10 frames",
-not a proof of permanence. The require-cache semantics predict the same
-result independently.)
-
-CountryCodes is 249 entries of {Emoji, Name}, ~107 KB resident once touched,
-table.freeze'd, pinned for the session, to read TWO fields once per player,
-which then get stringified into plrObj.Data.meta.clientInfo.
-
-It is also a BUG, not just waste. OnClientInvoke does
-`require(rfQuiver[id])(...)` on EVERY invoke, and the first call runs
-`script.CountryCodes:Destroy()`. A second invoke on the same client hits
-`script:WaitForChild("CountryCodes")` on a child that no longer exists ->
-infinite yield -> the server's InvokeClient never returns. One-invoke-per-
-client is the only reason this has survived.
-Fix direction: resolve the country name SERVER-side, or inline the single
-pair needed. Do not ship a 249-entry table to a client to read two fields.
+Live case: RFQuiver/clientInfo pins CountryCodes (249 entries, ~107 KB) to
+read TWO fields, and is also a BUG: the first invoke Destroys CountryCodes,
+so a second invoke infinite-yields on WaitForChild and InvokeClient never
+returns. Fix direction: resolve the country name SERVER-side.
 
 THE GENERAL LAW: lazy require DELAYS cost, it never RETURNS it. The Quiver
 (#6) is correct because it defers a FIRST require. clientInfo is wrong
 because it assumes you can undo one. Same instinct, opposite result.
 
 ## CHECKLIST FOR ANYTHING NEW
-  * What does it hold PER ENTITY, at construction? Can it be lazy (#1) or
-    a shared frozen singleton (#3)?
+  * What does it hold PER ENTITY, at construction? Can it be lazy (#1),
+    a shared frozen singleton (#3), or nil until set (#5)?
   * Does it allocate PER SWING or PER FRAME? Justify explicitly. "It is
     cleaner" is not a justification. Proposals have been withdrawn on this
     test before.

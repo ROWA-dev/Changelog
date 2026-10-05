@@ -1,8 +1,5 @@
 --!strict
---- DropKick - hop up, then dive at the ground on a diagonal, riding the kick
---- until you hit something or the floor.
---- It ends on the FIRST of: a collidable surface ahead, entering stun, or an
---- entity in the swept volume -- and which one decides if the landing carves.
+-- DropKick - hop, then dive on a diagonal until a body, the floor or a stun ends it; only the floor carves.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -22,38 +19,37 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
+local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 local DROP_KICK = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blunt),
-	dmg      = 18,
+	dmg      = 20,
 	stun     = 0.5,
-	posMult  = 2.5,
-	--parryH   = -0.04,
-	onHit    = function(attack)
-		hitSfx(attack.enemyEntity.HRootPart, "HardPunchHit", "HitCrush")
-	end,
+	posMult  = 2,
 }
 
 local DIVE_FORCE = 16
 local MAX_DIVE   = 2
+local AIM        = Vector3.new(0, -10, -8) -- the dive's aim, root space
 
--- the ride loop below already runs every frame, so this wants the LEAD and no
--- window: test where the dive is about to be, not where it was last frame.
+-- the ride loop runs every frame, so lead only: test where the dive is about to be
 local DIVE = table.freeze({ lead = 0.0625, worldSpace = true })
 local HOP_FORCE  = 8
 local HOP_TIME   = 0.1
+local HOP_WIND   = Vector3.new(0, -1.5, 0) -- the takeoff gust, at the feet
+
+-- the contact freeze, pauseF's flash length; Smash's arm so it beats the dive's momentum
+local HITSTOP = 0.2
+local FREEZE = table.freeze({ axes = Vector3.one, responsiveness = 200, maxTime = HITSTOP })
+-- the victim's half of the frame: hitFront's extreme is its first frame
+local HIT_POSE = game.ServerStorage.ROWA.Class.HumObj.HitAnims.hitFront
 
 local diveParams = RaycastParams.new()
 diveParams.FilterType = Enum.RaycastFilterType.Exclude
 diveParams.IgnoreWater = true
---- !! A BODY IS NOT THE FLOOR, and this is why the kick missed. A root is
---- CanCollide + CanQuery in the Default group, so diving AT someone made
---- THEM the landing surface: the loop broke with `hits` still nil and the
---- kick carved, played everything and dealt nothing. Entities is excluded so
---- only world geometry ends the ride; people are answered by the hitbox.
---- Set once: the diver is under Entities too, so a per-dive `char` entry only pinned the last diver.
+-- a body isn't the floor: Entities excluded so only the world ends the ride, the sweep answers people
 diveParams.FilterDescendantsInstances = { workspace.Effects, workspace.Entities }
 
 local function useFunc(this:myself)
@@ -65,12 +61,13 @@ local function useFunc(this:myself)
 	local char: any = hurtbox.Parent
 	local first = this:PlayAnim(script.First, 0, 1, 1.2)
 
-	--- the hop. Root-relative so it follows your facing.
+	-- the hop, root-relative so it follows your facing
 	local hop = this:bodyForce(
 		(Vector3.new(0, 1, 0) + Vector3.new(0, 0, -0.25)).Unit * HOP_FORCE,
 		HOP_TIME, true)
+	fireVFX("windShock", hurtbox, HOP_WIND)
 
-	if this:feintWait(0.34) then
+	if this:feintWait(0.4) then
 		if first then first:Stop() end
 		if hop then hop:destroy() end
 		return
@@ -89,23 +86,13 @@ local function useFunc(this:myself)
 	this:useMana()
 	this:triggerCD(cooldownID, 14, true)
 
-	if first then first:Stop() end
 	local loopAnim = this:PlayAnim(script.loop, 0, 1, 1)
 
 	local root = humObj.HRootPart
-	--- down and forward
 	local dive = this:bodyForce(Vector3.new(0, -1.2, -1).Unit * DIVE_FORCE, MAX_DIVE, true)
 
-	local hits = nil
-	local landing = nil
+	local hits, landing
 	local started = tick()
-
-	local function sweepAhead(from: BasePart, dir: Vector3)
-		local rpos = from.Position
-		local cf = CFrame.new(rpos + dir.Unit, rpos + dir.Unit * 6)
-		local _, found = this:sweep(cf, Vector3.new(7,7,7), DIVE)
-		return found
-	end
 
 	while tick() < started + MAX_DIVE do
 		task.wait()
@@ -113,69 +100,89 @@ local function useFunc(this:myself)
 		root = humObj.HRootPart
 		if root == nil then break end
 
-		local dir = root.CFrame.UpVector * -10 + root.CFrame.LookVector * 8
+		local dir = root.CFrame:VectorToWorldSpace(AIM)
+		local u = dir.Unit
 
-		--[[ PEOPLE ARE ASKED FIRST. They used to be asked second, after the
-			surface ray had already broken the loop -- and this ray is 12.8
-			studs long against a hop that only clears a few, so on most dives
-			the floor answered on the FIRST iteration and the hitbox below
-			never ran once. Whoever you are diving at decides the dive, not the
-			ground they happen to be standing on. ]]
-		local found = sweepAhead(root, dir)
+		-- people first, or the 12.8 stud floor ray ends most dives before the sweep runs
+		local _, found = this:sweep(CFrame.new(root.Position + u, root.Position + u * 6), Vector3.new(7,7,7), DIVE)
 		if #found > 0 then
 			hits = found
 			break
 		end
 
 		local result = workspace:Raycast(root.Position, dir, diveParams)
-		if result and result.Instance and result.Instance.CanCollide then
+		if result and result.Instance.CanCollide then
 			landing = result
 			break
 		end
 	end
 
 	if dive then dive:destroy() end
-	if loopAnim then loopAnim:Stop(0.1) end
 	fireVFX("dropKickCharge", nil, 0)
 
 	root = humObj.HRootPart
 	local origin = if landing then landing.Position
 		elseif root then root.Position
 		else hurtbox.Position
-	local dir = if root then (root.CFrame.UpVector * -10 + root.CFrame.LookVector * 8).Unit
+	local dir = if root then root.CFrame:VectorToWorldSpace(AIM).Unit
 		else Vector3.new(0, -1, 0)
 
 	if landing then
-		--- r3.5 is the inscribed sphere of the 7^3 cut this replaced
 		Destruction.Sphere(nil, origin, 3.5, 2.1, dir * 40)
 	end
 	fireVFX("dropKickLand", origin, dir)
 
-	--[[ THE IMPACT ITSELF STILL SWINGS: the loop leaves `hits` nil on a
-		landing, so without this a kick slammed down next to someone did
-		nothing. Lifted 2 studs to cover a standing target's body rather than
-		being buried in the floor it just cratered. ]]
+	-- a landing still swings, lifted 2 studs off the crater to cover a standing body
 	if hits == nil and not humObj:inStun() then
 		local _, found = this:hitbox(
 			CFrame.new(origin + Vector3.new(0, 2, 0)),
-			Vector3.new(7, 7, 7), nil, true)
+			Vector3.new(6, 7, 7), nil, true)
 		if #found > 0 then hits = found end
 	end
 
+	local lag = 0.5 -- miss
 	if hits and not humObj:inStun() then
+		local landed = {}
 		for _, enemy in pairs(hits) do
 			local attack = this:makeAtk(DROP_KICK, enemy, dir)
-			attack.knockback = this:knockback(dir * 17, 0.2, false, -1)
 			this:executeAttack(attack)
 			if attack:isHit() then
-				attack.enemyEntity.ragdoll:ragdoll(60, true, attack.atkDir*10)
+				local e = attack.enemyEntity
+				landed[attack] = e.PlayAnim and e:PlayAnim(HIT_POSE, 0, 1, 0) or false
+				fireVFX("pauseF", char, e.HRootPart and e.HRootPart.Parent)
 			end
 		end
-		
-		this:endLag(0.25)
-	else -- miss
-		this:endLag(0.4)
+
+		-- hitstop: both held on contact; crunch and launch wait for the release so the freeze sfx isn't buried
+		if next(landed) then
+			if loopAnim then loopAnim:AdjustSpeed(0) end
+			local sfx = script.parryultrakill:Clone()
+			sfx.Parent = hurtbox
+			sfx:Play()
+			game.Debris:AddItem(sfx, 4)
+			local at = root and root.Position
+			local release = root and pinTo(root, function() return at end, FREEZE)
+			task.wait(HITSTOP)
+			if release then release() end
+
+			fireVFX("camShake", hurtbox.Position, 100, 0.3, 0.2)
+			for attack, pose in landed do
+				if pose then pose:Stop() end
+				local e = attack.enemyEntity
+				if e.HRootPart == nil then continue end
+				hitSfx(e.HRootPart, "HardPunchHit", "HitCrush")
+				attack.knockback = this:knockback(dir * 17, 0.2, false, -1)
+				attack:ApplyKnockback()
+				e.ragdoll:ragdoll(60, true, attack.atkDir*10)
+			end
+		end
+		lag = 0.25
 	end
+
+	-- the kick's gust, hit or miss; after the hitstop so it leaves with the launch
+	fireVFX("fistHvy", hurtbox, dir)
+	if loopAnim then loopAnim:Stop(0.1) end
+	this:endLag(lag)
 end
 
 function module.use(self:myself)

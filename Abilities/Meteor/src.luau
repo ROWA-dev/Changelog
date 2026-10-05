@@ -7,7 +7,7 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "Meteor",
-	manaUse = 30,
+	manaUse = 40,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -186,7 +186,7 @@ local function useFunc(this:myself)
 	end
 
 	this:useMana()
-	this:triggerCD(cooldownID, 30)
+	this:triggerCD(cooldownID, 40)
 
 	local to, normal
 	if cursor then to, normal = aimPoint.ask(plrObj.Plr, ASK_T) end

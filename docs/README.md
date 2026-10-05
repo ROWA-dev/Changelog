@@ -64,6 +64,12 @@ The universal swing loop:
 `feintWait` returning true means CANCELLED. Early-return and clean up your
 VFX on that branch.
 
+SPARSE FEATURES cost only the entities that use them: nil until set
+(`self.slowMult or 1`), lazy, or a shared stub. A per-entity object only when
+nearly every entity reads or stacks into it. Patterns: howIsaveRuntimeRAM.md.
+Basicly the game has alot of sparse features where only 10% will actually ever
+be seen at a time so thats why we try to keep it efficient.
+
 ## ENTRY POINTS / WHERE THINGS GET KICKED OFF
   ServerScriptService/Core/Inputs.luau        client input -> wep:attack(...)
   ServerScriptService/Entities.luau           THE entity registry. Keyed by
@@ -121,9 +127,6 @@ VFX on that branch.
                                               read that file's header first.
   ReplicatedStorage/Modules/TopbarIcons.luau  topbar buttons. Icons REGISTER
                                               (name/order/touchOnly/onClick)
-                                              and the row lays itself out;
-                                              nobody hardcodes an X anymore.
-                                              settings, emotes, inventory.
   ROWA/Class/HitboxClass/types.luau           hitbox TYPES only, requires
                                               nothing. Keep it that way,
                                               see ARCHITECTURE.md
@@ -134,15 +137,4 @@ VFX on that branch.
   ServerStorage/ROWA/Modules/sharedFeintWait  the one windup impl; the two
                                               old paths forward to it
   ServerStorage/ROWA/Class/plrObj/DataStore   PLAYER DATA's DataStoreService
-                                              caller. One of TWO now.
-  ServerStorage/ROWA/Modules/imgBoard         the other one. The phone's image
-                                              board, own store, own budget,
-                                              wipeable. Never player data.
-  ServerStorage/ROWA/Modules/filterText       THE user-text filter. Was inlined
-                                              in plrObj/replication; lifted out
-                                              when ImgBoard needed it too.
-                                              Fails closed: nil means DROP.
   ReplicatedFirst/LocalCore.luau              client bootstrap (VFX, blood, HUD)
-  StarterGui/settings/terminalModule          the settings window. Pages are
-                                              DISCOVERED, not registered. Page
-                                              contract is at the top of that file.

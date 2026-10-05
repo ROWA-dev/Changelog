@@ -158,8 +158,9 @@ parrying does almost nothing.
 
 4.9 STUN MAKES RETREATING WORSE THAN ADVANCING
 Backpedalling costs 3 walkspeed normally, 6 for two seconds after being
-stunned. Movement returns smoothly over the last part of a stun rather
-than snapping, so the recovery is readable.
+stunned, and drops any speed above base 13 (scaled by how far back you
+move), so boosts never fund a retreat. Movement returns smoothly over the
+last part of a stun rather than snapping, so the recovery is readable.
 
 4.10 NEITHER FIGHTER GETS TO WATCH THE OTHER BE STUNNED
 If a trade stuns BOTH, both stuns are cut to 0.1s so the fight restarts
@@ -447,7 +448,8 @@ Base 13. Everything adds or subtracts, and several stack at once:
     slide       up to +28, decays with terrain
     landing hit +5 or more for about a second
     blocking    -6            attacking    -2
-    backpedal   -3, doubled to -6 for 2s after being stunned
+    backpedal   -3, doubled to -6 for 2s after being stunned; boosts
+                above 13 don't apply
     crouch      -7            swimming     -4
     rooted moves -100         true stun    0
     cards and status effects stack their own on top
