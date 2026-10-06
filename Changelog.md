@@ -3,6 +3,34 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.25.0 - Big Balance
+
+### Added ✅
+- New dexterity/fortitude card: Sure Footing
+- Added Canine requirement (3 lht)
+- Added Slayer requirement (4 hvy)
+- Added Mace requirement (6 hvy)
+- Added Claymore requirement (6 med)
+- Added Katana requirement (4 med)
+
+### Changes 🛠️
+- Increased Drop Kick damage (18 -> 20)
+- Decreased Drop Kick posture damage multiplier (2.5x -> 2x)
+- Increased Drop Kick wind up (0.54s -> 0.6s)
+- Increased Drop Kick endlag (0.4s -> 0.5s)
+- Drop Kick no longer applies knockback when blocked
+- Adjusted Drop Kick VFX
+- Decreased Imbue Mana mana cost (20 -> 10)
+- Increased Meteor mana cost (30 -> 40)
+- Increased Meteor cooldown (30s -> 40s)
+- Increased Paper Bomb mana cost (0* -> 20)
+  - It looks like 0 but Air said it's 10 so idk
+- Six Eyes hp thing
+- Fist heavy doing 20 dmg 💀💀☠️☠️ (same as executer btw) -> 17 😁
+- Cleaned code
+
+<br><sub>2026-10-04</sub>
+
 ## 1.24.1 - Baby Balance
 
 ### Changes 🛠️
@@ -137,9 +165,9 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 - Using Saringan now applies 10 bleed to self
 
 ### Changes 🛠️
-- Dropkick has a later hitbox or something
+- Drop Kick has a later hitbox or something
   - Air said it
-- Decreased Dropkick knockback
+- Decreased Drop Kick knockback
 - Burst also has a later hitbox
   - Air said it too
 
