@@ -23,7 +23,10 @@ local wepList:list = {
 	[13] = manifold.Light.Dagger.Dagger,
 	[14] = manifold.Heavy.GreatAxe.Oblitar,
 	[15] = manifold.Heavy.Greatsword.Slayer,
-	[16] = manifold.Medium.Swords.Sword
+	[16] = manifold.Medium.Swords.Sword,
+	[17] = manifold.Heavy.GreatAxe.StarkAxe2,
+	[18] = manifold.Medium.Swords.Scimitar,
+	[19] = manifold.Light.Rapier.SumiyaNeedle
 }
 table.freeze(wepList)
 

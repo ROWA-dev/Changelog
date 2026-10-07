@@ -20,6 +20,8 @@ local replIds        = require(script:WaitForChild("replIds")) -- THE wire ids, 
 local S2C, C2S       = replIds.S2C, replIds.C2S
 
 export type myself = baseClass.entity & {
+	-- narrows EntityBase's optional Hum: new() takes one and HumObj refuses without.
+	Hum: Humanoid,
 	parryWindow: numVal.NumberValue,
 
 	stun:     numVal.NumberValue,
@@ -59,11 +61,9 @@ export type myself = baseClass.entity & {
 	_numClimb:       number,
 	_dashForce:		 LinearVelocity,
 	_lastDashed: 	 number,
-	_lastDashCancel: number,
 	_lastJumped: 	 number,
 	_lastBlocked:    number,
 	_lastHit:        number,
-	_lastDoubleDash: number,
 	_wantSlide: 	 boolean,
 	_slideForce: 	 LinearVelocity?,
 	_slideHipDrop:   number,
@@ -120,7 +120,7 @@ local module = {
 	-- hyper armour: absolute tick() stamp like stun, class-table default so unarmoured entities cost nothing. Owned by StatusEffects/HyperArmour.
 	_hyperUntil = 0,
 
-	-- studs of HipHeight the current slide owes back, 0 when upright; class-level default so stopSlideState can never read nil on an entity that skipped new().
+	-- studs of HipHeight the current slide owes back, 0 when upright; class-level default so stopSlideState can never read nil on an entity that skipped new(). Never `HipHeight -= 1.5` by hand.
 	_slideHipDrop = 0,
 
 	-- class default: only Saringan holders pay a field.
@@ -134,6 +134,9 @@ local module = {
 
 	-- unmodded walkSpeed; CharController strips speed above it from backpedalling.
 	BASE_WALK = 13,
+
+	-- AdditiveValues mirrored server -> owner. Field name == its S2C key; both tiers loop this.
+	REPL_ADDITIVES = table.freeze({ "maxPosture", "walkSpeed", "sprintSpeed", "dashPower", "postureHeal", "slideSpeed", "charSize", "timeScale", "maxMana" }),
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -180,7 +183,6 @@ function module.new(hum: Humanoid):myself
 	self.onDashCancel = Signal.new()
 
 	self.combatants      = {}
-	self.combatDeadline  = 0
 	self.onCombatChanged = Signal.new()
 
 	self._lastAttack = 0
@@ -189,10 +191,7 @@ function module.new(hum: Humanoid):myself
 	self._lastJumped = 0
 	self._lastBlocked = 0
 	self._lastHit = 0
-	self._lastDoubleDash = 0
 	self._wantSlide = false
-	-- !! NEVER pair `HipHeight -= 1.5` / `+= 1.5` by hand: a missed or doubled call leaks the offset forever. Only _enterSlideHip/_exitSlideHip touch this.
-	self._slideHipDrop = 0
 	
 	--
 	
@@ -235,13 +234,9 @@ function module.destroy(self:myself)
 		for _, con in self.combatants do
 			con:Disconnect()
 		end
-		table.clear(self.combatants)
-		self.combatants = nil
 	end
-	self.combatDeadline = 0
 	if self.onCombatChanged then
 		self.onCombatChanged:Destroy()
-		self.onCombatChanged = nil
 	end
 	self.cooldowns:Destroy()
 	self.parryWindow:destroy()
@@ -341,16 +336,13 @@ end
 
 function module.ChangeSprinting(self:myself, setTo:boolean): boolean
 	if self.sprinting.Value ~= setTo then
-		--print("set sprint:", setTo)
 		self.sprinting.Value = setTo
 		local SprintAnim = self.charAnims.Sprint
 		if setTo == true then -- start sprint ing
-			--print("play sprint")
 			SprintAnim.Priority = Enum.AnimationPriority.Action
 			self:PlayTrack(SprintAnim,0.2)
 			self.walkSpeed:SetMod("sprint", 5) -- starts at 5?
 		elseif setTo == false then -- stopped sprint ing
-			--print("STOP sprint")
 			SprintAnim.Priority = Enum.AnimationPriority.Movement
 			SprintAnim:Stop(0.3)
 			self.walkSpeed:RemoveMod("sprint")
@@ -431,7 +423,6 @@ end
 
 function module.ChangeSliding(self:myself, setTo:boolean): boolean
 	local crouchAnim = self.charAnims.Crouch
-	--self._wantSlide = setTo
 
 	-- standing still -> the slide key crouches instead of sliding.
 	-- !! this fast-path must NEVER write `sliding.Value` for setTo==false and then fall through: the guard below would skip the ENTIRE teardown and strand the speed mod. Both branches return.
@@ -449,17 +440,15 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 		return true
 	end
 
-	if setTo == false and self.sliding.Value == false then
+	if setTo == false and not self.sliding.Value then
 		stopSlideState(self, false) -- orphan reaper, no-ops when clean
 		return false
 	end
 
 	if setTo == true then
 		while canSlide(self) == false and self._wantSlide do
-			--print("waiting can slide")
 			task.wait()
 		end
-		--print(canSlide(self), self._wantSlide)
 		if canSlide(self) == false then
 			return false
 		end
@@ -583,10 +572,6 @@ function module.Dash(self:myself, dir:any, fromServer:boolean?): boolean
 	
 	local hum = self.Hum
 	local rootpart = self.HRootPart
-	if rootpart == nil then
-		warn("rootpart not found")
-		return false
-	end
 	if dir == nil or dir == Vector3.zero then
 		dir = rootpart.CFrame.LookVector
 	end
@@ -688,7 +673,6 @@ function module.DashCancel(self:myself, dir:Vector3, fromServer:boolean?): boole
 	end
 
 	self:stopDash()
-	self._lastDashCancel = tick()
 
 	if dir ~= Vector3.zero then
 		local timeScale = self.timeScale.Value
@@ -724,24 +708,13 @@ end
 
 function module.PlayTrack(self:myself, track:AnimationTrack, fadeT:number?, weight:number?, speed:number?)
 	local timeScale = self.timeScale.Value
-	if speed == nil then
-		speed = timeScale
-	else
-		speed *= timeScale
-	end
-	if fadeT == nil then
-		fadeT = 0.1/timeScale
-	else
-		fadeT /= timeScale
-	end
-	return track:Play(fadeT, weight, speed)
+	return track:Play((fadeT or 0.1) / timeScale, weight, (speed or 1) * timeScale)
 end
 
 function module.PlayAnim(self:myself&any, anim:Animation, fadeT:number?, weight:number?, speed:number?): AnimationTrack
 	local prev = self._prevAnim
 	if prev then
 		prev:Stop()
-		prev = nil
 	end
 	
 	local track = self:LoadAnimation(anim)
@@ -780,20 +753,13 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 		onCombatChanged:Fire(model, joined)
 	end
 
-	self.maxPosture:initReplicateClient(S2C.maxPosture, remoteEvent)
-	self.walkSpeed:initReplicateClient(S2C.walkSpeed, remoteEvent)
-	self.sprintSpeed:initReplicateClient(S2C.sprintSpeed, remoteEvent)
-	self.dashPower:initReplicateClient(S2C.dashPower, remoteEvent)
-	self.postureHeal:initReplicateClient(S2C.postureHeal, remoteEvent)
-	self.slideSpeed:initReplicateClient(S2C.slideSpeed, remoteEvent)
-	self.charSize:initReplicateClient(S2C.charSize, remoteEvent)
-	self.timeScale:initReplicateClient(S2C.timeScale, remoteEvent)
-	self.maxMana:initReplicateClient(S2C.maxMana, remoteEvent)
+	for _, k in module.REPL_ADDITIVES do
+		(self :: any)[k]:initReplicateClient((S2C :: any)[k], remoteEvent)
+	end
 
 	
 	local rcon = remoteEvent.OnClientEvent:Connect(function(id:number, value:any, ...) 
 		if id == S2C.stun then
-			--self.stun.Value = value
 			if value == 0 then
 				self.timeStunned = 0
 				self.stun.Value = 0

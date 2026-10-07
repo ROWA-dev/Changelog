@@ -38,7 +38,7 @@ return function(this:wepBase.myself)
 		--- tautology: a hit turned around by Prediction still reports
 		--- isHit(), and the catch below would then grab the GRABBER. Same
 		--- line in Rah/Vise; see Class/HumObj/Grab's self-grab guard.
-		if attack:isHit() and attack.enemyEntity == enemy then
+		if attack:isHit() and attack.enemyEntity == enemy and enemy.grab then
 			isHit = attack
 		end
 	end

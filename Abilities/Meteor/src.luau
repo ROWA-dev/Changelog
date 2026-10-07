@@ -129,8 +129,8 @@ local function impact(this: myself, to: Vector3, normal: Vector3, dir: Vector3, 
 	local dist = {}
 	local _, hits = this:hitbox(CFrame.new(to), Vector3.one * (RADIUS * 2), nil, true)
 	for _, e in hits do dist[e] = (e.HRootPart.Position - to).Magnitude end
-	-- the query always ignores its caster; a meteor does not, same as Blight
-	dist[humObj] = (humObj.HRootPart.Position - to).Magnitude
+	-- the query always ignores its caster; a meteor does not, same as Blight. spareCaster: a boss raining them round itself
+	if not (this :: any).spareCaster then dist[humObj] = (humObj.HRootPart.Position - to).Magnitude end
 	-- crushed on the way down: the column back up its path, InverseRed's shape. Full blast, wherever it landed
 	local mid = to - dir * path / 2
 	local _, crushed = this:hitbox(CFrame.lookAt(mid, mid + dir), Vector3.new(CRUSH, CRUSH, path), nil, true)
@@ -140,7 +140,7 @@ local function impact(this: myself, to: Vector3, normal: Vector3, dir: Vector3, 
 		if d > RADIUS then continue end
 		local out = (enemy.HRootPart.Position - to + normal * 6).Unit
 		local attack = this:makeAtk(METEOR, enemy, out)
-		attack.dmgMult *= 1 - FALLOFF * d / RADIUS
+		attack.dmgMult *= (1 - FALLOFF * d / RADIUS) * ((this :: any).dmgMult or 1)
 		attack.knockback = this:knockback(out * KNOCK, 0.3)
 		this:executeAttack(attack)
 	end
@@ -159,6 +159,23 @@ local ROCK = table.freeze({
 		impact(proj.action, pos, if hitWorld and wh then wh.Normal else Vector3.yAxis, proj.dir, proj.carved, math.max(proj.travelled, 1))
 	end,
 })
+
+-- the rock at `k`x pace, same path: a boss sets it as .rock (with .dmgMult) on its own instance
+function module.pacedRock(k: number)
+	local r = table.clone(ROCK)
+	r.speed, r.accel = ROCK.speed * k, ROCK.accel * k * k
+	return table.freeze(r)
+end
+
+-- one rock down onto `to`, leaning in from `from`'s side. No mana, no cd: also how a boss calls them (catherdal giant)
+function module.fall(this: myself, to: Vector3, normal: Vector3, from: Vector3)
+	local rock = (this :: any).rock or ROCK
+	local originCF = CFrame.lookAt(skyFor(to, normal, from), to)
+	-- spawned before the broadcast: the drawn copy needs its id for the end packet
+	local p = this:projectile(rock, originCF)
+	-- `to` is where the telegraph goes: the line was clear to it, or it is coming through the roof over it
+	fireVFX("meteor", 2, this._humObj.HRootPart.Parent, originCF, rock.speed, rock.maxDistance, projMotion.pick(rock), p and p.id, to, normal)
+end
 
 local function useFunc(this:myself)
 	local cooldownID = "meteor"
@@ -197,11 +214,7 @@ local function useFunc(this:myself)
 	end
 	to, normal = aimPoint.clamp(root.Position, to :: Vector3, normal, RANGE)
 
-	local originCF = CFrame.lookAt(skyFor(to, normal, root.Position), to)
-	-- spawned before the broadcast: the drawn copy needs its id for the end packet
-	local p = this:projectile(ROCK, originCF)
-	-- `to` is where the telegraph goes: the line was clear to it, or it is coming through the roof over it
-	fireVFX("meteor", 2, char, originCF, ROCK.speed, ROCK.maxDistance, projMotion.pick(ROCK), p and p.id, to, normal)
+	module.fall(this, to :: Vector3, normal, root.Position)
 
 	this:endLag(0.35)
 end

@@ -127,8 +127,8 @@ That question alone lets you reject a design.
   leak is a bisect.
 
 ## WEAK TABLES: READ THIS BEFORE YOU ADD ONE
-Three are COMMENTED OUT ON PURPOSE, reasoning at the site (Entities.luau,
-"THE WEAK-MAP QUESTION, ANSWERED"). Do not re-enable them:
+Three are OFF ON PURPOSE: explicit cleanup already unmaps them, and a weak
+map turns a leak into an intermittent nil at GC time. Do not re-enable them:
 
     Entities.entityMap    __mode="v"
     PlrHandler.plrMap     __mode="v"

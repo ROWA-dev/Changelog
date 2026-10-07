@@ -22,6 +22,14 @@ local config:configs = {
 		dmg      = 16,
 		stun     = 0.66,
 		posMult  = 1,
+		onHit    = require(script.heavy)
+	},
+	weakheavy = {
+		weight   = weighEnum.Medium,
+		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
+		dmg      = 14,
+		stun     = 0.4,
+		posMult  = 0.5,
 		onHit    = require(script.heavy),
 		parryH   = 0.1
 	},
@@ -33,7 +41,7 @@ local config:configs = {
 		posMult  = 0.7,
 		onHit    = require(script.multiple),
 		stunMeOnParried = 0,
-		parryH   = 0.4
+		parryH   = 0.3
 	}
 }
 

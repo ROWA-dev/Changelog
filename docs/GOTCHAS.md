@@ -110,8 +110,9 @@ Footguns, silent failures and "why is this not working" traps.
     hits more than one thing over time -- you still loop and dedupe on
     `entityId` yourself, because sweep is first-contact-wins.
   * `no_entity` is checked in TWO places: on the Model (isRegisterable) and
-    on its Humanoid. Either tag means `Entities.Get` returns nil, so any code
-    doing `Entities.Get(hum).something` on them errors.
+    on its Humanoid. Either tag stops REGISTRATION, so an unregistered one
+    gets nil from `Entities.Get`; an already-registered one (a fresh corpse)
+    is still returned.
     (The registry is ServerScriptService/Entities.luau. Humanoids.luau is gone.)
     Registration also requires the instance to be a Model.
 
@@ -124,7 +125,9 @@ Footguns, silent failures and "why is this not working" traps.
     can set the status to `aborted`. Execute does not always reach HandleAttack.
   * `beforeAttack` is the ATTACKER's twin of it, fired first: outgoing damage
     cards (Frontliner) belong there, incoming ones (Underdog) in beforeAttacked.
-  * `HandleAttack` returns `nil` (not an enum) if the target `isDead`.
+  * `HandleAttack` returns `aborted` if the target `isDead`.
+  * `grab` is NOT in Combatant: a Mob has none. Gate a grab on `enemy.grab`
+    before it starts; every current caller does.
   * `parryH` / `dodgeH` are ADDED to the defender's window. NEGATIVE = harder
     to parry. Sign errors here make heavies parry-food.
   * `dmgTbl.onHit` only fires on the HIT branch, not on block, parry or dodge.
@@ -368,9 +371,9 @@ Footguns, silent failures and "why is this not working" traps.
     nothing. Requiring a CHILD does not pull in its PARENT.
   * TESTED TRAP: pointing `WepBase.types` at `HitboxClass` directly (to "cut
     out the DmgUtils middleman") RE-FORMS the cycle via
-    HumObj -> WepBase.types -> HitboxClass -> HitBox -> EntityLookup ->
-    Entities -> HumObj. Go to the leaf instead.
-  * The lazy in-function requires in `EntityLookup` and `HitBox` are
-    belt-and-braces now, not load-bearing. They STAY. Don't hoist them.
+    HumObj -> WepBase.types -> HitboxClass -> HitBox -> Entities -> HumObj.
+    Go to the leaf instead.
+  * The lazy in-function require in `HitBox` is belt-and-braces now, not
+    load-bearing. It STAYS. Don't hoist it.
   * Roblox prints only ONE arbitrary path through a cycle. The modules it names
     are usually a SUBSET of what's actually tangled.

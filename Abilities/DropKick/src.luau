@@ -35,16 +35,19 @@ local MAX_DIVE   = 2
 local AIM        = Vector3.new(0, -10, -8) -- the dive's aim, root space
 
 -- the ride loop runs every frame, so lead only: test where the dive is about to be
-local DIVE = table.freeze({ lead = 0.0625, worldSpace = true })
+local DIVE = table.freeze({ worldSpace = true })
 local HOP_FORCE  = 8
 local HOP_TIME   = 0.1
 local HOP_WIND   = Vector3.new(0, -1.5, 0) -- the takeoff gust, at the feet
 
 -- the contact freeze, pauseF's flash length; Smash's arm so it beats the dive's momentum
-local HITSTOP = 0.2
+local HITSTOP = 0.3
 local FREEZE = table.freeze({ axes = Vector3.one, responsiveness = 200, maxTime = HITSTOP })
 -- the victim's half of the frame: hitFront's extreme is its first frame
 local HIT_POSE = game.ServerStorage.ROWA.Class.HumObj.HitAnims.hitFront
+-- the loop pose's soles in root space; the victim is cframed chest-on to them, facing the kick
+local SOLES = Vector3.new(0, -1.8, -2.4)
+local VICTIM_AT = CFrame.new(SOLES + Vector3.new(0, -0.4, -0.5)) * CFrame.Angles(0, math.pi, 0)
 
 local diveParams = RaycastParams.new()
 diveParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -136,20 +139,29 @@ local function useFunc(this:myself)
 	if hits == nil and not humObj:inStun() then
 		local _, found = this:hitbox(
 			CFrame.new(origin + Vector3.new(0, 2, 0)),
-			Vector3.new(6, 7, 7), nil, true)
+			Vector3.new(6, 6, 6), nil, true)
 		if #found > 0 then hits = found end
 	end
 
 	local lag = 0.5 -- miss
 	if hits and not humObj:inStun() then
-		local landed = {}
+		local landed, holds = {}, {}
 		for _, enemy in pairs(hits) do
 			local attack = this:makeAtk(DROP_KICK, enemy, dir)
 			this:executeAttack(attack)
 			if attack:isHit() then
 				local e = attack.enemyEntity
-				landed[attack] = e.PlayAnim and e:PlayAnim(HIT_POSE, 0, 1, 0) or false
-				fireVFX("pauseF", char, e.HRootPart and e.HRootPart.Parent)
+				local vr = e.HRootPart
+				local pose = e.PlayAnim and e:PlayAnim(HIT_POSE, 0, 1, 0)
+				landed[attack] = pose or false
+				-- lifted to the soles, never sunk into the floor
+				if pose and vr and root then
+					local cf = root.CFrame * VICTIM_AT
+					cf += Vector3.yAxis * math.max(vr.Position.Y - cf.Y, 0)
+					vr.CFrame = cf
+					table.insert(holds, pinTo(vr, function() return cf.Position end, FREEZE))
+				end
+				fireVFX("pauseF", char, vr and vr.Parent)
 			end
 		end
 
@@ -160,10 +172,13 @@ local function useFunc(this:myself)
 			sfx.Parent = hurtbox
 			sfx:Play()
 			game.Debris:AddItem(sfx, 4)
-			local at = root and root.Position
-			local release = root and pinTo(root, function() return at end, FREEZE)
+			if root then
+				local at = root.Position
+				table.insert(holds, pinTo(root, function() return at end, FREEZE))
+				fireVFX("dropKickHit", root.CFrame * SOLES, dir, HITSTOP)
+			end
 			task.wait(HITSTOP)
-			if release then release() end
+			for _, release in holds do release() end
 
 			fireVFX("camShake", hurtbox.Position, 100, 0.3, 0.2)
 			for attack, pose in landed do

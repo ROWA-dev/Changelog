@@ -86,7 +86,7 @@ return function(this:wepTyp&any): wepType.atkResult
 		attack.hitbox = hitbox
 		this:executeAttack(attack)
 
-		if attack:isHit() or attack:isBlocked() then
+		if (attack:isHit() or attack:isBlocked()) and enemy.grab then
 			enemy.grab:grab(humObj, CATCH_C0, GRAB_MAXTIME, blade)
 			table.insert(held, enemy)
 		end

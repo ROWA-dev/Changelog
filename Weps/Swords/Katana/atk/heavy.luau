@@ -73,7 +73,7 @@ end
 --
 
 
-local function fastSlash(this:wepTyp&any, humObj):wepType.atkResult
+local function fastSlash(this:wepTyp&any, humObj, chargedTime:number):wepType.atkResult
 	if this:canTriggerCD("heavy") == false then return end
 	this:triggerCD("heavy")
 	
@@ -101,7 +101,7 @@ local function fastSlash(this:wepTyp&any, humObj):wepType.atkResult
 	local hitLanded = false
 	for _,enemy in pairs(hits) do
 		local attack = this:makeAtk(
-			dmgConfig.heavy,
+			if chargedTime > 0.4 then dmgConfig.weakheavy else dmgConfig.heavy,
 			enemy,
 			hurtbox.CFrame.LookVector
 		)
@@ -199,7 +199,7 @@ local function stop(this:wepTyp&any):wepType.atkResult
 	
 	if chargedTime < 1 then
 		warn("flash!")
-		return fastSlash(this, humObj)
+		return fastSlash(this, humObj, chargedTime)
 	else
 		warn("multiple!")
 		return multipleSlash(this, humObj)

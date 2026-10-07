@@ -19,15 +19,13 @@ local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
--- half up front, full on a connect: a feinted stab costs the cheap tier.
-local CD_FEINT, CD_FULL = 6, 12
+-- two stabs per CYCLE (rowa1's 1/14): the first commit opens it, the second waits it out; a feint only costs CD_QUICK.
+local CD_QUICK, CYCLE = 1, 12
 
 local function useFunc(this:myself & any)
 	local cooldownID = "fireStab"
 	if this:canTriggerCD(cooldownID) ~= true then return end
-	--- the feint tier, paid up front. The full price below must not pass
-	--- dontOverwrite or this pins the id at 6s. See CombatAction.triggerCD.
-	this:triggerCD(cooldownID, CD_FEINT, true)
+	this:triggerCD(cooldownID, CD_QUICK)
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 	local root = this._humObj.HurtBox
 
@@ -50,7 +48,13 @@ local function useFunc(this:myself & any)
 	end
 	fireVFX("fstabb", root)
 	this:useMana()
-	this:triggerCD(cooldownID, CD_FULL)
+	local left = (this._cycle or 0) - tick()
+	if left > CD_QUICK then
+		this._cycle = nil
+		this:triggerCD(cooldownID, left)
+	else
+		this._cycle = tick() + CYCLE
+	end
 
 	local humObj   = this._humObj
 	local hurtbox  = humObj.HurtBox

@@ -21,6 +21,7 @@ local dmgFlag  = dmgUtils.dmgFlags
 local fireVFX  = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx   = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local pinTo    = require(game.ServerStorage.ROWA.Modules.pinTo)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 -- the fist that catches them; the quake is the payoff
 local PUNCH = table.freeze({
@@ -60,6 +61,17 @@ local HIT, RELEASE, TRACK_END = 1.18, 1.37, 1.97
 -- the scene's quake reaches its DustBack, 55 studs out
 local LANE = Vector3.new(14, 10, 55)
 local FIST = CFrame.new(0, 0, -4)
+-- {studs out, radius}: the blast rolls down the lane and widens, floored a stud above the feet so the ground stood on survives
+local BLAST = table.freeze({ {12, 8}, {28, 11}, {48, 14}, {72, 18} })
+
+local function blast(origin: Vector3, forward: Vector3)
+	for _, step in BLAST do
+		local r, at = step[2], origin + forward * step[1]
+		Destruction.Ellipsoid(nil, CFrame.lookAlong(Vector3.new(at.X, origin.Y - 2 + r, at.Z), forward),
+			Vector3.new(r * 2, r * 2, r * 3), 4 + r / 3, forward * 150 + Vector3.new(0, 30, 0))
+		task.wait(0.05)
+	end
+end
 
 local function useFunc(this:myself)
 	local cooldownID = "quake"
@@ -117,6 +129,7 @@ local function useFunc(this:myself)
 
 	fireVFX("quake", 3, char)
 	local forward = hurtbox.CFrame.LookVector
+	task.spawn(blast, hurtbox.Position, forward)
 	local _, hits = this:hitbox(CFrame.new(0, 0, -LANE.Z / 2), LANE)
 	for _, enemy in hits do
 		local attack = this:makeAtk(QUAKE, enemy, forward)

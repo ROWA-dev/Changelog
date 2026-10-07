@@ -7,7 +7,6 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "FullBlue",
-	manaUse = 20, -- 2x, as is the drain: Six Eyes halves both back
 }
 module.__tostring = baseClass.__tostring
 module.__index = module

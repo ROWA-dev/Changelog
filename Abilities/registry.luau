@@ -66,6 +66,8 @@ local abilityList:list = {
 	[54] = manifold.Umbrage,
 	[55] = manifold.Meteor,
 	[56] = manifold.Quake,
+	[57] = manifold.Maelstrom,
+	[58] = manifold.Healing,
 }
 table.freeze(abilityList)
 
@@ -181,6 +183,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		desc = "A lock-on bolt; a connect follows with a 10-shot volley.",
 		req = { light = 4 },
 	},
+	[manifold.Healing] = {
+		desc = "Hold to heal whoever you face, or yourself. Drains mana until you drop under 5.",
+		req = { light = 8 },
+		tier = DraftTiers.RARE,
+	},
 	[manifold.JoltKick] = {
 		desc = "A lightning roundhouse that chains a second jolt.",
 		req = { lightning = 4 },
@@ -192,6 +199,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.StormUp] = {
 		desc = "A rising spin that launches you both. Air-combo opener.",
 		req = { lightning = 8 },
+		tier = DraftTiers.RARE,
 	},
 	[manifold.Cero] = {
 		desc = "A wide beam cannon that carves a tunnel.",
@@ -205,7 +213,6 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Lightning] = {
 		desc = "Call a bolt down on a target's position.",
 		req = { lightning = 6 },
-		tier = DraftTiers.RARE,
 	},
 	[manifold.Tendrils] = {
 		desc = "Blood tendrils grab, hoist and break a target.",
@@ -230,7 +237,6 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.IceShards] = {
 		desc = "Rain twenty ice shards in five waves.",
 		req = { ice = 6 },
-		tier = DraftTiers.RARE
 	},
 	[manifold.bloodChain] = {
 		desc = "A chain that yanks both parties to the midpoint.",
@@ -246,7 +252,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.DropKick] = {
 		desc = "Hop up, then dive at the ground on a diagonal.",
-		req = { dexterity = 4, strength = 2 },
+		req = { dexterity = 4 },
 	},
 	[manifold.Divide] = {
 		desc = "Uppercut, drag them in, two committed strikes.",
@@ -255,6 +261,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Smash] = {
 		desc = "Uppercut, flash-step up, drive them back down.",
 		req = { strength = 8 },
+		tier = DraftTiers.RARE,
 	},
 	[manifold.Burst] = {
 		desc = "Charge with a fireball; anyone caught is dragged along.",
@@ -263,7 +270,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Bastar] = {
 		desc = "Pin them on the blade, then hurl it down the lane.",
 		req = { hvy = 5 },
-		tier = DraftTiers.RARE,
+		notWepClass = FISTS, -- the pin and the throw need a blade
 	},
 	[manifold.Streak] = {
 		desc = "Blink-slash a 40-stud lane, dragging everyone to its end.",
@@ -273,7 +280,6 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Prediction] = {
 		desc = "Attacks are turned back on whoever threw them.",
 		req = { mind = 5 },
-		tier = DraftTiers.RARE,
 	},
 	[manifold.Freeze] = {
 		desc = "A line of ice. Freezes in one hit.",
@@ -293,11 +299,13 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.InverseRed] = {
 		desc = "fast projectile explodes on impact",
 		-- CARD id raw, like loadChar's, so Abilities gains no require on Cards. NOT ability 13.
-		req = { card = 13 } -- Six Eyes
+		req = { card = 13 }, -- Six Eyes
+		tier = DraftTiers.RARE,
 	},
 	[manifold.FullBlue] = {
 		desc = "A gravity well that drags everything into orbit.",
-		req = { card = 13 } -- Six Eyes card
+		req = { card = 13 }, -- Six Eyes card
+		tier = DraftTiers.RARE,
 	},
 	[manifold.BoulderKick] = {
 		desc = "Rip a chunk of the map out and punt it.",
@@ -306,12 +314,11 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.Meteor] = {
 		desc = "Call a meteor down where you aim, up to 140 studs. It comes in at an angle and leaves a crater.",
 		req = { earth = 6 },
-		tier = DraftTiers.RARE,
 	},
 	[manifold.Quake] = {
 		desc = "aka Strongest Left. Tears 55 studs down the lane.",
 		req = { strength = 10 },
-		tier = DraftTiers.RARE,
+		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.HollowPurple] = {
 		desc = "long windup unparryable undodgeable projectile",
@@ -322,6 +329,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		desc = "1.5x mana regen, copy abilities, +10% basic weapon damage. Exclusive with Six Eyes.",
 		req = { mind = 10 },
 		excludesCards = { 13 }, -- Six Eyes
+		tier = DraftTiers.ULTIMATE,
 	},
 	[manifold.Tentacles] = {
 		desc = "Dark strands lash out of a portal down a long lane.",
@@ -330,6 +338,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.WindSlash] = {
 		desc = "Heavy Slash, shoots out a boomerang projectile",
 		req = { wind = 2 },
+	},
+	[manifold.Maelstrom] = {
+		desc = "Huge double slash",
+		req = { wind = 5 },
 	},
 	[manifold.Umbrage] = {
 		desc = "Lock on within 100 studs, dive at them as a shadow wraith, then hold them for a flurry of shadow cuts.",
@@ -346,6 +358,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 			creation = 4,
 			And = { anyOf({ "hvy", "med", "lht" }, 2), anyOf(require(game.ReplicatedStorage.Modules.ElementRegistry), 9) },
 		},
+		tier = DraftTiers.RARE,
 	},
 }
 table.freeze(abilityMeta)

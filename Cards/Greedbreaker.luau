@@ -4,7 +4,7 @@ local Debris = game:GetService("Debris")
 
 export type myself = baseClass.myself
 
-local BONUS = 0.2
+local BONUS = 0.3
 
 local module = {}
 module.__index = module
@@ -25,7 +25,7 @@ function module.new(humObj):myself
 	self:addConnection(humObj.onAttack:Connect(function(attack)
 		if not (attack.greedbreaker and attack:isHit()) then return end
 		local victim = attack.enemyEntity
-		local at = victim and (victim.getFxPart and victim:getFxPart() or victim.HRootPart)
+		local at = victim and victim:getFxPart()
 		if at == nil then return end
 
 		local fx = script.ParticleEmitter:Clone()

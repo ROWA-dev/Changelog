@@ -44,7 +44,7 @@ return function(this:wepBase.myself): wepBase.atkResult
 			guard in Class/HumObj/Grab for what that does.
 			A read grab has to WHIFF, and falling through to the else branch
 			(anim stop + endLag, having just eaten your own heavy) is it. ]]
-		if attack:isHit() and attack.enemyEntity == enemy then
+		if attack:isHit() and attack.enemyEntity == enemy and enemy.grab then
 			isHit = attack
 		end
 	end

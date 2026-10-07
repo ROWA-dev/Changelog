@@ -44,7 +44,7 @@ local HITBOX_SZ = Vector3.new(6,7,7)
 
 -- active frames: the swing rides a lunge, so one snapshot lands before the body
 -- arrives. `lead` is the other half if it still reads short.
-local SWING = table.freeze({ window = 0.2 })
+local SWING = table.freeze({ window = 0.12 })
 
 local function drawScythe(humObj:any): any
 	local char = humObj.Model
@@ -98,8 +98,8 @@ local function useFunc(this:myself&any)
 		return
 	end
 	this:useMana()
-	this:triggerCD(cooldownID, 6, true)
-	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*12, 0.2)
+	this:triggerCD(cooldownID, 8, true)
+	local bmover = this:bodyForce(hurtbox.CFrame.LookVector*15, 0.2, false, 0.4)
 
 	local _, hits = this:sweep(HITBOX_CF, HITBOX_SZ, SWING)
 	-- sweep bails on stun; this is the interrupt branch it bailed for.

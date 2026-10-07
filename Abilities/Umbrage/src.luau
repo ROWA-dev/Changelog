@@ -49,7 +49,7 @@ local LOCK     = table.freeze({ distWeight = 10, requireLOS = true }) :: Targeti
 local RANGE    = 100
 local WINDUP   = 0.4 -- the anim's lean lands at 0.43
 local SPEED    = 140
-local TRAVEL   = RANGE / SPEED + 0.3
+local TRAVEL   = RANGE / SPEED + 0.6 -- slack for the homing curve, a runner, and a loop-back after a dodge
 local CD       = 12
 local WHIFF_CD = 2
 --- the pin outlives the hit this long, so the dive's momentum dies where it landed
@@ -71,7 +71,10 @@ local PROJ = table.freeze({
 	--- the one it locked is seized for the cuts; anyone else in the way is bowled over
 	onHit = function(proj, attack)
 		local enemy = attack.enemyEntity
-		if enemy == proj.target then
+		--- a dodge only buys its i-frames: once they're spent the dive can loop back and take them
+		if attack:isDodged() then
+			task.delay(enemy.dodgeWindow, function() proj.seen[enemy.entityId] = nil end)
+		elseif enemy == proj.target then
 			proj.seized = attack:isHit() or attack:isBlocked()
 		elseif attack:isHit() then
 			enemy:bodyForce(proj.dir * 12, 0.2)
@@ -155,11 +158,16 @@ local function useFunc(this:myself)
 
 	--- seized: the shadow holds them up in front of you and cuts; you stay planted until it lets go
 	local hold = eroot.Position + Vector3.new(0, LIFT, 0)
+	local grab = this:PlayAnim(script.Grab, 0.05, 1, 1)
 	local release = pinTo(eroot, function() return hold end, { maxTime = CUTS * CUT_GAP + 0.3 })
 	local letGo = false
 	for i = 1, CUTS do
 		task.wait(CUT_GAP)
-		if letGo or this:channelBreak() or target.isActive ~= true then break end
+		--- a clean hold lets the anim play out; a broken one cuts it
+		if letGo or this:channelBreak() or target.isActive ~= true then
+			if grab then grab:Stop(0.15) end
+			break
+		end
 		fireVFX("umbrage", 4, target.Model, i == CUTS)
 		--- spawned: ping compensation can hold an execute, and that must not stretch the cadence
 		task.spawn(function()
@@ -172,6 +180,11 @@ local function useFunc(this:myself)
 	unpin()
 
 	this:endLag(0.15)
+end
+
+--- a parried cut only ends the flurry, so it skips AbilityBase's attack lockout
+function module.onParried(self:myself, attack:any)
+	if attack.dmgTbl ~= CUT then baseClass.onParried(self, attack) end
 end
 
 function module.use(self:myself)

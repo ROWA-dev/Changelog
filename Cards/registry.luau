@@ -1,5 +1,6 @@
 --!strict
 local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
+local DraftTiers = require(game.ReplicatedStorage.Modules.DraftTiers)
 
 export type card = {
 	name: string,
@@ -12,6 +13,7 @@ export type card = {
 	
 	innate: boolean?,
 	unObtainable: boolean?,
+	tier: string?, -- Modules/DraftTiers, nil is the default colour
 
 	-- the SAME gate weapons and abilities use. nil = ungated.
 	req: Requirements.req?,
@@ -80,7 +82,7 @@ local cardList:clType = {
 	},
 	[9] = {
 		name = "Strength",
-		desc = "your basic attacks deal 5% more weapon damage",
+		desc = "weapon attacks deal 5% more weapon damage",
 		mods = { wepDmgMult = 0.05 }, -- AttackClass reads it for weapon attacks only
 		req = {
 			strength = 6,
@@ -94,12 +96,14 @@ local cardList:clType = {
 		desc = "+10% weapon damage, +10% weapon posture damage, +20 posture, +10 max health",
 		module = manifold.Haki,
 		req = { strength = 6, fortitude = 4 },
+		tier = DraftTiers.RARE,
 	},
 	[11] = {
 		name = "Shield",
 		desc = "+40 max posture and a shield that replaces your block stance",
 		module = manifold.Shield,
 		req = { fortitude = 6 },
+		tier = DraftTiers.RARE,
 	},
 	[12] = {
 		name = "Frontliner",
@@ -113,18 +117,21 @@ local cardList:clType = {
 		module = manifold.SixEye,
 		knobs = { getupMult = 3, manaCostMult = 0.75 },
 		req = { mind = 6 },
+		tier = DraftTiers.ULTIMATE,
 	},
 	[14] = {
 		name = "Fortitude",
 		desc = "+40 max health",
 		module = manifold.Fortitude,
 		req = { fortitude = 8 },
+		tier = DraftTiers.RARE,
 	},
 	[15] = {
 		name = "Quick Step",
 		desc = "dodging grants a second dodge window, if you keep off the attack. one chain evades 40 damage",
 		module = manifold.QuickStep,
 		req = { dexterity = 8 },
+		tier = DraftTiers.RARE,
 	},
 	[16] = {
 		name = "Many-Handed",
@@ -144,6 +151,7 @@ local cardList:clType = {
 		module = manifold.SideShotgun,
 		req = { lht = 4, card = 17 }, -- Side Gun
 		replaces = 17,
+		tier = DraftTiers.RARE,
 	},
 	[19] = {
 		name = "Mana Pores",
@@ -181,6 +189,7 @@ local cardList:clType = {
 		module = manifold.Bloodletting,
 		-- the ELEMENT is spelled `blood`; an unknown name is unsatisfiable, not skipped.
 		req = { blood = 8 },
+		tier = DraftTiers.RARE,
 	},
 	[25] = {
 		name = "Deep Wound",
@@ -226,12 +235,14 @@ local cardList:clType = {
 		desc = "Strong knockback burns both fighters and detonates on the victim.",
 		module = manifold.EmperorFlame,
 		req = { flame = 9, strength = 1 },
+		tier = DraftTiers.RARE,
 	},
 	[32] = {
 		name = "Dispel",
 		desc = "landing a weapon heavy puts the ability they are using, or last used, on cooldown for 2 seconds per damage dealt, 30 seconds to 4 minutes",
 		module = manifold.Dispel,
 		req = { dark = 8 },
+		tier = DraftTiers.RARE,
 	},
 	[33] = {
 		name = "Purity",
@@ -271,7 +282,7 @@ local cardList:clType = {
 	},
 	[39] = {
 		name = "Greedbreaker",
-		desc = "your weapon hits deal 20% more damage to opponents who are attacking",
+		desc = "your weapon hits deal 30% more damage to opponents who are attacking",
 		module = manifold.Greedbreaker,
 		req = {
 			Or = {
@@ -281,7 +292,7 @@ local cardList:clType = {
 	},
 	[40] = {
 		name = "Callus",
-		desc = "take 20% less damage while attacking, after the first 0.1 seconds of the attack",
+		desc = "take 30% less damage while attacking, after the first 0.1 seconds of the attack",
 		module = manifold.Callus,
 		req = { fortitude = 5 },
 	},
@@ -290,6 +301,25 @@ local cardList:clType = {
 		desc = "speed debuffs on you are half as strong",
 		knobs = { slowMult = 0.5 }, -- HumObj:slow does the scaling
 		req = { dexterity = 2, fortitude = 2 },
+	},
+	[42] = {
+		name = "Adept",
+		desc = "+15% weapon damage",
+		mods = { wepDmgMult = 0.15 },
+		tier = DraftTiers.RARE,
+		req = {
+			Or = {
+				{hvy = 9}, {med = 9}, {lht = 9}
+			} :: {Requirements.req}
+		},
+	},
+	[43] = {
+		name = "Mana Eater",
+		desc = "regain mana upon parrying a non-weapon attack",
+		module = manifold.ManaEater,
+		req = {
+			Or = { {mind = 1}, {dark = 1} } :: {Requirements.req}
+		},
 	},
 }
 table.freeze(cardList)

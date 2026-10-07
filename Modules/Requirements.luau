@@ -363,6 +363,16 @@ function module.eachStat(req: req?, fn: (string, number, any) -> ())
 	for _, sub in ipairs(req.Or or {}) do module.eachStat(sub, fn) end
 end
 
+--- stat points the gate demands: leaves + sum, through And, never Or (a branch is optional).
+function module.cost(req: req?): number
+	if req == nil then return 0 end
+	local n = 0
+	eachLeaf(req, function(_, amount) n += amount end)
+	for _, amount in pairs(req.sum or {}) do n += amount end
+	for _, sub in ipairs(req.And or {}) do n += module.cost(sub) end
+	return n
+end
+
 --- authoring guard: a typo'd stat name is a req that can never pass, silently.
 --  Call it from a test after adding reqs; nothing in prod calls it.
 function module.validate(req: req?, label: string?): boolean

@@ -16,7 +16,7 @@ Thin wrapper around any Humanoid, players AND NPCs.
   Fields:  Name, isActive, entityId (auto-incrementing), Hum, HRootPart, Janitor
   Signals: beforeAttacked, beforeAttack (attacker side), onAttacked, onAttack
   Methods: :Damage(amt)            -- flat `Hum.Health -= amt`
-           :HandleAttack(atk, src) -- stub, returns 0 ("ready"); overridden by HumObj
+           no HandleAttack: a bare EntityBase is not a Combatant, HumObj/SimpleEntity own it
            :LoadAnimation(anim)    -- lazily creates an Animator if missing
            :AddConnection/:RemConnection (Janitor passthrough)
            :destroy()              -- destroys playing tracks + signals, clears table
@@ -52,8 +52,8 @@ Adds the state both sides need to read/predict.
   stun pierces armour. Every TrueStun caller is a punish or a grab cinematic,
   so that split needs no per-caller config.
   Owned by Class/StatusEffects/HyperArmour; do not set it by hand.
-  Same gate exists on SimpleEntity and TestDummy, so all three Combatant
-  implementers behave identically.
+  Same gate exists on SimpleEntity (and its TrueStun pierces it too), so
+  both Combatant implementers behave identically.
 
   Consumed on the client via ReplicatedFirst/ClientData/ClientClass.luau
   (`self.HumObj = HumObjClass.new(hum)`), and subclassed on the server by HumObj.
@@ -146,7 +146,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
   :onAttackReturn(enum, src) -- sets status, fires enemy.onAttacked + my.onAttack
 
 ### HandleAttack resolution order (HumObj)
-    1. isDead                 -> returns nil
+    1. isDead                 -> returnEnums.aborted
     2. isParry(attack)        -> FireAllClients("parry", ...), stuns the ATTACKER
                                  (Heavy: 0.3s stun + 0.4s threshold, else 0.4s +
                                  0.5s; overridable per-dmgTbl via `stunMeOnParried`),
@@ -354,7 +354,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
   ServerStorage/ROWA/Class/HitboxClass.luau: value object holding
   {cf, sz, op, ignoreHum}; :hit() delegates to ServerScriptService/HitBox.luau.
   HitBox.hitbox(cf, sz, overlapParams, ignore) does GetPartBoundsInBox and
-  returns ENTITIES deduped on `entityId`, resolved via EntityLookup.fromPart.
+  returns ENTITIES deduped on `entityId`, resolved via Entities.Get(part).
   (It used to return {Humanoid} deduped on the Humanoid. HitboxClass.types
   still SAYS `{Humanoid}`; that type is knowingly stale, see
   ARCHITECTURE.md.) `ignore` is the attacker's Humanoid at every current

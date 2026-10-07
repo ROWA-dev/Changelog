@@ -5,7 +5,7 @@ export type myself = baseClass.myself & {
 	_atkStart: number,
 }
 
-local CUT = 0.2
+local CUT = 0.3
 local GRACE = 0.1 -- the first 0.1s of an attack is unprotected, so mashing attack is not a shield
 
 local module = {}

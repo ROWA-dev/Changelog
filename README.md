@@ -1,24 +1,22 @@
-# big balancing
-dropkick more vfx
-windup 0.54 -> 0.6
-dmg 18 -> 20
-wont do kb on blocked hit anymore
-0.4s -> 0.5s endlag
+# alot
+fixed bastar code and sum vfx
+dropkick dmg 18->20 but less annoying kb/posture dmg + sum vfx
+firestab is double use once again
+fullblue mana 20->10
+harvest active hitbox 0.2s -> 0.12s
+joltkick stuns you if u block it now so u cant just attack/dodge out being hit by the first hit + sum vfx
+quake now breaks stuff
+umbrage will curve back hit again when dodged
 
-imbue mana 20 -> 10 cheaper mana use
+sword m1 dmg from 13 -> 12.5
+sword arial windup 0.42->0.44
 
-meteor mana and cooldown 30 -> 40
+cards arent all colored gold now...
 
-paper bombs mana 10 -> 20
+new 8 light ability *Healing* (1hp per mana) OP
+new wind ability Maelstrom TODO vfx messy and needs an animation
 
-six eyes gets up 4x faster -> 3x faster
-mana cost multiplier 0.5 -> 0.75
+new weapon Scimitar (needs a heavy attack- same w sword)
+new weapon Stark Axe (needs cool heavy atk)
+new weapon Sumiya Needle (its like a fishing rod rapier) (needs cool heavy attack and effect)
 
-new card" Sure Footing" all speed debuffs are half as strong
-
-many handed +1 weapon -> +2
-
-fist heavy doing 20 dmg 💀💀☠️☠️ (same as executer btw) -> 17 😁
-
-
-and more weapon requirement changes

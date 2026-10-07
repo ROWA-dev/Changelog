@@ -35,6 +35,9 @@ local JOLT = {
 	end,
 }
 
+-- resp 40 drifted, 120+ too hard; no `axes`, its 10M force yanks.
+local HOME = table.freeze({ responsiveness = 80, maxTime = 1.2 })
+
 --- the JoltFx burst, fired twice (once per kick).
 local function joltBurst(root: BasePart)
 	local stpos = root.Position + Vector3.new(0, -1, 0)
@@ -80,6 +83,12 @@ local function useFunc(this:myself)
 		if attack:isHit() or attack:isBlocked() then
 			connected = enemy
 		end
+		-- a blocked first kick locks their m1 and dash through the 0.6 beat, so they can't escape the follow-up.
+		if attack:isBlocked() then
+			local lock = this:scaledTime(0.6)
+			enemy.canAtkThreshold = math.max(enemy.canAtkThreshold, tick() + lock)
+			enemy.cooldowns:trigger("dash", lock)
+		end
 	end
 
 	if connected == nil then
@@ -100,6 +109,10 @@ local function useFunc(this:myself)
 	if anim then anim:Stop() end
 	this:PlayAnim(script.Anim2, 0.1, 1, 1)
 
+	-- fired on the land so the bolts read as the hit's discharge; only a connect reaches here.
+	local leftLeg = char:FindFirstChild("Left Leg")
+	if leftLeg then fireVFX("joltCharge", leftLeg, true) end
+
 	--[[ !! HRootPart, NOT HurtBox. The pin is an AlignPosition and the
 		HurtBox is a massless query volume -- constraining it moves nothing,
 		so the caster never actually homed onto the victim and the second
@@ -109,18 +122,10 @@ local function useFunc(this:myself)
 	local unpin = pinTo(myRoot, function()
 		if eroot.Parent == nil or myRoot.Parent == nil then return nil end
 		return eroot.Position - myRoot.CFrame.LookVector * 4
-	end, { maxTime = 1.2 })
+	end, HOME)
 
-	--- a plain 0.3s beat between the two kicks.
-	if this:feintWait(0.3) then
-		unpin()
-		return
-	end
-
-	local leftLeg = char:FindFirstChild("Left Leg")
-	if leftLeg then fireVFX("joltCharge", leftLeg) end
-
-	if this:feintWait(0.3) then
+	--- a plain 0.6s beat between the two kicks.
+	if this:feintWait(0.6) then
 		unpin()
 		return
 	end

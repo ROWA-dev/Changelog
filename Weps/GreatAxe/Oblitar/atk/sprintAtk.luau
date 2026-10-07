@@ -1,13 +1,4 @@
 --!strict
---- Oblitar sprint attack - rowa1's THRUST (Main `typ == 3`, Anims.Thrust).
---- !! Damage(6) is `oblM1`, NOT `oblH2` -- the doc reads as though oblH2 were
---- the thrust; that is the heavy's second beat, four branches away. This is an
---- m1-strength poke with a lunge, which is why it binds to sprintAtk.
---- FORCE 12, not the 6 a literal MiniDash conversion gives: S7's P/5 is for a
---- FLAT mover, and rowa2's bodyForce DECAYS across the window, so it needs
---- roughly double to cover the same ground. Also exactly Claymore's sprint.
---- NOT PORTED: rowa1's two extra whiff re-queries. basicAtks.sprint owns whiff
---- handling for every weapon.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 

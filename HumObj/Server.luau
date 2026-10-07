@@ -1,5 +1,4 @@
 --!strict
--- TODO asses redundancy in this entire class... how bad does this scale with alot of humobjs??
 debug.setmemorycategory("HumObjClass")
 local packages = game.ReplicatedStorage:WaitForChild("Packages")
 local classes  = game.ReplicatedStorage:WaitForChild("Class")
@@ -23,7 +22,6 @@ local grabClass     = require(script.Grab)
 local dragBody      = require(script.dragBody)
 
 local knockForce = require(game.ServerScriptService.Knockback)
---local emoteBase = require(game.ServerStorage.ROWA.Emotes.EmoteBase)
 
 type atkTyp = DmgUtils.atkTyp
 type abilityTyp = any
@@ -44,7 +42,6 @@ export type myself = baseClass.myself & {
 	hurtboxSize: AdditiveValue.myself,
 	HurtBox:     BasePart,
 
-	--stopW: boolean?, -- set to true to cancel windup
 	isDead: boolean?,
 	-- the KNOCKED-DOWN pool. nil until you are first knocked, nil again once you get up, so an entity that never goes down holds nothing.
 	knockedHp: number?,
@@ -136,10 +133,9 @@ export type myself = baseClass.myself & {
 
 	SubscribedEventCB: ((id:number, value: any)->())?,
 
-	_emoteInstance: any?,--emoteBase.myself?,
+	_emoteInstance: any?,
 	StopEmote: (self: myself) -> (),
 	destroy: (self: myself) -> (),
-	--new:     (hum: Humanoid) -> myself,
 }
 
 local module = {
@@ -171,7 +167,6 @@ local function landHitSpeedBuff(humObj:any, extraTime:number)
 	humObj.walkSpeed:SetMod("landhit", 5+extraTime)
 	
 	local speedboostTime = 0.8+extraTime
-	--print(speedboostTime)
 	humObj._landHitExpire = time() + speedboostTime
 	if not humObj._landHitTask then
 		humObj._landHitTask = task.spawn(landSpeed, humObj)
@@ -208,6 +203,25 @@ local function releaseWep(w:any)
 end
 
 local onDied = require(script.onDeath)
+
+-- the torso's BD/BD2 blood. `make` clones them in when missing; without it a torso that never bled stays clean.
+local function torsoBleed(torso: BasePart, a: number, b: number, make: boolean?)
+	local bfx: any, bfx2: any = torso:FindFirstChild("BD"), torso:FindFirstChild("BD2")
+	if make and bfx == nil then
+		bfx = script.BD:Clone()
+		bfx.Archivable = false
+		bfx.Parent = torso
+	end
+	if make and bfx2 == nil then
+		bfx2 = script.BD2:Clone()
+		bfx2.Archivable = false
+		bfx2.Parent = torso
+	end
+	if bfx and bfx2 then
+		bfx:Emit(a)
+		bfx2:Emit(b)
+	end
+end
 
 -- HandleAttack's branches. Pure moves; see the dispatcher for the order.
 local resolveParry = require(script.resolution.resolveParry)
@@ -250,11 +264,8 @@ function module.new(hum: Humanoid): myself
 	local abstract = baseClass.new(hum) :: baseClass.myself
 	local self:myself = setmetatable(abstract, module) :: any
 
-	self.isActive 		= true
 	-- destroy() stamps "norepli" on the root, so a live HumObj on that same root must clear it or CharController reads the stale tag as "apply air friction forever". Symmetric with destroy.
-	if self.HRootPart then
-		self.HRootPart:RemoveTag("norepli")
-	end
+	self.HRootPart:RemoveTag("norepli")
 	self.hurtboxSize    = AdditiveValue.new(1)
 	self.dmgRecord      = dmgRecord.new()
 	self.cards          = cardLoader.new(self)
@@ -266,7 +277,7 @@ function module.new(hum: Humanoid): myself
 	self.cooldowns:setCooldown("feint", 2) -- basic feint (wep)
 	self.cooldowns:setCooldown("feint2", 3) -- ability feint
 	self.cooldowns:setCooldown("parry", 1.2)
-	self.cooldowns:setCooldown("wieldMsg", 2) -- anti chat-spam on refused wields -- TODO this is redundant and is a waste?
+	self.cooldowns:setCooldown("wieldMsg", 2) -- anti chat-spam on refused wields; quietTrigger needs it registered
 
 	self.canAtkThreshold = 0
 	self.dodgeThreshold  = 0
@@ -276,39 +287,32 @@ function module.new(hum: Humanoid): myself
 
 	self.equippedWeapons = {}
 	self.maxWeapons      = AdditiveValue.new(1) -- ONE committed weapon by default; Many-Handed is the card that raises it
-	self.wepDmgMult      = AdditiveValue.new(1) -- TODO might be redundant?
+	self.wepDmgMult      = AdditiveValue.new(1)
 	self.healthHeal      = AdditiveValue.new(1)
-	self.heldWeapon      = nil
-	self.sideWep         = nil
-	self.wielding_weapon = nil
-	self.using_ability  = nil
-	self.blockAnimOverride = nil
 
 	self.onAttackWindup = Signal.new()
 	self.onStunned      = Signal.new()
 
 	local function blockedOrHit(attack:atkTyp)		
-		local myEntity = self--attack.enemyEntity
-		landHitSpeedBuff(myEntity, attack.dmgTbl.stun*2)
+		landHitSpeedBuff(self, attack.dmgTbl.stun*2)
 
 		-- TODO turn this into blade Dancer card (resets dash after landing a hit)
-		myEntity.cooldowns:Reset("dash")
-		myEntity.cooldowns:Reset("dashCancel")
+		self.cooldowns:Reset("dash")
+		self.cooldowns:Reset("dashCancel")
 
 		local enemyEntity = attack.enemyEntity
-		local enemyhum = enemyEntity.Hum
 
-		-- continue air combo, only up close: a ranged hit landing on two jumpers is not one
-		if enemyEntity.floating and enemyhum.FloorMaterial == Enum.Material.Air and myEntity.Hum and myEntity.Hum.FloorMaterial == Enum.Material.Air and myEntity:isSwimming() == false and enemyEntity:isSwimming() == false
-			and (myEntity.HRootPart.Position - enemyEntity.HRootPart.Position).Magnitude <= 15 then
+		-- continue air combo, only up close: a ranged hit landing on two jumpers is not one. isSwimming first: only fighters float, a Mob has neither.
+		if enemyEntity.isSwimming and enemyEntity.Hum.FloorMaterial == Enum.Material.Air and self.Hum.FloorMaterial == Enum.Material.Air and self:isSwimming() == false and enemyEntity:isSwimming() == false
+			and (self.HRootPart.Position - enemyEntity.HRootPart.Position).Magnitude <= 15 then
 			local keepfloating = 0.2 + attack.dmgTbl.stun
 
 			-- maybe seperate this int oa module or uppercut class? cuz im using this in here and uppercut attack too...
 			enemyEntity.floating.Value = keepfloating
-			myEntity.floating.Value = keepfloating
+			self.floating.Value = keepfloating
 
-			enemyEntity.targetFloatY.Value = myEntity.HurtBox or myEntity.HRootPart
-			myEntity.targetFloatY.Value = enemyEntity.HurtBox or enemyEntity.HRootPart
+			enemyEntity.targetFloatY.Value = self.HurtBox
+			self.targetFloatY.Value = enemyEntity.HurtBox
 		end
 	end
 
@@ -349,7 +353,6 @@ function module.new(hum: Humanoid): myself
 				and now < lastUsedFeint + 0.8 -- window for heuristic feint read??
 				and self.attacking.Value == true
 			then
-				--==warn("FEINT READ")
 				local mambo = script.Mambo:Clone()
 				mambo.Parent = self.HRootPart
 				mambo:Play()
@@ -368,30 +371,14 @@ function module.new(hum: Humanoid): myself
 				emitcount += math.floor(attack.knockback.force.Magnitude^0.5)
 			end
 
-			if self.Hum and self.Hum.Parent and self.Hum.Parent:FindFirstChild("Torso") then
+			local myTorso:BasePart? = self.Model:FindFirstChild("Torso")::any
+			if myTorso then
 				local newDmg = attack:CalculateDamage()
 				if attackIsSlash == false then
 					newDmg = newDmg/2
 				end
-				local myTorso:BasePart = self.Hum.Parent:FindFirstChild("Torso")::any
-				local bfx:ParticleEmitter = myTorso:FindFirstChild("BD")::any
-				local bfx2:ParticleEmitter = myTorso:FindFirstChild("BD2")::any
-				if bfx == nil then
-					bfx = script.BD:Clone()
-					bfx.Archivable = false
-					bfx.Parent = myTorso
-				end
-				if bfx2 == nil then
-					bfx2 = script.BD2:Clone()
-					bfx2.Archivable = false
-					bfx2.Parent = myTorso
-				end
-				local totalBleed1 = math.clamp(newDmg/5,2,200)
-				local totalBleed2 = math.clamp(newDmg/4,2,300)
-				bfx:Emit(totalBleed1)
-				bfx2:Emit(totalBleed2)
+				torsoBleed(myTorso, math.clamp(newDmg/5,2,200), math.clamp(newDmg/4,2,300), true)
 
-				local relativeAtkDir = myTorso.CFrame:VectorToObjectSpace(attack.atkDir)
 				local allHitAnims = script.HitAnims:GetChildren()
 				local hitAnim = allHitAnims[math.random(1,#allHitAnims)]
 				-- this flinch is what cancels abilities: it takes over lastAbilityAnim, one slot, so both cannot play. Armoured skips the anim entirely.
@@ -446,8 +433,7 @@ function module.new(hum: Humanoid): myself
 		self:Die()
 	end), "humDied")
 
-	-- self.Model, not HRootPart.Parent: the rootpart need not sit directly under the model on a non-standard rig.
-	local character:Model = self.Model or self.HRootPart.Parent::any
+	local character:Model = self.Model
 	local hurtbox = character:FindFirstChild("hurtbox") or script.hurtbox:Clone()
 	hurtbox:WaitForChild("Weld").Part0 = self.HRootPart
 	hurtbox.Weld.Part1 = hurtbox
@@ -457,9 +443,7 @@ function module.new(hum: Humanoid): myself
 	do
 		local ogHBSize = self.HurtBox.Size
 		local function hurtboxSzChange()
-			local sz = self.hurtboxSize.Value--*self.charSize.Value
-			--print("HURTBOX CHANGE!", sz)
-			self.HurtBox.Size = ogHBSize*sz
+			self.HurtBox.Size = ogHBSize*self.hurtboxSize.Value
 		end
 		self:AddConnection(self.hurtboxSize.onSet:Connect(hurtboxSzChange), "hurtboxSz_set")
 		self:AddConnection(self.hurtboxSize.onRemove:Connect(hurtboxSzChange), "hurtboxSz_rem")
@@ -467,9 +451,7 @@ function module.new(hum: Humanoid): myself
 
 	do
 		local charSizeChanged = function(key: string) 
-			-- self.Model, not HRootPart.Parent
-			local model:any = self.Model or (self.HRootPart::any).Parent
-			model:ScaleTo(self.charSize.Value)
+			self.Model:ScaleTo(self.charSize.Value)
 		end
 		self:AddConnection(self.charSize.onSet:Connect(charSizeChanged), "charSz_set")
 		self:AddConnection(self.charSize.onRemove:Connect(charSizeChanged), "charSz_rem")
@@ -499,7 +481,6 @@ function module.new(hum: Humanoid): myself
 		end), "emote_attacking")
 
 		self:AddConnection(self.blocking.Changed:Connect(stopEmote), "emote_blocking")
-		--self.onDash:Connect(stopEmote)
 	end
 	regenLoop(self, hum.HealthChanged, function()
 		return hum.Health < hum.MaxHealth
@@ -529,9 +510,7 @@ function module.new(hum: Humanoid): myself
 	regenLoop(self, self.floating.Changed, function()
 		return self.floating.Value > 0
 	end, function(dt)
-		if self.floating then
-			self.floating.Value = math.clamp(self.floating.Value - dt, 0, 2)
-		end
+		self.floating.Value = math.clamp(self.floating.Value - dt, 0, 2)
 		return true
 	end, "frame") -- floating alone used task.wait(); posture used wait()
 
@@ -557,8 +536,7 @@ function module.StopEmote(self:myself&any)
 end
 
 function module.destroy(self:myself&any)
-	--print("DESTROYED ME!", self.Hum, debug.traceback())
-	_clearWieldedWeapon(self)
+	self:UnwieldWeapon()
 	if self.isActive ~= true then
 		return
 	end
@@ -585,9 +563,6 @@ function module.destroy(self:myself&any)
 		self.parryAnim:Destroy()
 	end
 	self:StopEmote()
-	-- already released by _clearWieldedWeapon at the top; same ownership rule.
-	releaseWep(self.wielding_weapon)
-	self:setWieldingWeapon(nil)
 	if self.plrObj then
 		self.plrObj.HumObj = nil
 	end
@@ -631,8 +606,6 @@ local returnEnums = DmgUtils.returnEnum
 -- !! HandleAttack - the dispatcher. Resolution ORDER is the contract: dead -> parry -> dodge -> block -> hit, and the combat test harness pins it.
 -- !! THE BLOCK BRANCH CAN RETURN nil ON PURPOSE -- a broken guard falls through to the hit branch, which is how guard-breaking works. Do not collapse it into `return blocked`.
 function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
-	local enemyEntity = attack.enemyEntity
-
 	-- !! NEVER `return nil` here: a caller cannot tell "already dead" from "forgot to return". Routed through onAttackReturn so attack.status is really set.
 	if self.isDead then
 		return attack:onAttackReturn(returnEnums.aborted, atkSource)
@@ -640,18 +613,17 @@ function module.HandleAttack(self:myself, attack:atkTyp, atkSource:any?):number
 
 	local atkPostureDMG = attack:CalculatePostureDmg()
 
-	if enemyEntity.isParry and enemyEntity:isParry(attack) then
+	if self:isParry(attack) then
 		return resolveParry(self, attack, atkSource, atkPostureDMG)
 	end
 
 	-- !! PASS THE ATTACK, as the parry and block branches do: without it every `dmgTbl.dodgeH` is a no-op, including HollowPurple's i-frame-piercing -10.
-	if enemyEntity.isDodge and enemyEntity:isDodge(attack) then
+	if self:isDodge(attack) then
 		return attack:onAttackReturn(returnEnums.dodged, atkSource)
 	end
 
-	--enemyEntity.HRootPart.AssemblyLinearVelocity = Vector3.new(0,0,0)
 	-- TODO make block motors like move when hit on client side
-	if enemyEntity.isBlock and enemyEntity:isBlock(attack) then
+	if self:isBlock(attack) then
 		local blocked = resolveBlock(self, attack, atkSource, atkPostureDMG)
 		if blocked ~= nil then
 			return blocked
@@ -684,9 +656,9 @@ function module.useSideWep(self:myself&any): boolean
 end
 
 function module.wieldChanged(self:myself&any): Signal.Signal<any?>
-	local signal = rawget(self, "_wieldChanged")
-	if signal then return signal end
-	signal = Signal.new()
+	local existing = rawget(self, "_wieldChanged")
+	if existing then return existing end
+	local signal = Signal.new()
 	rawset(self, "_wieldChanged", signal)
 	return signal
 end
@@ -700,18 +672,6 @@ function module.setWieldingWeapon(self:myself&any, weapon:weaponBase.myself?)
 	if signal then signal:Fire(weapon) end
 end
 
-function _clearWieldedWeapon(self:myself)
-	local wielding = self.wielding_weapon
-	if wielding then
-		if wielding.unwield then
-			--wielding:unequip()
-			pcall(wielding.unequip, wielding)
-		end
-		self:setWieldingWeapon(nil)
-		return true
-	end
-	return false
-end
 
 
 local Requirements = require(game.ReplicatedStorage.Modules.Requirements)
@@ -809,8 +769,14 @@ function module.WieldWeapon(self:myself&any, wep: weaponBase.myself?): (boolean,
 	return true
 end
 
-function module:UnwieldWeapon(): boolean
-	return _clearWieldedWeapon(self)
+function module.UnwieldWeapon(self:myself&any): boolean
+	local wielding = self.wielding_weapon
+	if wielding == nil then return false end
+	if wielding.unwield then
+		pcall(wielding.unequip, wielding)
+	end
+	self:setWieldingWeapon(nil)
+	return true
 end
 
 -- forget `wep` from every pose, for a weapon leaving the player while it may still be committed.
@@ -869,6 +835,13 @@ end
 
 --
 
+-- nil unless both face the same way (dot > 0.1); then how much I face the attacker, < 0 = they are behind me.
+local function facingWhenAligned(self:any, attacker:any): number?
+	local mine, theirs = self.HurtBox.CFrame, attacker.HurtBox.CFrame
+	if mine.LookVector:Dot(theirs.LookVector) <= 0.1 then return nil end
+	return mine.LookVector:Dot((theirs.Position - mine.Position).Unit)
+end
+
 function module.isParry(self:myself, atk:atkTyp?)
 	local window = self.parryWindow.Value/self.timeScale.Value
 
@@ -880,21 +853,10 @@ function module.isParry(self:myself, atk:atkTyp?)
 		if atk.dmgTbl.parryH then
 			window += atk.dmgTbl.parryH
 		end
-
-		local enemyEntity = atk.myEntity
-		local enemyRoot:BasePart = enemyEntity.HurtBox or enemyEntity.HRootPart
-		local humRoot:BasePart   = self.HurtBox or self.HRootPart
-		local dot = humRoot.CFrame.LookVector:Dot(enemyRoot.CFrame.LookVector)
-
-		if dot > 0.1 then -- is behind via angle
-			--harder to parry if attacked from behind
-
-			local toEnemy = (enemyRoot.Position - humRoot.Position).Unit
-			local facingDot = humRoot.CFrame.LookVector:Dot(toEnemy)
-			--print(facingDot)
-			if facingDot < 0 then -- is behind via position
-				window -= 0.06
-			end
+		-- harder to parry if attacked from behind
+		local facing = facingWhenAligned(self, atk.myEntity)
+		if facing and facing < 0 then
+			window -= 0.06
 		end
 	end
 	
@@ -933,16 +895,9 @@ end
 function module.isBlock(self:myself, atk:atkTyp?)
 	local isBlockingValue = self.blocking.Value
 	if atk and atk.myEntity and isBlockingValue then
-		local enemyEntity = atk.myEntity
-		local enemyRoot:BasePart = enemyEntity.HurtBox or enemyEntity.HRootPart
-		local humRoot:BasePart   = self.HurtBox or self.HRootPart
-		local dot = humRoot.CFrame.LookVector:Dot(enemyRoot.CFrame.LookVector)
-
-		if dot > 0.1 then -- is behind via angle
-			local toEnemy = (enemyRoot.Position - humRoot.Position).Unit
-			local facingDot = humRoot.CFrame.LookVector:Dot(toEnemy)
-			--print(facingDot)
-			return facingDot > 0 -- is in front via position
+		local facing = facingWhenAligned(self, atk.myEntity)
+		if facing then
+			return facing > 0 -- is in front via position
 		end
 	end
 	if self.ragdoll:inRagdoll() then -- cannot block in ragdoll
@@ -960,7 +915,6 @@ function module.canAttack(self:myself)
 
 	return (
 		not self:inStun() -- cant attack in stun
-			--and self:isDodge() == false
 			and not self:isKnocked() -- cant attack on the floor. rowa1 gated its whole input handler on this.
 			and now > lastDashed
 			and now > self.canAtkThreshold
@@ -1023,14 +977,7 @@ function module.GuardBreak(self:myself)
 		while self.isActive and self:inTrueStun() and gbreakTrack do
 			local now = tick()
 			if tick() > bleed then bleed = now + 0.1
-				local char = self.Model::any
-				local myTorso:BasePart = char:FindFirstChild("Torso")::any
-				local bfx:ParticleEmitter = myTorso:FindFirstChild("BD")::any
-				local bfx2:ParticleEmitter = myTorso:FindFirstChild("BD2")::any
-				if bfx and bfx2 then
-					bfx:Emit(2)
-					bfx2:Emit(1)
-				end
+				torsoBleed(self.Model:FindFirstChild("Torso")::any, 2, 1)
 
 				game.ReplicatedStorage.FastRemotes.blood:FireAllClients(
 					1,
@@ -1055,7 +1002,7 @@ function module.GetBlade(self:myself): Instance?
 	if wep and wep._model then
 		return wep._model:FindFirstChild("Blade", true)
 	end
-	return nil-- self.HRootPart.Parent:FindFirstChild("Blade", true)
+	return nil
 end
 
 function module.feint(self:myself): boolean
@@ -1065,11 +1012,7 @@ function module.feint(self:myself): boolean
 end
 
 function module.Heal(self: myself, amt: number): number
-	if not self.Hum then
-		return 0
-	end
-
-	local myTorso: BasePart = self.Hum.Parent:FindFirstChild("Torso") :: any
+	local myTorso: BasePart = self.Model:FindFirstChild("Torso") :: any
 	local cloud: ParticleEmitter = myTorso:FindFirstChild("healCloud") :: any or script.HealFx.healCloud:Clone()
 	local cross: ParticleEmitter = myTorso:FindFirstChild("healCross") :: any or script.HealFx.healCross:Clone()
 
@@ -1150,17 +1093,12 @@ function module.setTransparency(self: myself & { _ogTransparency: ogTransparency
 	end
 
 	local ogTransparency = self._ogTransparency
-	local char = self.Model or (self.HRootPart and self.HRootPart.Parent)
-	if not char then return end
+	local char = self.Model
 
 	if transparency == nil or transparency == 0 then
 		for inst:any, value in pairs(ogTransparency) do
 			if inst and inst.Parent then
-				if inst:IsA("BasePart") or inst:IsA("Decal") then
-					inst.Transparency = value :: number
-				elseif inst:IsA("ParticleEmitter") then
-					inst.Transparency = value :: NumberSequence
-				end
+				inst.Transparency = value
 			end
 		end
 		table.clear(ogTransparency)
@@ -1171,16 +1109,12 @@ function module.setTransparency(self: myself & { _ogTransparency: ogTransparency
 	transparency = math.clamp(transparency, 0, 1)
 
 	for _, inst:any in pairs(char:GetDescendants()) do
-		if inst:IsA("BasePart") or inst:IsA("Decal") then
+		local isPart = inst:IsA("BasePart") or inst:IsA("Decal")
+		if isPart or inst:IsA("ParticleEmitter") then
 			if ogTransparency[inst] == nil then
 				ogTransparency[inst] = inst.Transparency
 			end
-			inst.Transparency = math.max(inst.Transparency, transparency)
-		elseif inst:IsA("ParticleEmitter") then
-			if ogTransparency[inst] == nil then
-				ogTransparency[inst] = inst.Transparency
-			end
-			inst.Transparency = NumberSequence.new(transparency)
+			inst.Transparency = if isPart then math.max(inst.Transparency, transparency) else NumberSequence.new(transparency)
 		end
 	end
 end
@@ -1193,7 +1127,6 @@ function module.Dash(self:myself, dir:Vector3, fromSS:boolean?): boolean
 		warn(self,"dashing while attack... punish?")
 		self.cooldowns:trigger("dashCancel")
 	end
-	--print("SS DASH", fromSS, canDash)
 	if canDash == false then return false end
 	
 	self.dodgeThreshold = tick() + self.dodgeWindow
@@ -1201,11 +1134,9 @@ function module.Dash(self:myself, dir:Vector3, fromSS:boolean?): boolean
 	
 	self.ragdoll:unragdoll()
 	if self:isBlock() == true then
-		--warn("RAH punish dash while blocking")
 		self.cooldowns:trigger("dashCancel")
 		self:ChangeBlocking(false)
 	end
-	--print("ssDASH", dir)
 	return baseClass.Dash(self, dir, fromSS)
 end
 
@@ -1231,7 +1162,6 @@ function module.canBlock(self:myself&any)
 	return (
 		self.attacking.Value == false -- cant block while attacking
 			and now > self._lastDashed + 0.3/self.timeScale.Value
-			--and now > self.cooldowns:lastUsedAt("dash") + 0.3
 			and baseClass.inTrueStun(self) == false
 			and self:isKnocked() == false
 	)
@@ -1263,14 +1193,12 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 			task.wait()
 		end
 		if self._wantblock == false then
-			warn("CANCEL", self:canAttack())
 			return self.blocking.Value
 		end
 		if self:canBlock() == false then
 			return false
 		end
 	end
-	--setTo = self._wantblock
 	if self.blocking.Value ~= setTo then
 		self._lastBlocked = tick()
 
@@ -1323,7 +1251,7 @@ function module.ChangeState(self:myself, state:Enum.HumanoidStateType)
 		if plr then
 			game.ReplicatedStorage.RemoteEvents.VFX:FireClient(plr, "cstate", state)
 		end
-	elseif self.Hum then
+	else
 		self.Hum:ChangeState(state)
 	end
 end
@@ -1343,22 +1271,15 @@ function module.bodyForce(self:myself, forceVector:Vector3, t: number, isRootRel
 end
 
 function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Player)
-	self.maxPosture:initReplicateServer(S2C.maxPosture, remoteEvent, plr)
-	self.walkSpeed:initReplicateServer(S2C.walkSpeed, remoteEvent, plr)
-	self.sprintSpeed:initReplicateServer(S2C.sprintSpeed, remoteEvent, plr)
-	self.dashPower:initReplicateServer(S2C.dashPower, remoteEvent, plr)
-	self.postureHeal:initReplicateServer(S2C.postureHeal, remoteEvent, plr)
-	self.slideSpeed:initReplicateServer(S2C.slideSpeed, remoteEvent, plr)
-	self.charSize:initReplicateServer(S2C.charSize, remoteEvent, plr)
-	self.timeScale:initReplicateServer(S2C.timeScale, remoteEvent, plr)
-	self.maxMana:initReplicateServer(S2C.maxMana, remoteEvent, plr)
+	for _, k in baseClass.REPL_ADDITIVES do
+		(self :: any)[k]:initReplicateServer((S2C :: any)[k], remoteEvent, plr)
+	end
 
 	self:AddConnection(self.stun.Changed:Connect(function(number: number) 
-		local duration = self.timeStunned--number-tick()
+		local duration = self.timeStunned
 		if number == 0 then
 			duration = 0
 		end
-		--print("STUN duration:",duration, number)
 		remoteEvent:FireClient(plr, S2C.stun, duration)
 	end), "repl_stun")
 
@@ -1451,7 +1372,6 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 			self.sliding.Value = value
 		end
 	end
-	--self:AddConnection(rcon, "repliServer")
 end
 
 return table.freeze(module)

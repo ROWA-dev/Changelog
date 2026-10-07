@@ -16,7 +16,7 @@ forms a REAL cycle.
 ever used at runtime. That single edge put THIRTEEN modules into one
 strongly-connected component:
 
-    DmgUtils -> HitboxClass -> HitBox -> EntityLookup -> Entities
+    DmgUtils -> HitboxClass -> HitBox -> Entities
              -> HumObj -> WepBase.types -> DmgUtils
 
 plus Knockback, knockBreakStuff, SimpleEntity, AttackClass and the three
@@ -43,20 +43,18 @@ NOT pull in its PARENT. That property is what the whole scheme rests on.
 The "obvious tidy" of pointing `WepBase.types` straight at `HitboxClass`
 (cutting out the DmgUtils middleman) RE-FORMS the cycle by a new route:
 
-    HumObj -> WepBase.types -> HitboxClass -> HitBox -> EntityLookup
-           -> Entities -> HumObj
+    HumObj -> WepBase.types -> HitboxClass -> HitBox -> Entities -> HumObj
 
 Anything wanting hitbox types goes to the LEAF. Never to HitboxClass.
 
 ## LAZY REQUIRES: DORMANT, NOT ABSENT
-`EntityLookup` and `HitBox` require their dependency INSIDE a function and
-cache it. Those were load-order deadlock fixes. The deadlock is gone at its
-source, so they are belt-and-braces, and THEY STAY. Hoisting them buys
-nothing and re-arms the failure the moment someone adds a type import
-upstream. Both files say so at the top.
+`HitBox` requires `Entities` INSIDE a function and caches it. That was a
+load-order deadlock fix. The deadlock is gone at its source, so it is
+belt-and-braces, and IT STAYS. Hoisting it buys nothing and re-arms the
+failure the moment someone adds a type import upstream.
 
 ## A LAZY REQUIRE IS A CYCLE YOU AGREED TO KEEP
-`HumObj/onDeath` used to hold a third one, and it is GONE. It required
+`HumObj/onDeath` used to hold another one, and it is GONE. It required
 `Entities` inside a function purely to walk the whole registry calling
 `dmgRecord:endMembership(self)` on every entity alive, because
 `contributions` is keyed by ATTACKER and so cannot answer "whose fights am I
@@ -72,9 +70,10 @@ whole HumObj subtree requires `Entities` nowhere, and the walk went from
 O(every entity alive) to O(my fights).
 
 So, before writing another lazy require: ASK WHAT DATA THE CALLEE ACTUALLY
-WANTED. Twice now the answer has been a couple of fields, not a module. The
-two that remain (EntityLookup, HitBox) stay because they are belt-and-braces
-over a deadlock already fixed at its source -- not because deferring is a fix.
+WANTED. It is usually a couple of fields or one function, not a module
+(EntityLookup <-> Entities was cut by moving its one function into Entities).
+The one that remains (HitBox) stays because it is belt-and-braces over a
+deadlock already fixed at its source -- not because deferring is a fix.
 
 ## HOW TO CHECK YOUR WORK
 The type warning is the oracle: open the Script Analysis window. A cycle
