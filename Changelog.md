@@ -3,6 +3,42 @@ For any contributors wanting to help push changes faster, check the [guidelines]
 
 # Changelog
 
+## 1.26.0 - A Sock Of A Pond
+
+### Added ✅
+- New light ability: Healing
+- New wind ability: Maelstrom
+  - VFX WIP
+- New mind/dark card: Mana Eater
+- New WIP weapons
+  - New sword: Scimitar
+  - New greataxe: Stark Axe
+  - New rapier: Sumiya Needle
+- Jolt Kick now stuns you if blocked
+- Quake now breaks stuff
+- Umbrage will now come back if dodged
+
+### Changes 🛠️
+- Fixed Bastar bugs and VFX
+- Increased Dropkick damage (18 -> 20)
+- Decreased Dropkick knockback
+- Adjusted Dropkick code and VFX
+- Fire Stab can be used twice again
+  - It must have been bugged or something idk
+- Decreased Full Blue mana cost (20 -> 10)
+- Decreased Harvest hitbox duration (0.2s -> 0.12s)
+- Increased Harvest cooldown (6s -> 8s)
+- Increased Harvest dash velocity
+- Secret Meteor changes
+- Increased Callus damage mitigation (-20% -> -30%)
+- Increased Greedbreaker damage buff (+20% -> +30%)
+- Adjusted Oblitar M1 hitbox offset (+0.5 studs Z)
+- Katana heavy changes
+- Increased Sword aerial attack wind up (0.42 -> 0.44)
+- Decreased Sword M1 damage (13 -> 12.5)
+
+<br><sub>2026-10-04</sub>
+
 ## 1.25.0 - Big Balance
 
 ### Added ✅
