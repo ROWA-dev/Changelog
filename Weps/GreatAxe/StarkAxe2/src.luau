@@ -7,6 +7,8 @@ export type myself = baseWep.myself & {
 local module = {
 	Name = "Stark Axe",
 	req = { hvy = 4 },
+	idleAnim = script:WaitForChild("idle"),
+	sprintAnim = script:WaitForChild("sprint"),
 }
 module.__tostring = baseWep.__tostring
 module.__index = module

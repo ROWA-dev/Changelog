@@ -11,7 +11,6 @@ local weaponBase = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 local baseClass  = require(classes.HumObjClient)
 local replIds    = require(classes.HumObjClient.replIds) -- THE wire ids. SINGLE SOURCE, shared with the client, same deal as KNOCK_HP.
 local S2C, C2S   = replIds.S2C, replIds.C2S
-local locomotionProfiles = require(game.ReplicatedStorage.Modules.LocomotionProfiles)
 
 local DmgUtils      = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgRecord     = require(script.damageRecord)
@@ -1323,23 +1322,23 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 	end
 
 	-- Wield switches can emit nil -> weapon in one thread. Defer once and send
-	-- only the final inherited profile, so heavy -> heavy costs no packet.
-	local lastLocomotionProfile = locomotionProfiles.DEFAULT
-	local locomotionQueued = false
+	-- only the final sprint asset id (0 = default), so heavy -> heavy costs no packet.
+	local lastSprintId = 0
+	local sprintQueued = false
 	self:AddConnection(self:wieldChanged():Connect(function()
-		if locomotionQueued then return end
-		locomotionQueued = true
+		if sprintQueued then return end
+		sprintQueued = true
 		task.defer(function()
-			locomotionQueued = false
+			sprintQueued = false
 			if self.isActive ~= true then return end
 			local weapon = self.wielding_weapon
-			local wanted = if weapon then weapon.locomotionProfile else locomotionProfiles.DEFAULT
-			local profile = locomotionProfiles.resolveId(wanted)
-			if profile == lastLocomotionProfile then return end
-			lastLocomotionProfile = profile
-			remoteEvent:FireClient(plr, S2C.locomotionProfile, profile)
+			local anim = weapon and weapon.sprintAnim
+			local id = anim and tonumber(anim.AnimationId:match("%d+")) or 0
+			if id == lastSprintId then return end
+			lastSprintId = id
+			remoteEvent:FireClient(plr, S2C.sprintAnim, id)
 		end)
-	end), "repl_locomotionProfile")
+	end), "repl_sprintAnim")
 
 	-- bespoke: these two send an id AND a value, so they are not rows in valueRepl above.
 	self:AddConnection(self.cooldowns.CooldownChanged:Connect(function(id: string, value: number) 

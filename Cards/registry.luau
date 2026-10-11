@@ -113,9 +113,9 @@ local cardList:clType = {
 	},
 	[13] = {
 		name = "Six Eyes",
-		desc = "+10 max health and 20% faster healing, 3x faster knockdown recovery. Abilities 25% cheaper. Exclusive with Saringan",
+		desc = "+10 max health and 20% faster healing, 2x faster knockdown recovery. Abilities 25% cheaper. Exclusive with Saringan",
 		module = manifold.SixEye,
-		knobs = { getupMult = 3, manaCostMult = 0.75 },
+		knobs = { getupMult = 2, manaCostMult = 0.75 },
 		req = { mind = 6 },
 		tier = DraftTiers.ULTIMATE,
 	},

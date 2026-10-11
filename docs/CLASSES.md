@@ -34,8 +34,7 @@ Adds the state both sides need to read/predict.
   indicator*(). Test one with rawget; reading is what allocates.
   howIsaveRuntimeRAM #0 has the measurements and why it matters.
   Default cooldowns set here: dashCancel 1.5, dash 1.5, slide 2
-  CharAnims solely owns lazy tracks; locomotion profiles override Walk/Sprint
-  by one owner-only id and fall back per field.
+  CharAnims solely owns lazy tracks; the wielded weapon's `sprintAnim` overrides Sprint.
   Methods: :setupController, :ChangeSprinting, :ChangeSliding, :stopDash,
            :Stun(t, bypassArmour?), :TrueStun, :inStun(offset?), :inTrueStun,
            :isKnocked, :canBeKnocked,

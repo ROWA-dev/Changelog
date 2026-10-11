@@ -1,11 +1,4 @@
 --!strict
---[[ Turns incoming projectiles aside in flight. Uses `deflect` because it
-already re-points the shot, drops the homing lock, opens a grace window and
-calls tellClients (so the drawn copy corrects itself), clears `seen`, grants
-one bounce. Not a hit-time abort:
-beforeAttacked is too late, and aborting spends pierce, which reads as an
-absorb rather than a miss. ]]
-
 local baseClass = require(script.Parent:WaitForChild("cardBase"))
 local Projectile = require(game.ServerStorage.ROWA.Class.Projectile)
 local RunService = game:GetService("RunService")

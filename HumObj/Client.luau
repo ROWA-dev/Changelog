@@ -337,12 +337,11 @@ end
 function module.ChangeSprinting(self:myself, setTo:boolean): boolean
 	if self.sprinting.Value ~= setTo then
 		self.sprinting.Value = setTo
-		local SprintAnim = self.charAnims.Sprint
 		if setTo == true then -- start sprint ing
-			SprintAnim.Priority = Enum.AnimationPriority.Action
-			self:PlayTrack(SprintAnim,0.2)
+			self.charAnims:playSprint(0.2)
 			self.walkSpeed:SetMod("sprint", 5) -- starts at 5?
 		elseif setTo == false then -- stopped sprint ing
+			local SprintAnim = self.charAnims.Sprint
 			SprintAnim.Priority = Enum.AnimationPriority.Movement
 			SprintAnim:Stop(0.3)
 			self.walkSpeed:RemoveMod("sprint")
@@ -802,8 +801,8 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 			end
 		elseif id == S2C.floating then
 			self.floating.Value = value
-		elseif id == S2C.locomotionProfile then
-			self.charAnims:setLocomotionProfile(value)
+		elseif id == S2C.sprintAnim then
+			self.charAnims:setSprintAnim(value)
 		elseif id == S2C.trueStun then
 			-- duration on the wire, absolute timestamp locally, 0 = clear. Written straight to the field, since :TrueStun would re-route through :Stun and double up S2C.stun.
 			self.trueStun.Value = if value > 0 then tick() + value else 0

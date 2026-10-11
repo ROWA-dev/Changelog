@@ -37,7 +37,11 @@ local emoteList:elType = {
 	[7] = {
 		name = "Scary", -- ts ass
 		module = manifold.StayInPlace.Scary,
-	}
+	},
+	[8] = {
+		name = "Chess",
+		module = manifold.StayInPlace.Chess,
+	},
 }
 table.freeze(emoteList)
 
@@ -86,7 +90,8 @@ function module.getEmoteName(id:number): string?
 end
 
 local Humanoids = require(game.ServerScriptService.Entities)
-function module.playEmote(id:number, hum:Humanoid)
+-- arg goes to .new, server callers only (a Chess guest gets the host's board)
+function module.playEmote(id:number, hum:Humanoid, arg:any?)
 	if module.isValidId(id) == false then return end -- ids come from the client
 	local humObj = Humanoids.Get(hum)
 	if humObj == nil or humObj.isActive ~= true then return end
@@ -99,7 +104,7 @@ function module.playEmote(id:number, hum:Humanoid)
 	-- weapon put-away/give-back is owned by EmoteBase.new/.destroy so that every
 	-- emote teardown path restores it. UnwieldWeapon() here orphaned the weapon.
 	local emoteClass = module.getEmoteClass(id)
-	local emoteInstance = emoteClass.new(animator)
+	local emoteInstance = emoteClass.new(animator, arg)
 	humObj._emoteInstance = emoteInstance -- register BEFORE Play: an emote that
 	emoteInstance:Play()                  -- ends inside Play must find itself here
 	return

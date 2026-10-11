@@ -52,6 +52,55 @@ local SPEED    = 110
 local GRAVITY  = 40
 local MAX_DIST = 400
 local LIFETIME = 8
+module.SPEED, module.GRAVITY, module.BLDR = SPEED, GRAVITY, BLDR
+
+-- tears a rock out at `digAt` and gathers it to gatherCF (in `follow`'s space if given: it rides that part until launched). nil = nothing breakable there.
+-- also how a boss throws one (catherdal giant): .scale on its instance grows the rock, .bldr swaps the dmg table
+function module.dig(this: myself, digAt: Vector3, gather: number, gatherCF: CFrame, follow: BasePart?): { any }?
+	local k = (this :: any).scale or 1
+	-- DIG, THEN DECIDE: Grab carves the crater, describes the biggest cuboids that came out, and withholds them from the rubble fx so they leave the ground exactly once.
+	local _, chunks = Destruction.Grab(nil, CFrame.new(digAt), DIG_SIZE * k, DIG_MINSZ * k, nil, GRAB_COUNT)
+	if chunks == nil or #chunks == 0 then return nil end
+	fireVFX("boulderKick", 1, this._humObj.Model, chunks, gather, gatherCF, follow)
+	return chunks
+end
+
+-- flings a dug rock from originCF
+function module.launch(this: myself, chunks: { any }, originCF: CFrame)
+	local k = (this :: any).scale or 1
+	local char = this._humObj.Model
+	-- built per cast because ONE field varies: the hit volume is sized off the pieces actually torn up, so a rock of big slabs hits wider than one of scraps.
+	local avg = Vector3.zero
+	for _, c in ipairs(chunks) do
+		avg += (c.size + Vector3.new(5, 5, 5)) / 2
+	end
+	avg /= #chunks
+	-- half the magnitude of the average piece size
+	local hitSize = Vector3.one * math.clamp(avg.Magnitude * 0.5, 4, 10 * k)
+
+	-- !! THE PROJECTILE IS SPAWNED BEFORE THE FX: the drawn rock needs the projectile's `id` to receive a correction, and the id does not exist until it is spawned.
+	local p = this:projectile(table.freeze({
+		speed       = SPEED,
+		gravity     = GRAVITY,
+		maxDistance = MAX_DIST,
+		lifetime    = LIFETIME,
+		size        = hitSize,
+		dmgTbl      = (this :: any).bldr or BLDR,
+		knockbackForce = 9.6,
+		knockbackTime  = 0.2,
+
+		onExpire = function(proj: any, pos: Vector3, _hitWorld: boolean)
+			-- where it really stopped is THE ONLY THING THE CLIENTS COULD NOT PREDICT, so it is the only thing sent.
+			fireVFX("boulderKick", 3, char, pos)
+			-- r7 where it lands; velo is studs/SECOND, along the direction it was actually travelling
+			Destruction.Sphere(nil, pos, 7 * k, 4.2, proj.dir * 70)
+			fireVFX("camShake", pos, 300, 1, 0.15)
+		end,
+	}), originCF)
+
+	fireVFX("boulderKick", 2, char, originCF, SPEED, GRAVITY, MAX_DIST, LIFETIME,
+		p and p.id)
+end
 
 local function useFunc(this:myself)
 	local cooldownID = "boulderKick"
@@ -70,17 +119,13 @@ local function useFunc(this:myself)
 	local forward = hurtbox.CFrame.LookVector
 	local digAt = hurtbox.Position + forward * 6 + Vector3.new(0, -2, 0)
 
-	-- DIG, THEN DECIDE: Grab carves the crater, describes the biggest cuboids that came out, and withholds them from the rubble fx so they leave the ground exactly once.
-	local _, chunks = Destruction.Grab(
-		nil,
-		CFrame.new(digAt),
-		DIG_SIZE,
-		DIG_MINSZ,
-		nil,
-		GRAB_COUNT
-	)
+	-- where the rock assembles: in front of the caster, at kicking height
+	local gatherCF = CFrame.new(
+		hurtbox.Position + forward * 6 + Vector3.new(0, 2, 0),
+		hurtbox.Position + forward * 12)
+	local chunks = module.dig(this, digAt, GATHER, gatherCF)
 
-	if chunks == nil or #chunks == 0 then
+	if chunks == nil then
 		-- the fizzle tier: 2s, no mana spent. The full price below must not pass
 		-- dontOverwrite or this pins the id at 2s for the session. See triggerCD.
 		if anim then anim:Stop(0.1) end
@@ -89,12 +134,6 @@ local function useFunc(this:myself)
 		return
 	end
 
-	-- where the rock assembles: in front of the caster, at kicking height
-	local gatherCF = CFrame.new(
-		hurtbox.Position + forward * 6 + Vector3.new(0, 2, 0),
-		hurtbox.Position + forward * 12)
-
-	fireVFX("boulderKick", 1, char, chunks, GATHER, gatherCF)
 	-- the telegraph: the kicking leg glows red for the whole gather
 	local leftLeg = char:FindFirstChild("Left Leg")
 	if leftLeg then
@@ -125,38 +164,7 @@ local function useFunc(this:myself)
 	-- re-read: the caster may have turned during the gather
 	forward = (hurtbox.CFrame.LookVector + Vector3.new(0,0.1,0)).Unit
 	local originCF = CFrame.new(gatherCF.Position, gatherCF.Position + forward)
-
-	-- built per cast because ONE field varies: the hit volume is sized off the pieces actually torn up, so a rock of big slabs hits wider than one of scraps.
-	local avg = Vector3.zero
-	for _, c in ipairs(chunks) do
-		avg += (c.size + Vector3.new(5, 5, 5)) / 2
-	end
-	avg /= #chunks
-	-- half the magnitude of the average piece size
-	local hitSize = Vector3.one * math.clamp(avg.Magnitude * 0.5, 4, 10)
-
-	-- !! THE PROJECTILE IS SPAWNED BEFORE THE FX: the drawn rock needs the projectile's `id` to receive a correction, and the id does not exist until it is spawned.
-	local p = this:projectile(table.freeze({
-		speed       = SPEED,
-		gravity     = GRAVITY,
-		maxDistance = MAX_DIST,
-		lifetime    = LIFETIME,
-		size        = hitSize,
-		dmgTbl      = BLDR,
-		knockbackForce = 9.6,
-		knockbackTime  = 0.2,
-
-		onExpire = function(proj: any, pos: Vector3, _hitWorld: boolean)
-			-- where it really stopped is THE ONLY THING THE CLIENTS COULD NOT PREDICT, so it is the only thing sent.
-			fireVFX("boulderKick", 3, char, pos)
-			-- r7 where it lands; velo is studs/SECOND, along the direction it was actually travelling
-			Destruction.Sphere(nil, pos, 7, 4.2, proj.dir * 70)
-			fireVFX("camShake", pos, 300, 1, 0.15)
-		end,
-	}), originCF)
-
-	fireVFX("boulderKick", 2, char, originCF, SPEED, GRAVITY, MAX_DIST, LIFETIME,
-		p and p.id)
+	module.launch(this, chunks, originCF)
 
 	this:endLag(0.3)
 end

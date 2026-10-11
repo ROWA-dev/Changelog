@@ -56,7 +56,7 @@ so the layer you declare one on is its blast radius.
 
 | layer | seeds |
 |---|---|
-| weight (`Light`/`Medium`/`Heavy`) | `req`, `postureGain`, `locomotionProfile`, `onParried`, the m1-cycle fields |
+| weight (`Light`/`Medium`/`Heavy`) | `req`, `postureGain`, `sprintAnim`, `onParried`, the m1-cycle fields |
 | family | `WepType`, `blockAnim`/`parryAnim`/`idleAnim` + the Animation children they name |
 | weapon | `Name`, its `Model`, `dmgConfig`, `attack` |
 
@@ -134,9 +134,7 @@ Lifecycle, the weapon-only half:
 | `:holsterAt(i)` | back-slot offset applied on top of the C0 authored in Studio (captured once into `_strapC0`), indexed by position in `equippedWeapons` |
 | `:unequip()` / `:destroy()` | `destroy` destroys all four AdditiveValues; `table.clear` alone leaks their mod lists |
 
-`locomotionProfile` is an inherited numeric id from `Modules/LocomotionProfiles`;
-HumObj sends the changed id once to the owner and CharAnims lazily resolves
-optional Walk/Sprint assets.
+`sprintAnim` (inherited like `idleAnim`) is sent as its asset id on wield change and plays at Action2, over the weapon's idle.
 
 `HumObj:getBlockAnim()` resolves `blockAnimOverride` before the weapon default,
 so a card never overwrites a weapon's authored animation.

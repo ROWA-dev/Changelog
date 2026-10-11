@@ -159,7 +159,7 @@ Both halves are load-bearing. A "refund" applied after the full price is a silen
 no-op. A full price passed with `dontOverwrite` after a short one has been
 registered is *also* a no-op, permanently: one whiff pins that id at the cheap
 tier for the session. PowerStrike, HollowPurple, Zoltraak, Tendrils,
-BoulderKick, LionFall and bloodChain are the shape.
+BoulderKick and LionFall are the shape.
 
 ## 6. Hitboxes
 

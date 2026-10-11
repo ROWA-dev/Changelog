@@ -14,6 +14,8 @@ different: teardown paths, client-owned UI, and a saved loadout.
   ROWA/Class/HumObj `StopEmote`               THE teardown, all three callers
   StarterGui/EmoteUi/EmotesGui                the wheel + the replace picker
   ROWA/Emotes/Phone/rowaPhone/Apps            phone app id -> module registry
+  ROWA/Emotes/StayInPlace/Chess               board on the floor, two seats; the game
+                                              is ServerStorage/Chess/Table
   ROWA/Modules/phoneSpeak                     Speak's server half: filter,
                                               budget, the voice everyone hears
   ReplicatedStorage/Modules/pianoConfig       piano audio id + grid, both sides
@@ -24,7 +26,7 @@ different: teardown paths, client-owned UI, and a saved loadout.
 ## 2. THE CLASS TREE
     EmoteBase
       |- StayInPlace (abstract, no BaseAnim)
-      |    |- Flex, Fraud, Sherbet
+      |    |- Flex, Fraud, Sherbet, Scary, Chess
       |- Camera (Selfie), Phone, Piano
   Leaves under StayInPlace `require(script.Parent)`, so MOVING one changes what
   it inherits. The others name EmoteBase explicitly and can sit anywhere.
@@ -40,9 +42,10 @@ different: teardown paths, client-owned UI, and a saved loadout.
   track never fires Ended.
 
 ## 3. LIFECYCLE
-  Emotes.playEmote(id, hum)
+  Emotes.playEmote(id, hum, arg?)
     validates the id (they come from a client), refuses while stunned or
-    attacking, `humObj:StopEmote()`, builds, REGISTERS, then Plays.
+    attacking, `humObj:StopEmote()`, builds (`.new(animator, arg)`, arg is
+    server-only), REGISTERS, then Plays.
   Registration happens BEFORE Play on purpose: an emote that ends inside Play
   has to find itself on the humObj to deregister.
 
@@ -85,8 +88,24 @@ different: teardown paths, client-owned UI, and a saved loadout.
   An emote that needs input owns a channel and a method:
     Phone   RemoteEvents.Phone -> Tap / Speak / StopSpeak, ids in its `enums`
     Piano   RemoteEvents.Piano -> ready / play / abort
-  Both resolve the sender with `ROWA/Modules/liveEmote`, then check the
-  instance is theirs before acting (Piano compares the metatable).
+    Chess   RemoteEvents.Chess -> sync / pick / move / premove / resign / again / closed
+  All resolve the sender with `ROWA/Modules/liveEmote`, then check the
+  instance is theirs before acting (Piano and Chess compare the metatable).
+
+  Chess is the one TWO-PLAYER emote. The host picks 3/5/10 minutes and a mode.
+  The board lies on the floor (raycast under its middle) with its White
+  stand where they stood; Human puts a prompt on the Black stand, and taking
+  it plays the emote on the joiner with the host as `arg`. Both seats are
+  dragged onto their stands (pinTo) and held facing the board. A finished
+  game stays on the board under the end card; Rematch (both offer, the
+  engine always does) starts the next one with colors swapped by turning
+  the board, so nobody walks. Either emote ending ends both; an end card
+  then stays up without Rematch. "closed" is every way out of the gui: it
+  ends a live emote and drops the server's copy of the gui (`open`). An
+  unfinished game is kept 30s for that pair (Table's `saved`), colors
+  included. Board parts are nodestroy-tagged: squares are CanQuery for the
+  client's click raycast. The gui is Client + Ui (palette off the board's
+  squares, builders) + EndPanel (lazy).
 
   The phone is an OS: `Apps` is the registry, buttons are GENERATED from it, and
   an app class is required on the tap that opens it and never sooner. Contract is
@@ -192,6 +211,11 @@ different: teardown paths, client-owned UI, and a saved loadout.
   drops the whole pose so the authored sit animation comes back.
 
 ## 7. GOTCHAS
+  * !! A gui script's cleanup cannot hang off the SERVER destroying its gui:
+    unless the place replicates Destroy (ReplicateInstanceDestroySetting) the
+    client only sees Parent = nil, so Destroying never fires there. Chess
+    fires "close" and the client resets, then destroys its own gui (after
+    its end panel, if any) and says "closed" so the server drops its copy.
   * ids are PERSISTED in emoteData. Only APPEND, same rule as weapons.
   * getEmoteClass errors on an unknown id; isValidId is the soft check, and
     every client-facing path uses it.

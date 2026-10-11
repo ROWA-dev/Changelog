@@ -16,6 +16,11 @@ function module.new(humObj:humObj):myself
 	return setmetatable(baseClass.new(humObj), module) :: any
 end
 
+-- not feintable; a stun still cancels the windup via feintWait.
+function module.feint(_self: myself): boolean
+	return false
+end
+
 local dmgUtils   = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag    = dmgUtils.dmgFlags
 local Targeting  = require(game.ServerStorage.ROWA.Modules.Targeting)
@@ -42,7 +47,7 @@ local RANGE      = 200
 local YANK_TIME  = 1
 -- stop pulling once they are this close
 local YANK_STOP  = 4
-local HOP_FORCE  = 14
+local HOP_FORCE  = 13
 
 -- the mutual yank: two AlignPositions aimed at the midpoint, since bodyForce is fire-and-forget and would overshoot.
 -- !! returns a destructor, CALL IT ON EVERY EXIT -- a stranded AlignPosition drags a player around permanently.
@@ -132,24 +137,18 @@ local function useFunc(this:myself)
 	end
 
 	this:useMana()
-	-- the miss tier, paid BEFORE the lock-on. Charging 12 here and "refunding"
-	-- 2 below is the no-op trigger() quietly eats -- it is monotone. See triggerCD.
-	this:triggerCD(cooldownID, 2, true)
+	-- a miss costs the full price too
+	this:triggerCD(cooldownID, 12)
 
 	-- aimed slightly DOWN: the chain is thrown at chest height, not along the eyeline.
 	local aimDir = (hurtbox.CFrame.LookVector + Vector3.new(0, -0.3, 0)).Unit
 	local target = Targeting.nearestInDirection(
 		hurtbox.Position, aimDir, humObj, RANGE, Targeting.TIGHT)
 
-	-- no target: it only ever cost the miss tier.
 	if target == nil or target.HRootPart == nil then
 		this:endLag(0.2)
 		return
 	end
-
-	-- locked on, so it costs the full price. No dontOverwrite: that is exactly
-	-- what stops this landing.
-	this:triggerCD(cooldownID, 12)
 
 	local myRoot = humObj.HRootPart
 	local cfg = table.clone(CHAIN_CFG)

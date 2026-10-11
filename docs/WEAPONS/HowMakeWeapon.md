@@ -51,7 +51,7 @@ module.attack = require(script.attack)
 return table.freeze(module)
 ```
 
-That is a complete weapon. `req`, `postureGain`, `locomotionProfile`,
+That is a complete weapon. `req`, `postureGain`, `sprintAnim`,
 `onParried` and the block/parry anims all arrive by inheritance — **declare none
 of them** unless this weapon is genuinely different.
 
