@@ -130,7 +130,7 @@ export type myself = baseClass.myself & {
 	wieldChanged: (self:myself) -> Signal.Signal<any?>,
 	setWieldingWeapon: (self:myself, weapon:weaponBase.myself?) -> (),
 
-	SubscribedEventCB: ((id:number, value: any)->())?,
+	SubscribedEventCB: ((id:number, value: any, extra: any)->())?,
 
 	_emoteInstance: any?,
 	StopEmote: (self: myself) -> (),
@@ -1362,13 +1362,15 @@ function module.initReplicateServer(self:myself, remoteEvent:RemoteEvent, plr:Pl
 
 
 	-- C2S: its OWN id space, see replIds.
-	self.SubscribedEventCB = function(id:number, value: any)
+	self.SubscribedEventCB = function(id:number, value: any, extra: any)
 		if id == C2S.sprinting then
 			self.sprinting.Value = value
 		elseif id == C2S.jumped then
 			self._lastJumped = tick()
 		elseif id == C2S.sliding then
 			self.sliding.Value = value
+			-- extra = crouching: hides name + health bar, any sliding edge restores it
+			self.Hum.DisplayDistanceType = if value and extra then Enum.HumanoidDisplayDistanceType.None else Enum.HumanoidDisplayDistanceType.Viewer
 		end
 	end
 end

@@ -68,6 +68,7 @@ local abilityList:list = {
 	[56] = manifold.Quake,
 	[57] = manifold.Maelstrom,
 	[58] = manifold.Healing,
+	[59] = manifold.Balance,
 }
 table.freeze(abilityList)
 
@@ -348,7 +349,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { dark = 4 },
 	},
 	[manifold.BurningResolve] = {
-		desc = "Set yourself ablaze: +10% weapon damage (15% with Azure Flames), +4 speed",
+		desc = "Set yourself ablaze: +15% weapon damage (20% with Azure Flames), +4 speed",
 		req = { flame = 3, fortitude = 2 },
 	},
 	[manifold.ImbueMana] = {
@@ -359,6 +360,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 			And = { anyOf({ "hvy", "med", "lht" }, 2), anyOf(require(game.ReplicatedStorage.Modules.ElementRegistry), 9) },
 		},
 		tier = DraftTiers.RARE,
+	},
+	[manifold.Balance] = {
+		desc = "Split the time left on every effect you have evenly between you and everyone you're in combat with, even out everyone's posture, and borrow a random card off one of them for an minute.",
+		req = { light = 6, dark = 6 },
 	},
 }
 table.freeze(abilityMeta)

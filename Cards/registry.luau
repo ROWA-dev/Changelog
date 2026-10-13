@@ -354,6 +354,21 @@ function module.get(id:number): card?
 	return cardList[id]
 end
 
+-- a random non-innate id off a cardLoader, skipping any `except` holds. nil if none; reservoir, so no table
+function module.randomTakeable(loader:any, except:any?): number?
+	local list = loader.cards -- the inert stub has none
+	if list == nil then return nil end
+	local pick, n = nil, 0
+	for _, v in list do
+		local card = cardList[v.id]
+		if card and not card.innate and not (except and except:hasCard(v.id)) then
+			n += 1
+			if math.random(n) == 1 then pick = v.id end
+		end
+	end
+	return pick
+end
+
 -- draftable == obtainable by playing: innate ones are granted at load, unObtainable ones are gifts
 function module.isDraftable(id:number): boolean
 	local card = cardList[id]

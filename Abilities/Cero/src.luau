@@ -59,6 +59,7 @@ local function useFunc(this:myself)
 
 	local chargeSnd = script["OFA Charge Up Smash SFX"]:Clone()
 	chargeSnd.Parent = hurtbox
+	chargeSnd.TimePosition = 0.1
 	chargeSnd:Play()
 	game.Debris:AddItem(chargeSnd, 4)
 

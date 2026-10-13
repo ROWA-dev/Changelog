@@ -175,9 +175,13 @@ this fire per second per player". That question alone kills most designs.
   Standing still sends NOTHING. The server writes it onto the `hurtbox`
   part only -- so the fast channel costs one part, and the other rig
   parts follow through Motor6D on each client for free.
+  On a train car the pose is car-relative + the car's base, and the server
+  welds the hurtbox to that base (`Weld.C0`): standing on a moving train
+  sends nothing too, and each peer draws the rider on its own car.
   Inbound, peers anchor the other player's HRP and lerp it at
   `alpha = 1 - exp(-20*dt)`, the framerate-independent form of a
   per-frame lerp, computed ONCE per frame because dt is loop-invariant.
+  A rider is lerped in its car's space, else the lerp trails a moving car.
   UNRELIABLE IS CORRECT HERE: a dropped pose is superseded by the next
   one, so retransmission would deliver stale news late.
   HitboxQuery queries the hurtbox FIRST ("it is the fast-replicated

@@ -464,7 +464,8 @@ stunned. You cannot sprint defensively.
 Entry costs 1.5 studs of height and a burst of 1.6x slide speed. Downhill
 ACCELERATES you, uphill kills the slide. Cooldown 2s. Jumping out of a
 slide converts the speed into a leap, so slide jumping is a real
-traversal option. Standing still turns the slide key into a crouch.
+traversal option. Standing still turns the slide key into a crouch, which
+hides your name and health bar.
 
 7.4 PARKOUR
 Vault, climb and wallslide hang off the jump input. Vault reach 5,

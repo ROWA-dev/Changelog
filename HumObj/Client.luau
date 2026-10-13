@@ -427,8 +427,8 @@ function module.ChangeSliding(self:myself, setTo:boolean): boolean
 	-- !! this fast-path must NEVER write `sliding.Value` for setTo==false and then fall through: the guard below would skip the ENTIRE teardown and strand the speed mod. Both branches return.
 	if setTo == true and self.Hum.MoveDirection == Vector3.zero and self.sliding.Value ~= true then
 		stopSlideState(self, false) -- reap residue before crouching over it
+		self:PlayTrack(crouchAnim, 0.1) -- before the write: the C2S sliding send reads IsPlaying as the crouch flag
 		self.sliding.Value = true
-		self:PlayTrack(crouchAnim, 0.1)
 		return true
 	end
 
@@ -837,7 +837,7 @@ function module.initReplicateClient(self:myself, remoteEvent:RemoteEvent)
 		remoteEvent:FireServer(C2S.sprinting, boolean)
 	end), "repl_c2s_sprinting")
 	self:AddConnection(self.sliding.Changed:Connect(function(boolean: boolean) 
-		remoteEvent:FireServer(C2S.sliding, boolean)
+		remoteEvent:FireServer(C2S.sliding, boolean, boolean and self.charAnims.Crouch.IsPlaying)
 	end), "repl_c2s_sliding")
 end
 

@@ -1,13 +1,8 @@
-# 💊💊💊
-idk wtf changed in boulderkick
+# train station
+a train station on main map
 
-blood chain cant be feinted anymore and moves abit less
+crouching/sliding now hides ur hp and name
 
-six eyes getup time 3x -> 2x faster
+new ability balance
 
-refactored the weapons custom movement animations for humobjs..
-no more stupid locomotion profile abstraction.
-
-new chess emote
-
-train model is basicly done
+cero windup sound abit faster

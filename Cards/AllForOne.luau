@@ -20,19 +20,7 @@ function module.new(humObj):myself
 	self:addConnection(humObj.onAttack:Connect(function(attack)
 		if tick() < self._next or not (attack:isHit() and attack:isWep()) then return end
 		local victim = attack.enemyEntity
-		-- the inert stub has no list
-		local list = victim and victim.cards.cards
-		if list == nil then return end
-
-		-- reservoir pick, so no table per hit
-		local pick, n = nil, 0
-		for _, v in list do
-			local card = CARDS.get(v.id)
-			if card and not card.innate then
-				n += 1
-				if math.random(n) == 1 then pick = v.id end
-			end
-		end
+		local pick = victim and CARDS.randomTakeable(victim.cards)
 		if pick == nil then return end
 
 		self._next = tick() + COOLDOWN
