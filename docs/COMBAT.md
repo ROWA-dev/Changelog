@@ -48,7 +48,8 @@ so backing off loses your finisher. Re-entering starts you at swing 1.
 ## 3. THE THREE ANSWERS
 Checked in this order, first match wins: PARRY, DODGE, BLOCK, else HIT.
 
-PARRY. 0.2s from raising guard, -0.08 in stun, -0.06 from behind, plus
+PARRY. 0.2s from raising guard, -0.08 in stun, -0.06 from behind, -0.1
+vs a touch (isMobile) attacker, plus
 the attack's parryH. Cooldown 1.2s, RESET on success, so parry CHAINS;
 miss one and you wait 1.2s, and that gap is the whole risk. Block still
 works for 0.2s after the window closes. Landing one stuns the attacker
@@ -252,6 +253,7 @@ default rate. So a knockdown is a tempo loss and a free window for
 everyone else, not a death.
 THE EXCEPTION: a weapon whose hit calls Modules/execute ignores the pool
 and kills outright, which is the point of carrying one.
+EarthStab too: a hit that would knock you kills you, impaled on its spike.
 You also stay execute-able until health passes 10, so the moment you stand
 up is still the most dangerous one.
 Mechanism and the reasons it is where it is: CLASSES 3.5.
@@ -515,6 +517,7 @@ mobility economy, and 5.5 is how you lose it.
     weapon feint       0.15 slower for 0.2s, no dash 0.1s
     early feint        up to 0.4s lockout, less the longer you hold
     parry in stun      -0.08 window        from behind -0.06
+    parry vs touch     -0.1 window (attacker isMobile)
     heavy blocked      blocker stunned 0.1 and locked 0.1
 
 8.4 REWARDS

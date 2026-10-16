@@ -1,5 +1,5 @@
 --!strict
--- Healing: hold to heal whoever you face (else yourself) until mana drops under manaUse. No anim, no windup, no flat cost: the drain is the price.
+-- Healing: hold to heal whoever you face (else yourself) and mend destruction in front, until mana drops under manaUse. No anim, no windup, no flat cost: the drain is the price.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -17,6 +17,7 @@ function module.new(humObj: humObj): myself
 end
 
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
 
 local CD_ID = "healing"
 local TICK_START, TICK_MIN = 0.3, 0.1
@@ -24,6 +25,7 @@ local RAMP_SELF, RAMP_OTHER = 2, 1 -- seconds of holding on that target to ease 
 local MANA_PER_TICK, HEAL_SELF, HEAL_OTHER = 1, 1, 2
 local BOX_CF, BOX_SZ = CFrame.new(0, 0, -3), Vector3.new(4, 5, 4) -- HurtBox-local: whoever stands right in front
 local LEASE, RENEW = 3, 2 -- client fx ceiling, re-sent before it lapses
+local MEND_AT, MEND_R, MEND_TIME = Vector3.new(0, -1.5, -4), 5, 2.5 -- HurtBox-local, low enough to reach the floor; seconds of holding to repair a part
 
 local function useFunc(this: myself)
 	-- no real cooldown: a one-beat re-arm so UseAbility's 0.2s retry cannot recast a tap
@@ -46,8 +48,9 @@ local function useFunc(this: myself)
 			if (e :: any).Heal then target = e break end -- SimpleEntity has no Heal
 		end
 		target:Heal(if target == humObj then HEAL_SELF else HEAL_OTHER)
+		local frag = Destruction.mend(humObj.HurtBox.CFrame:PointToWorldSpace(MEND_AT), MEND_R, MEND_TIME)
 
-		local aim = target.Model:FindFirstChild("Head") or target.HRootPart
+		local aim = if target == humObj and frag then frag else target.Model:FindFirstChild("Head") or target.HRootPart
 		if aim ~= sent or tick() - sentAt > RENEW then
 			sent, sentAt = aim, tick()
 			fireVFX("healHand", char, LEASE, aim)

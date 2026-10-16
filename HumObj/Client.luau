@@ -320,7 +320,7 @@ function module.canBeKnocked(self:myself): boolean
 end
 
 function module.isKnocked(self:myself): boolean
-	return self.Hum.Health <= module.KNOCK_HP and module.canBeKnocked(self)
+	return self.Hum.Health <= module.KNOCK_HP and self:canBeKnocked() -- self: an entity can opt out (the catherdal giant)
 end
 
 local function canSlide(self:myself): boolean

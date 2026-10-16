@@ -69,6 +69,7 @@ local abilityList:list = {
 	[57] = manifold.Maelstrom,
 	[58] = manifold.Healing,
 	[59] = manifold.Balance,
+	[60] = manifold.EarthStab,
 }
 table.freeze(abilityList)
 
@@ -185,7 +186,7 @@ local abilityMeta: {[ModuleScript]: meta} = {
 		req = { light = 4 },
 	},
 	[manifold.Healing] = {
-		desc = "Hold to heal whoever you face, or yourself. Drains mana until you drop under 5.",
+		desc = "Hold to heal whoever you face, or yourself, and mend broken ground in front of you. Drains mana until you drop under 5.",
 		req = { light = 8 },
 		tier = DraftTiers.RARE,
 	},
@@ -310,6 +311,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	},
 	[manifold.BoulderKick] = {
 		desc = "Rip a chunk of the map out and punt it.",
+		req = { earth = 3 },
+	},
+	[manifold.EarthStab] = {
+		desc = "A rupture burrows to your target and a spike of the ground erupts at them.",
 		req = { earth = 4 },
 	},
 	[manifold.Meteor] = {

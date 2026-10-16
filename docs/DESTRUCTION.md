@@ -3,11 +3,13 @@
 
 ## Files
     ROWA/Destruction_Stable/
-      Destruction         public API: Sphere, Sphere_Fast, Cylinder, Ellipsoid, OBB, Grab; original(frag) -> the part it was cut from.
+      Destruction         public API: Sphere, Sphere_Fast, Cylinder, Ellipsoid, OBB, Grab; original(frag) -> the part it was cut from;
+                          mend(pos, r, t) repairs what is nearby if kept up for t seconds (Healing).
                           `plr` is ignored everywhere; kept so ~40 callers didn't change
         Carve             THE carve engine + the four shapes
         FloodFill         what a carve left unsupported
         DestroyedHandler  regen records, falling islands ("stars"), regen, re-gluing loose assemblies
+        Bodies            registered animated Models (catherdal giant): every carve also cuts them at half scale, holes mend
       DestUtils           hitbox (anchored, plus opted-in loose parts for carves), subdivide, greedy mesher, visualize
       RuntimeStorage      carved originals wait here until regen
 
@@ -21,6 +23,9 @@
    A LOOSE part that was carved skips the flood fill: its assembly, snapshotted before the cut, is re-glued
    by what still touches (`reglue`), so pieces cut off fall on their own and keep the old velocity.
 5. After ~120s the record regens: its stars go home, the original comes back, fragments are destroyed.
+   `mend` cuts that short: a record kept touched for its whole repair regens then, while a `mendGrow` ghost fills the hole.
+   Wire: start (deadline), then stop or done, from a re-arming timer; touches in between are silent.
+   It finds records by their original's box, so a part swallowed whole repairs too; a fallen star comes home with its record.
 
 ## Adding a shape
 A shape is `(cf, query box size, default minSz, sd)` in Carve. `sd(p)` is the signed distance from `p`,

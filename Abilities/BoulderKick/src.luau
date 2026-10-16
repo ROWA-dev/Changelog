@@ -22,6 +22,7 @@ local dmgFlag     = dmgUtils.dmgFlags
 local fireVFX     = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx      = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local Destruction = require(game.ServerStorage.ROWA.Destruction_Stable.Destruction)
+local Targeting   = require(game.ServerStorage.ROWA.Modules.Targeting)
 
 -- kept in step with StoneBall's neighbouring row.
 local BLDR = table.freeze({
@@ -37,11 +38,14 @@ local BLDR = table.freeze({
 	end,
 })
 
-local WINDUP = 0.22
-local GATHER = 0.7
+-- 0.1s quicker than authored (0.92 -> 0.82 to the kick); the anim is sped to match so the kick stays on its frame.
+local ANIM_SPEED = 0.92 / 0.82
+local WINDUP = 0.22 / ANIM_SPEED
+local GATHER = 0.7 / ANIM_SPEED
 
 -- !! FULL EXTENT, not radii: Destruction halves this itself, same trap as Armor's DIG_SIZE.
-local DIG_SIZE  = Vector3.new(12, 12, 12)
+-- flat Y: same footprint, ~half the depth, so people stop falling in the hole.
+local DIG_SIZE  = Vector3.new(12, 6, 12)
 local DIG_MINSZ = 3.6
 -- SIX, not seven.
 local GRAB_COUNT = 6
@@ -52,7 +56,21 @@ local SPEED    = 110
 local GRAVITY  = 40
 local MAX_DIST = 400
 local LIFETIME = 8
-module.SPEED, module.GRAVITY, module.BLDR = SPEED, GRAVITY, BLDR
+module.BLDR = BLDR
+
+-- hard 30 deg cone like Spear's throw, out to as far as the rock flies: soft-locks onto someone above, below or to the side.
+local AIM_CONE = table.freeze({ distWeight = 10, maxAngle = math.rad(30) })
+
+-- the exact low arc onto `to` at SPEED; out of reach throws at 45, the farthest it goes.
+function module.aimCF(from: Vector3, to: Vector3): CFrame
+	local d = to - from
+	local x = Vector3.new(d.X, 0, d.Z).Magnitude
+	if x < 0.01 then return CFrame.lookAt(from, to) end
+	local v2 = SPEED * SPEED
+	local disc = v2 * v2 - GRAVITY * (GRAVITY * x * x + 2 * d.Y * v2)
+	local tan = if disc < 0 then 1 else (v2 - math.sqrt(disc)) / (GRAVITY * x)
+	return CFrame.lookAt(from, Vector3.new(to.X, from.Y + tan * x, to.Z))
+end
 
 -- tears a rock out at `digAt` and gathers it to gatherCF (in `follow`'s space if given: it rides that part until launched). nil = nothing breakable there.
 -- also how a boss throws one (catherdal giant): .scale on its instance grows the rock, .bldr swaps the dmg table
@@ -61,7 +79,7 @@ function module.dig(this: myself, digAt: Vector3, gather: number, gatherCF: CFra
 	-- DIG, THEN DECIDE: Grab carves the crater, describes the biggest cuboids that came out, and withholds them from the rubble fx so they leave the ground exactly once.
 	local _, chunks = Destruction.Grab(nil, CFrame.new(digAt), DIG_SIZE * k, DIG_MINSZ * k, nil, GRAB_COUNT)
 	if chunks == nil or #chunks == 0 then return nil end
-	fireVFX("boulderKick", 1, this._humObj.Model, chunks, gather, gatherCF, follow)
+	fireVFX("boulderKick", 1, this._humObj.Model, chunks, gather, gatherCF, follow, if k ~= 1 then k else nil)
 	return chunks
 end
 
@@ -74,7 +92,7 @@ function module.launch(this: myself, chunks: { any }, originCF: CFrame)
 	for _, c in ipairs(chunks) do
 		avg += (c.size + Vector3.new(5, 5, 5)) / 2
 	end
-	avg /= #chunks
+	avg *= k / #chunks -- the drawn rock is scaled by k too
 	-- half the magnitude of the average piece size
 	local hitSize = Vector3.one * math.clamp(avg.Magnitude * 0.5, 4, 10 * k)
 
@@ -109,7 +127,7 @@ local function useFunc(this:myself)
 	local humObj  = this._humObj
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
-	local anim = this:PlayAnim(script.Kick, 0, 1, 1)
+	local anim = this:PlayAnim(script.Kick, 0, 1, ANIM_SPEED)
 
 	if this:feintWait(WINDUP) then
 		if anim then anim:Stop(0.1) end
@@ -162,8 +180,11 @@ local function useFunc(this:myself)
 		Vector3.new(7, 7, 0.5), 0.9, true)
 
 	-- re-read: the caster may have turned during the gather
-	forward = (hurtbox.CFrame.LookVector + Vector3.new(0,0.1,0)).Unit
-	local originCF = CFrame.new(gatherCF.Position, gatherCF.Position + forward)
+	local from = gatherCF.Position
+	local look = hurtbox.CFrame.LookVector
+	local target = Targeting.nearestInDirection(from, look, humObj, MAX_DIST, AIM_CONE)
+	local originCF = if target then module.aimCF(from, (Targeting.lead(target.HRootPart, from, SPEED)))
+		else CFrame.new(from, from + (look + Vector3.new(0, 0.1, 0)).Unit)
 	module.launch(this, chunks, originCF)
 
 	this:endLag(0.3)

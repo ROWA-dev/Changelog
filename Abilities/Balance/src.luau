@@ -1,5 +1,5 @@
 --!strict
--- needs a timed effect on you and someone in combat with you: each effect's time left is split evenly between you and every one of them, posture evens out, and you borrow one card.
+-- needs someone in combat with you: each timed effect's time left is split evenly between you and every one of them, posture evens out, and you borrow one card.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -47,11 +47,6 @@ local function useFunc(this:myself)
 	local effects:any = humObj.statusEffects
 	local enemies = enemiesOf(humObj)
 	if #enemies == 0 then return end
-	local any = false
-	for _, e in effects.activeEffects do
-		any = any or leftOf(e) ~= nil
-	end
-	if not any then return end
 
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 	if this:feintWait(0.4) then
@@ -61,7 +56,7 @@ local function useFunc(this:myself)
 
 	this:triggerCD(cooldownID, CD)
 	this:useMana()
-	fireVFX("scaleAnim")
+	--fireVFX("scaleAnim",humObj.Hum)
 	local n = #enemies + 1
 	for key, e in effects.activeEffects do
 		local left = leftOf(e)

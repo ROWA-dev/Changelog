@@ -1,8 +1,16 @@
-# train station
-a train station on main map
+# upd
+scimitar has a two part critical attack (use twice)
 
-crouching/sliding now hides ur hp and name
+train has cool sounds now
 
-new ability balance
+boulderkick has abit of auto aim
 
-cero windup sound abit faster
+new earth move earthstab (traveling attack)
+
+healing (the ability) can now heal destruction
+
+bloodchain on hit now applies 4 bleed
+
+mobile players are now harder to parry :)
+
+

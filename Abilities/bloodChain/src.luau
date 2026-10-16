@@ -28,8 +28,9 @@ local fireVFX    = require(game.ServerStorage.ROWA.Modules.fireVFX)
 local hitSfx     = require(game.ServerStorage.ROWA.Modules.hitSfx)
 local projMotion = require(game.ReplicatedStorage.Modules.projMotion)
 
--- low damage, high posture: a guard-breaking opener, not a damage move. Preserve that shape.
--- !! `blood` is written by NAME, never by bit value.
+-- onhit apply bleed status
+local BLEED_T, BLEED_DMG = 4, 1
+
 local CHAIN = {
 	weight   = dmgUtils.weighEnum.Heavy,
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blood),
@@ -184,6 +185,12 @@ local function useFunc(this:myself)
 			proj:kill()
 			return
 		end
+		
+		attack.enemyEntity.statusEffects:apply(
+			humObj.statusEffects.Bleed,
+			BLEED_T,
+			BLEED_DMG
+		)
 
 		fireVFX("bchainYank", myRoot, eroot)
 		-- LATCH the flying chain onto them for the pull, or the yank plays with nothing visibly connecting the two.

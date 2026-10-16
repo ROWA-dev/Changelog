@@ -857,6 +857,8 @@ function module.isParry(self:myself, atk:atkTyp?)
 		if facing and facing < 0 then
 			window -= 0.06
 		end
+		local plrObj = atk.myEntity.plrObj -- touch attackers are harder to parry
+		if plrObj and plrObj.isMobile then window -= 0.1 end
 	end
 	
 	-- TODO maybe clamp parrywindow...

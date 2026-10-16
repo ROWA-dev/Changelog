@@ -142,6 +142,7 @@ this is also used for things that would clobber up the network stream... instead
     A one-off fire misses late joiners and stream-ins, so the server tags the
     model with the quiver id and LocalCore/VFX calls it (model, true/false) on
     tag add/remove. Add the id to its list there. burningResolve is the model.
+    Same for fx on a part the server just made: sent as an arg it arrives nil under StreamingEnabled (EarthStab's spike).
 
   ### A PROJECTILE'S DRAWN COPY IS CORRECTED, NOT RE-SENT
     Class/Projectile holds no Instance, so every client integrates its own
