@@ -88,15 +88,8 @@ local CASTER_BACK = 2
 
 -- !! the air-combo float and this move cannot both own the victim's height; it arms from blockedOrHit AFTER dmgTbl.onHit, so this must run after executeAttack.
 local function killFloat(entity:any)
-	if entity == nil then return end
 	if entity.floating then entity.floating.Value = 0 end
 	if entity.targetFloatY then entity.targetFloatY.Value = nil end
-end
-
--- jump the single track to a mark; a second :PlayAnim would stop this track and load another.
-local function seek(track:AnimationTrack?, to:number)
-	if track == nil then return end
-	track.TimePosition = to
 end
 
 local function useFunc(this:myself)
@@ -180,7 +173,7 @@ local function useFunc(this:myself)
 
 	if caught == nil or caught.HRootPart == nil then
 		-- MISS: the whiff is parked mid-clip, so seek straight to it past the freeze frame and the jump prep.
-		seek(anim, MARK.MISS_IN)
+		if anim then anim.TimePosition = MARK.MISS_IN end
 		restore()
 		this:endLag(MARK.MISS_OUT - MARK.MISS_IN)
 		-- MUST stop, or the clip runs on into the flash-step and plays a full slam at nobody.
@@ -214,6 +207,12 @@ local function useFunc(this:myself)
 		return
 	end
 
+	-- victim torn down mid-launch (left the game): their HRootPart is gone, and the throw below would skip restore().
+	if caught.isActive ~= true or caught.HRootPart == nil then
+		bail()
+		return
+	end
+
 	-- hold them at the apex while you close; maxTime is the hang plus a margin, so a thrown error cannot strand the pin.
 	local apex = caught.HRootPart.Position + forward * 4
 	release = pinTo(caught.HRootPart, function() return apex end,
@@ -223,8 +222,9 @@ local function useFunc(this:myself)
 	caught.ragdoll:ragdoll(HOLD, false)
 
 	-- TrueStun, not :Stun: only TrueStun passes bypassArmour, so under hyper armour the pin is otherwise free. Guarded, it is not in Combatant.
+	-- +0.2: HOLD ends ON the slam frame and feintWait always overshoots, so a bare HOLD lets a queued guard parry the slam.
 	if caught.TrueStun then
-		caught:TrueStun(HOLD)
+		caught:TrueStun(HOLD + 0.2)
 	end
 
 	-- 1.18 -> 1.45, the rest of the prep.
@@ -234,7 +234,7 @@ local function useFunc(this:myself)
 	end
 
 	-- 1.45 -> 2.60: seek over the whiff, which sits in the middle of the clip.
-	seek(anim, MARK.TELE_IN)
+	if anim then anim.TimePosition = MARK.TELE_IN end
 	fireVFX("phantom", char, char.PrimaryPart and char.PrimaryPart.CFrame or hurtbox.CFrame)
 	fireVFX("fstep", char, 0.4)
 	-- hauls the CASTER up client-side for most of the window, so the last stretch is a real fall into the slam. NOT to `apex`, see CASTER_OVER.

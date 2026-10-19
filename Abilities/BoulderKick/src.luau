@@ -73,12 +73,26 @@ function module.aimCF(from: Vector3, to: Vector3): CFrame
 end
 
 -- tears a rock out at `digAt` and gathers it to gatherCF (in `follow`'s space if given: it rides that part until launched). nil = nothing breakable there.
--- also how a boss throws one (catherdal giant): .scale on its instance grows the rock, .bldr swaps the dmg table
+-- also how a boss throws one (catherdal giant): .scale on its instance grows the rock, .bldr swaps the dmg table, .intact raises one of the ground's look and carves nothing, dig or landing (nil = no ground there)
+local groundRay = RaycastParams.new()
+groundRay.FilterType = Enum.RaycastFilterType.Exclude
+groundRay.FilterDescendantsInstances = { workspace.Entities }
 function module.dig(this: myself, digAt: Vector3, gather: number, gatherCF: CFrame, follow: BasePart?): { any }?
 	local k = (this :: any).scale or 1
-	-- DIG, THEN DECIDE: Grab carves the crater, describes the biggest cuboids that came out, and withholds them from the rubble fx so they leave the ground exactly once.
-	local _, chunks = Destruction.Grab(nil, CFrame.new(digAt), DIG_SIZE * k, DIG_MINSZ * k, nil, GRAB_COUNT)
-	if chunks == nil or #chunks == 0 then return nil end
+	local chunks
+	if (this :: any).intact then
+		local hit = workspace:Raycast(digAt + Vector3.new(0, 8, 0), Vector3.new(0, -16, 0), groundRay)
+		if hit == nil then return nil end
+		chunks = {}
+		for _ = 1, GRAB_COUNT do
+			local off = Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * DIG_SIZE * k * 0.5
+			table.insert(chunks, { size = DIG_SIZE * k * (0.3 + 0.2 * math.random()), cf = CFrame.new(hit.Position + off), color = (hit.Instance :: BasePart).Color, material = hit.Material })
+		end
+	else
+		-- DIG, THEN DECIDE: Grab carves the crater, describes the biggest cuboids that came out, and withholds them from the rubble fx so they leave the ground exactly once.
+		chunks = select(2, Destruction.Grab(nil, CFrame.new(digAt), DIG_SIZE * k, DIG_MINSZ * k, nil, GRAB_COUNT))
+		if chunks == nil or #chunks == 0 then return nil end
+	end
 	fireVFX("boulderKick", 1, this._humObj.Model, chunks, gather, gatherCF, follow, if k ~= 1 then k else nil)
 	return chunks
 end
@@ -107,11 +121,11 @@ function module.launch(this: myself, chunks: { any }, originCF: CFrame)
 		knockbackForce = 9.6,
 		knockbackTime  = 0.2,
 
-		onExpire = function(proj: any, pos: Vector3, _hitWorld: boolean)
+		onExpire = function(proj: any, pos: Vector3, hitWorld: boolean)
 			-- where it really stopped is THE ONLY THING THE CLIENTS COULD NOT PREDICT, so it is the only thing sent.
 			fireVFX("boulderKick", 3, char, pos)
 			-- r7 where it lands; velo is studs/SECOND, along the direction it was actually travelling
-			Destruction.Sphere(nil, pos, 7 * k, 4.2, proj.dir * 70)
+			if not (this :: any).intact then Destruction.Sphere(nil, pos, 7 * k, 4.2, proj.dir * 70) end
 			fireVFX("camShake", pos, 300, 1, 0.15)
 		end,
 	}), originCF)

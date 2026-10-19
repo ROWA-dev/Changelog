@@ -159,7 +159,7 @@ Both halves are load-bearing. A "refund" applied after the full price is a silen
 no-op. A full price passed with `dontOverwrite` after a short one has been
 registered is *also* a no-op, permanently: one whiff pins that id at the cheap
 tier for the session. PowerStrike, HollowPurple, Zoltraak, Tendrils,
-BoulderKick and LionFall are the shape.
+BoulderKick and the counters are the shape.
 
 ## 6. Hitboxes
 
@@ -243,16 +243,17 @@ you inherit a stale one and self-cancel on frame one.
 ## 8. Counters
 
 A counter subscribes to `humObj.beforeAttacked`, sets
-`atk.status = returnEnum.aborted`, and answers. Guard it with:
+`atk.status = returnEnum.aborted`, and answers. Open it with:
 
 ```lua
-if not humObj:canCounter() then return end
+if this:counterStartup() then return end
 ```
 
-which is "no reversal out of pressure" — 0.2s off the last **hit** and the last
-**block**, read from the `_lastHit` and `_lastBlocked` stamps. Do **not** write
-this by hand against `stun.Value`: that is a deadline other code overwrites (a
-parry zeroes it outright), which is why countering out of hitstun used to work.
+It gates on `HumObj:canCounter` (no reversal out of pressure, §10), roots you
+under the cd id, pays mana + the hit tier, then runs the startup with nothing shown; a hit
+or stun in it stuffs the counter silently (miss tier). Play anims/VFX only after it.
+Call `this:counterMissed()` on the whiff branch (miss tier); a read keeps the hit tier.
+Tiers are `COUNTER_HIT_CD` / `COUNTER_MISS_CD` in AbilityBase.
 
 ## 9. How an ability reaches a player
 

@@ -425,6 +425,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
                              Burn / Shock / Bleed / Blind / Hemorrhage /
                              HyperArmour / Reflect / EarthArmour / Saringan /
                              Charm / ManaPoisoning (rides HumObj.onManaLost) /
+                             Dizz (a level per stack, owner-only screen fx) /
                              BurningResolve (a Burn subclass, own key, so
                              dodge and ice never douse it) /
                              Freeze. Freeze is the odd one: a BUILDUP METER,

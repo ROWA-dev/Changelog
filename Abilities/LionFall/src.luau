@@ -1,5 +1,5 @@
 --!strict
--- LionFall - a counter: an attack inside the STANCE window is cancelled and answered with one huge punch. Half the cooldown on a whiff.
+-- LionFall - a counter: an attack inside the STANCE window is cancelled and answered with one huge punch.
 local baseClass = require(script.Parent.AbilityBase)
 export type myself = baseClass.myself
 type humObj = baseClass.humObj
@@ -37,9 +37,6 @@ local LION_FALL = {
 }
 
 local STANCE     = 0.4
-local CD         = 22
-local WHIFF_CD   = CD / 2
-local SLOW_KEY   = "lionFall"
 
 local function useFunc(this:myself)
 	local cooldownID = "lionFall"
@@ -49,17 +46,9 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local char: any = hurtbox.Parent
 
-	--- no reversal out of pressure. See HumObj:canCounter.
-	if not humObj:canCounter() then return end
+	if this:counterStartup() then return end
 
 	local windup = this:PlayAnim(script.Windup, 0, 1, 1.5)
-	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
-	this:useMana()
-	--- the whiff tier, paid UP FRONT. The full price lands below only if the
-	--- stance actually catches something -- charging it here and refunding after
-	--- is the no-op trigger() quietly eats. See triggerCD.
-	this:triggerCD(cooldownID, WHIFF_CD, true)
-	this:atkWait(0.1)
 
 	--- the red tell.
 	local indicator = script.Highlight:Clone()
@@ -82,15 +71,12 @@ local function useFunc(this:myself)
 	if windup then windup:Stop(0.1) end
 
 	if triggeredBy == nil then
-		--- whiffed: already paid the half tier, plus a window to be punished in
-		humObj.walkSpeed:RemoveMod(SLOW_KEY)
+		--- whiffed: the miss tier, plus a window to be punished in
+		this:counterMissed()
+		humObj.walkSpeed:RemoveMod(cooldownID)
 		this:atkWait(0.7) -- on miss
 		return
 	end
-
-	--- it caught one, so it costs the full price. No dontOverwrite: that is
-	--- exactly what stops this landing.
-	this:triggerCD(cooldownID, CD)
 
 	local punch = this:PlayAnim(script.Punch, 0, 1, 1)
 
@@ -122,7 +108,7 @@ local function useFunc(this:myself)
 			game.Debris:AddItem(startSnd, 0)
 			if sparks then game.Debris:AddItem(sparks, 0) end
 			if circle then game.Debris:AddItem(circle, 0) end
-			humObj.walkSpeed:RemoveMod(SLOW_KEY)
+			humObj.walkSpeed:RemoveMod(cooldownID)
 			return
 		end
 		if sparks then sparks:Emit(8) end
@@ -166,7 +152,7 @@ local function useFunc(this:myself)
 		end)
 	end
 
-	humObj.walkSpeed:RemoveMod(SLOW_KEY)
+	humObj.walkSpeed:RemoveMod(cooldownID)
 	humObj.canAtkThreshold = tick() + 0.24
 	this:endLag(0.2)
 end

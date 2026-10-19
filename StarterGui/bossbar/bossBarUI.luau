@@ -1,10 +1,13 @@
 --!nonstrict
--- S2C.bossBar names the boss Model; health is read off its already-replicated Humanoid, so nothing else rides the wire.
+-- S2C.bossBar names the boss Model; health is read off its already-replicated Humanoid, and its "immortal" attribute turns the fill rainbow, so nothing else rides the wire.
 local BOSS_BAR = require(game.ReplicatedStorage.Class.HumObjClient.replIds).S2C.bossBar
 local FADE = 2 -- secs the bar takes to fade out once the boss dies
+local RAINBOW = 0.5 -- hue cycles a sec while it's immortal
 
 local gui = script.Parent
 local hp, label = gui:WaitForChild("Bar"):WaitForChild("HP"), gui:WaitForChild("TextLabel")
+local edge = hp:WaitForChild("Edge")
+local hpColor, edgeColor = hp.BackgroundColor3, edge.BackgroundColor3
 local conns = {}
 -- every transparency in the bar and its authored value, so the death fade can lerp them all to 1 and back
 local fades = {}
@@ -48,5 +51,16 @@ game.ReplicatedStorage:WaitForChild("RemoteEvents"):WaitForChild("CharacterRepli
 	label.Text = model.Name:upper()
 	conns[1] = hum.HealthChanged:Connect(set)
 	conns[2] = model.AncestryChanged:Connect(function(_, p) if not p then hide() end end)
+	local function immortal()
+		if conns.rainbow then conns.rainbow:Disconnect() conns.rainbow = nil end
+		hp.BackgroundColor3, edge.BackgroundColor3 = hpColor, edgeColor
+		if model:GetAttribute("immortal") ~= true then return end
+		conns.rainbow = game:GetService("RunService").RenderStepped:Connect(function()
+			local h = os.clock() * RAINBOW % 1
+			hp.BackgroundColor3, edge.BackgroundColor3 = Color3.fromHSV(h, 0.75, 1), Color3.fromHSV(h, 0.4, 1)
+		end)
+	end
+	immortal()
+	conns[3] = model:GetAttributeChangedSignal("immortal"):Connect(immortal)
 	gui.Enabled = true
 end)

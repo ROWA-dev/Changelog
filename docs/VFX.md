@@ -74,11 +74,11 @@ this is also used for things that would clobber up the network stream... instead
       end
 
   ### ReplicatedStorage/VFXQuiver - ALWAYS available on the client
-    camShake, dash, dbri, dragIK, feintfx, grabWeld, kb, kbd, parry,
-    postureBreak, projSteer, ragdollc, systemMsg
+    camShake, dash, dbri, dragIK, feintfx, grabWeld, hideArms, hideTool, kb,
+    kbd, parry, postureBreak, projSteer, ragdollc, systemMsg
   The hot-path / bootstrap-critical ones. `kb`/`kbd` are how knockback movers
   get created and destroyed on the owning client. `projSteer` is hot because
-  its first use is the frame something got PARRIED.
+  its first use is the frame something got PARRIED. hideTool/hideArms, so a cold fetch cannot land a hide AFTER its showArms.
   `ragdollc` takes the char it acts on and is NOT always your own: whoever
   owns a body runs its state machine, so dragBody fires it at the grabber
   for their victim. A rig that is not yours gets its state machine PARKED
@@ -88,7 +88,7 @@ this is also used for things that would clobber up the network stream... instead
 
   ### ServerStorage/ROWA/VFXQuiver - fetched on demand
     The FOLDER is the list (~100 ids); enumerating it here only goes stale.
-    hideTool/hideArms hide, showArms is the ONLY restore and it is
+    showArms is the ONLY restore for the hot hideTool/hideArms and it is
     per-CHARACTER, so every exit path of a hiding ability owes one.
 
   ### ntf - the corner notification

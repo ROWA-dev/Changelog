@@ -90,6 +90,12 @@ be seen at a time so thats why we try to keep it efficient.
                                               brain, despawn on death. A kind
                                               subclasses it and calls
                                               `Kind:spawn(pos)`. See Bunny.
+  ServerStorage/ROWA/Class/Boss.luau          HumObj with a physical body its
+                                              brain drives (:drive/:hold each
+                                              Heartbeat). Unanchored, server-
+                                              owned, ungrabbable, unknockable.
+                                              Register before any Get. See
+                                              catherdal giant/CGMain.
   ServerStorage/ROWA/Weps.luau                weapon id -> class registry
   ServerStorage/ROWA/Abilities.luau           ability id -> class registry
   ServerStorage/ROWA/Items.luau               item id -> class registry

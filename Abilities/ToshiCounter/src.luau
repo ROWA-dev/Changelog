@@ -24,26 +24,18 @@ local function useFunc(this:myself)
 		
 	local humObj = this._humObj
 
-	-- no reversal out of pressure. See HumObj:canCounter.
-	if not humObj:canCounter() then return end
-	
-	local anim = this:PlayAnim(script.Init, 0, 1, 1)
+	if this:counterStartup() then return end
 
-	humObj.walkSpeed:SetMod(cooldownID, -100)
-	this:useMana()
-	this:triggerCD(cooldownID, 20, true)
-	this:atkWait(0.1)
+	local anim = this:PlayAnim(script.Init, 0, 1, 1)
 	
-	local triggered = false
 	local triggeredBy = nil
 	local atkHook = humObj.beforeAttacked:Connect(function(atk) 
 		triggeredBy = atk.myEntity
 		atk.status = dmgUtils.returnEnum.aborted
-		triggered = true
 	end)
 	
 	local endt = tick() + 0.5
-	while tick() < endt and triggered == false do
+	while tick() < endt and triggeredBy == nil do
 		task.wait()
 	end
 	
@@ -54,6 +46,7 @@ local function useFunc(this:myself)
 	end
 	
 	if triggeredBy == nil then
+		this:counterMissed()
 		this:atkWait(0.7) -- 0.7s time to punish this guy lol
 		humObj.walkSpeed:RemoveMod(cooldownID)
 		return

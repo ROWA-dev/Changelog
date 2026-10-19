@@ -23,8 +23,6 @@ local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
 
 local WINDOW = 0.5
-local ABSORB_CAP = 1000
-local SLOW_KEY = "prediction"
 
 local function useFunc(this: myself)
 	local cooldownID = "prediction"
@@ -33,24 +31,12 @@ local function useFunc(this: myself)
 	end
 
 	local humObj = this._humObj
-	local char: any = humObj.HurtBox.Parent
-
-	--- no reversal out of pressure. See HumObj:canCounter.
-	if not humObj:canCounter() then
-		return
-	end
+	if this:counterStartup() then return end
 
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
-
-	this:useMana()
-	this:triggerCD(cooldownID, 14, true)
-
-	--- rooted for the stance
-	humObj.walkSpeed:SetMod(SLOW_KEY, -100)
 	fireVFX("predictStance", humObj.HRootPart, WINDOW)
-	this:atkWait(0.1)
 
-	local reflect: any = humObj.statusEffects:apply(statusEffects.Reflect, WINDOW, ABSORB_CAP)
+	local reflect: any = humObj.statusEffects:apply(statusEffects.Reflect, WINDOW)
 
 	--- `noFeint`: the stance cannot be cancelled once committed, so atkWait, not
 	--- feintWait. A CORRECT READ still ends it early, which is why the wait is a
@@ -70,7 +56,7 @@ local function useFunc(this: myself)
 		waited += task.wait()
 	end
 
-	humObj.walkSpeed:RemoveMod(SLOW_KEY)
+	humObj.walkSpeed:RemoveMod(cooldownID)
 	if anim then
 		anim:Stop(0.2)
 	end
@@ -81,6 +67,7 @@ local function useFunc(this: myself)
 		answer exactly one attack, drop the effect on the landed branch:
 		humObj.statusEffects:remove(statusEffects.Reflect) ]]
 	if not landed then
+		this:counterMissed()
 		this:endLag(0.6)
 	end
 end

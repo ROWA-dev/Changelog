@@ -68,13 +68,15 @@ end
 
 -- tapering blocks of the ground up an axis leaning at the victim, each twisted so it reads as rock, a cube on its corner for the point.
 -- clients grow it off the blocks' tag and the model's root/born/life attributes, never a sent instance: one born this instant arrives nil under StreamingEnabled
-local function spike(c: crawlMotion.state, axis: Vector3)
+local function spike(c: crawlMotion.state, axis: Vector3, life: number?, k: number?)
+	life, k = life or SPIKE_LIFE, k or 1
+	local len, wide = SPIKE_LEN * k, SPIKE_W * k
 	local base = CFrame.new(c.pos) * CFrame.fromRotationBetweenVectors(Vector3.yAxis, axis)
 	local model = Instance.new("Model")
 	model.Name = "EarthSpike"
 	model:SetAttribute("root", base)
 	model:SetAttribute("born", workspace:GetServerTimeNow())
-	model:SetAttribute("life", SPIKE_LIFE)
+	model:SetAttribute("life", life)
 	local parts = table.create(SEGS + 1)
 	local function block(name: string, cf: CFrame, size: Vector3)
 		local p = Instance.new("Part")
@@ -85,19 +87,19 @@ local function spike(c: crawlMotion.state, axis: Vector3)
 		p.Parent = model
 		table.insert(parts, p)
 	end
-	local step = SPIKE_LEN / SEGS
+	local step = len / SEGS
 	for i = 0, SEGS - 1 do
-		local w = SPIKE_W * (1 - i / SEGS) + 0.6
+		local w = wide * (1 - i / SEGS) + 0.6 * k
 		local twist = CFrame.Angles(math.rad(math.random(-5, 5)), math.random() * math.pi, math.rad(math.random(-5, 5)))
 		block("Rock", base * CFrame.new(0, (i + 0.5) * step, 0) * twist, Vector3.new(w, step * 1.3, w))
 	end
-	-- centred on the last block's top face (1.3x overlap puts it 0.15 step past SPIKE_LEN) and wide enough to swallow it
-	block("Tip", base * CFrame.new(0, SPIKE_LEN + step * 0.15, 0) * CORNER_UP, Vector3.one * (SPIKE_W / SEGS + 0.6) * 1.25)
+	-- centred on the last block's top face (1.3x overlap puts it 0.15 step past len) and wide enough to swallow it
+	block("Tip", base * CFrame.new(0, len + step * 0.15, 0) * CORNER_UP, Vector3.one * (wide / SEGS + 0.6 * k) * 1.25)
 	model.Parent = MAP
 
 	task.spawn(solidify, model)
 	-- the originals too: a carved one waits in RuntimeStorage, and regen skips one with no parent
-	task.delay(SPIKE_LIFE, function()
+	task.delay(life, function()
 		for _, p in parts do p:Destroy() end
 		model:Destroy()
 	end)
@@ -105,13 +107,13 @@ local function spike(c: crawlMotion.state, axis: Vector3)
 end
 
 -- welded under the torso so the corpse clone keeps it (plrObj/makeCorpse); the limbs stay ragdolled and dangle
-local function impale(char: Instance, rock: BasePart, c: crawlMotion.state, axis: Vector3)
+local function impale(char: Instance, rock: BasePart, c: crawlMotion.state, axis: Vector3, k: number?)
 	local torso = char:FindFirstChild("Torso") :: BasePart?
 	if torso == nil then return end
 	local w = Instance.new("Weld")
 	w.Name = "impale"
 	w.Part0, w.Part1 = rock, torso
-	w.C0 = rock.CFrame:ToObjectSpace(CFrame.lookAlong(c.pos + axis * IMPALE_AT, axis, c.t))
+	w.C0 = rock.CFrame:ToObjectSpace(CFrame.lookAlong(c.pos + axis * IMPALE_AT * (k or 1), axis, c.t))
 	w.Parent = torso
 end
 
@@ -141,6 +143,33 @@ local RUPTURE = table.freeze({
 	end,
 })
 
+--- one rupture from `from`: crawls at target if given, else straight along look. The cast's launch, called bare by the catherdal giant
+function module.rupture(this: myself, from: Vector3, look: Vector3, target: any?)
+	local cfg, aim = RUPTURE, from + look
+	if target and target.HRootPart then
+		local c = table.clone(RUPTURE)
+		c.target = target
+		cfg, aim = table.freeze(c), target.HRootPart.Position
+	end
+	this:projectile(cfg, CFrame.lookAt(from, aim))
+end
+
+--- one spike out of the ground under `at` (cast down from it), leaning along look, through whoever stands on it; standing life secs (default SPIKE_LIFE), hitting for dmg (default SPIKE's), k x as big. Called bare by the catherdal giant
+function module.erupt(this: myself, at: Vector3, look: Vector3, life: number?, dmg: number?, k: number?)
+	local ground = crawlMotion.start(at, look, 0)
+	if ground == nil then return end
+	local c, axis = burrow.spikeAt(ground)
+	local rock = spike(c, axis, life, k)
+	local size = RUPTURE.size * (k or 1)
+	local _, hits = this:hitbox(CFrame.new(c.pos) * CFrame.fromRotationBetweenVectors(Vector3.yAxis, axis) * CFrame.new(0, size.Y / 2, 0), size, nil, true) -- the rupture's hit volume, stood up
+	for _, enemy in hits do
+		local attack = this:makeAtk(SPIKE, enemy, axis)
+		if dmg then attack.dmgMult *= dmg / SPIKE.dmg end
+		this:executeAttack(attack)
+		if attack:isHit() and enemy.Hum and enemy.Hum.Health <= 0 then impale(enemy.Hum.Parent, rock, c, axis, k) end
+	end
+end
+
 local function useFunc(this:myself)
 	local cooldownID = "earthStab"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -163,14 +192,7 @@ local function useFunc(this:myself)
 	local from = hurtbox.Position + look * 2
 	local target = Targeting.nearestInDirection(hurtbox.Position, look, humObj, RANGE, Targeting.TIGHT)
 
-	-- no lock: it burrows straight ahead
-	local cfg, aim = RUPTURE, from + look
-	if target and target.HRootPart then
-		local c = table.clone(RUPTURE)
-		c.target = target
-		cfg, aim = table.freeze(c), target.HRootPart.Position
-	end
-	this:projectile(cfg, CFrame.lookAt(from, aim))
+	module.rupture(this, from, look, target) -- no lock: it burrows straight ahead
 
 	this:endLag(0.3)
 	humObj.walkSpeed:RemoveMod(cooldownID)

@@ -582,7 +582,7 @@ function module.destroy(self:myself&any)
 	self.dmgRecord:destroy()
 	self.ragdoll:destroy()
 	self.statusEffects:destroy()
-	self.grab:destroy()
+	if self.grab then self.grab:destroy() end -- a Boss has none
 	if self.sideWep then self.sideWep:destroy() self.sideWep = nil end
 	-- BOTH directions: drop whoever I am hauling, and make whoever is hauling ME let go. Otherwise the survivor keeps a dangling AlignPosition and the victim's parts stay owned by a player who no longer exists.
 	self:stopDrag()
@@ -870,7 +870,7 @@ local VELOCITY_NUDGE   = 0.1
 local NUDGE_MIN_SPEED  = 8
 
 -- !! isDodge is a PREDICATE and must NEVER write to dodgeThreshold: Dash sets that field, DashCancel clamps it, Clap and HollowPurple push it forward, so asking the question would change the answer permanently and cumulatively.
--- PingCompensation polls this every Heartbeat for up to 0.9x the attacker's ping, so the nudge is a LOCAL term that expires with the question. Built like isParry, deliberately.
+-- PingCompensation polls this every Heartbeat for up to 0.9x the victim's ping, so the nudge is a LOCAL term that expires with the question. Built like isParry, deliberately.
 function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
 	local window:number = offset or 0
 
@@ -923,8 +923,8 @@ function module.canAttack(self:myself)
 end
 
 --[[ NO REVERSAL OUT OF PRESSURE. A counter thrown the instant you are hit or
-	while your guard is being worked is free defence rather than a read, so the
-	three counters ask this first.
+	while your guard is being worked is free defence rather than a read, so
+	AbilityBase.counterStartup asks this at cast and again after the startup.
 
 	!! IT READS STAMPS, NOT `stun.Value`. That field is a DEADLINE other code
 	overwrites -- the parry branch zeroes it outright, and resolveHit's
