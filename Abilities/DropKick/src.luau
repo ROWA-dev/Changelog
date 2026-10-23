@@ -27,6 +27,7 @@ local DROP_KICK = {
 	type     = bit32.bor(dmgFlag.magic, dmgFlag.blunt),
 	dmg      = 20,
 	stun     = 0.5,
+	parryH   = 0.04,
 	posMult  = 2,
 }
 

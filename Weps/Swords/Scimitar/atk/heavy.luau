@@ -11,7 +11,7 @@ local FX = "scimHvy" -- stages: 1 swing, 2 hit (dmgConfig)
 local SLASH_SIZE = Vector3.new(26, 6, 26)
 local BOX_CF, BOX_SIZE = CFrame.new(0, 0, -6), Vector3.new(10, 10, 10)
 local ACTIVE = table.freeze({ window = 0.1 })
-local MISS_CD = 4 -- whiffed/parried cut or lapsed follow-up; the uppercut pays the registered 10 (Scimitar:wield)
+local MISS_CD = 6 -- whiffed/parried cut or lapsed follow-up; the uppercut pays the registered 10 (Scimitar:wield)
 local WINDOW = 1.5 -- after a cut lands or is blocked, a heavy within this is the uppercut
 local SPACING, KB_STUDS = 14, 1.1 -- the cut leaves them ~SPACING ahead at any range; studs per knockback(f, 0.3) unit
 local PULL = Vector3.new(0, 0, -6) -- a landed cut steps you ~5 after them

@@ -1,11 +1,11 @@
-# I Made COUNTERS WAY TOO OVERPOWERED in ROWA2... But There's a Catch
-ALL the counter moves are now 20s cooldown and halved to 10s when u land them
-ALL the counters windup changes from 0.1s -> 0.2s (VERY NOTICABLE cant use them as reads anymore have to actually predict)
+# small balancing
+new human like ai for future npcs/fighters
 
-Prediction has small white highlight on character so we know when its active
+lionfall active frames same as every counter now
 
-Getting hit by smash uppercut now guarantees the second hit smash
+toshing counter mana use 20 -> 10 default
 
-Quickstep will now disable when interupted with m1 (so u cant be invisible during ur windup)
+frenzied form no longer works on true stunned (gbd) opponents and its posture downside from -20 -> -15
 
-and some code cleanup and stuff
+scimitar wiff crit cooldown 4s -> 6s
+

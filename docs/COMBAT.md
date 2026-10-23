@@ -472,7 +472,7 @@ hides your name and health bar.
 7.4 PARKOUR
 Vault, climb and wallslide hang off the jump input. Vault reach 5,
 sprinting vaults harder, closer obstacles throw you higher. Climb is 2
-per airtime, refunded on landing, ladders free. Both 0.4s cooldown.
+per airtime, refunded on landing, ladders and `climbable` Models (the giant) free. Both 0.4s cooldown.
 Wallslide is automatic and bleeds horizontal speed. They are the only
 ways to gain height without jumping, and height feeds aerials.
 

@@ -16,6 +16,14 @@ local config:configs = {
 		posMult  = 1,
 		onHit    = require(script.slash)
 	},
+	heavy = {
+		weight   = weighEnum.Medium,
+		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
+		dmg      = 16,
+		stun     = 0.8,
+		posMult  = 2,
+		onHit    = require(script.slash)
+	},
 	punch = {
 		weight   = weighEnum.Light,
 		type     = bit32.bor(dmgFlag.blunt, dmgFlag.weaponM1),

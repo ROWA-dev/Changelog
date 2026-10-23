@@ -5,6 +5,7 @@
     ROWA/Destruction_Stable/
       Destruction         public API: Sphere, Sphere_Fast, Cylinder, Ellipsoid, OBB, Grab; original(frag) -> the part it was cut from;
                           mend(pos, r, t) repairs what is nearby if kept up for t seconds (Healing).
+                          onLost(fn): a boat's owner is handed each part leaving it; occupied(cf, size): an entity is in that box.
                           `plr` is ignored everywhere; kept so ~40 callers didn't change
         Carve             THE carve engine + the four shapes
         FloodFill         what a carve left unsupported
@@ -44,7 +45,7 @@ Blocks under minSz are decided by their centre, so misclassified volume scales w
   The record's Luau bookkeeping is ~3 KB for a 40-fragment hit, ~5% of that. Fewer fragments is
   the lever, which is why Carve windows (heavy hit 191 -> 40).
 - A carve allocates ~40 KB of Luau garbage and keeps none of it.
-- Regen always comes, so everything held is released: the wait for an occupant has a 60s ceiling;
+- Regen always comes (a boat's owner repairs it instead: the train, at its stops), so everything held is released: the wait for an occupant has a 60s ceiling;
   star members wait for their star, whose owner has a finite clock.
 - `reglue` clears its shared OverlapParams after use (GOTCHAS, HITBOX TRAPS: params hold strong refs).
 - Client: dbri keeps a pool of up to ~200 debris parts (each with a dust emitter), reused oldest
@@ -63,9 +64,12 @@ Blocks under minSz are decided by their centre, so misclassified volume scales w
   the flood fill cannot see (CanQuery off) PINS the island: it is left in place, no fling, no owner call
   (SetNetworkOwner throws on it), and still goes home at regen.
 - A star member carved while down gets a record that waits for its star: the tree comes back whole.
-  Loose and in no star (a boat) = permanent damage, no record.
-- A breakable BOAT needs its own welds swapped for DestWelds at spawn, or reglue cannot split it (not
-  built yet). Its parts must be CanQuery: re-gluing finds contacts with a spatial query.
+  Loose and in no star (a boat) = no record: `onLost` hands its owner each part carved or cut off, unglued and still in place (TrainServer clones them for its repair).
+- A breakable BOAT needs its own welds swapped for DestWelds at spawn, or reglue cannot split it (the
+  train's TrainServer does). Its parts must be CanQuery: re-gluing finds contacts with a spatial query.
+- An anchored `nodestroy` part in a loose assembly is its PIN (a train car's `base`): what still touches it
+  keeps its welds, new fragments weld to it, cut-off pieces leave every Model and fall. No pin: every carve
+  re-welds the whole assembly.
 - Ground is world Y <= -4 (FloodFill GROUND_Y). Anything higher must chain down to it through
   destructible anchored parts. The map does (RockGate, IslandTerrain).
 - A star goes home with its root fragment's record, or the swallowed part's. Parts that fell into

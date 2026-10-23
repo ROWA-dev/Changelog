@@ -36,7 +36,7 @@ local LION_FALL = {
 	end,
 }
 
-local STANCE     = 0.4
+local STANCE     = 0.5
 
 local function useFunc(this:myself)
 	local cooldownID = "lionFall"

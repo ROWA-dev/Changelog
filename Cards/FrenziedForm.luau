@@ -7,7 +7,7 @@ local baseClass = require(script.Parent:WaitForChild("cardBase"))
 export type myself = baseClass.myself & {
 }
 
-local MAX_POSTURE_CUT = 20
+local MAX_POSTURE_CUT = 15
 -- share of the damage dealt that ALSO comes off the victim's guard.
 local POSTURE_PER_DMG = 0.5
 
@@ -27,8 +27,11 @@ function module.new(humObj):myself
 		local victim = attack.enemyEntity
 		if victim == nil then return end
 		-- Combatant guarantees an inert `posture`, so a non-posture defender is safe.
-		victim.posture.Value = math.max(0,
-			victim.posture.Value - attack:CalculateDamage() * POSTURE_PER_DMG)
+		if victim.inTrueStun and victim:inTrueStun() then return end
+		victim.posture.Value = math.max(
+			0,
+			victim.posture.Value - attack:CalculateDamage() * POSTURE_PER_DMG
+		)
 	end))
 
 	return self

@@ -359,7 +359,8 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
   ARCHITECTURE.md.) `ignore` is the attacker's Humanoid at every current
   call site, compared against the resolved entity's `.Hum`; an entity works too.
   It also fires the Hitboxes RemoteChannel so subscribed players see debug
-  hitbox visuals (ReplicatedFirst/LocalCore/VisualHB via FastRemotes.Hitbox).
+  hitbox visuals (ReplicatedFirst/LocalCore/VisualHB via FastRemotes.Hitbox),
+  and HumanAI's tap (ROWA/Class/HumanAI/tap, nil while no AI is alive).
 
 ## 5. KnockbackClass
   ServerStorage/ROWA/Class/KnockbackClass.luau: value object {force, t, isRR, decayT}.

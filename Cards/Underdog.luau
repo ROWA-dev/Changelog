@@ -13,11 +13,11 @@ function module.new(humObj):myself
 	
 	self:addConnection(
 		humObj.beforeAttacked:Connect(function(attack) -- under dog card
-			local victim:Humanoid   = attack.enemyEntity.Hum
-			local attacker:Humanoid = attack.myEntity.Hum
+			local victim:Humanoid?   = attack.enemyEntity.Hum
+			local attacker:Humanoid? = attack.myEntity.Hum
 
-			-- if victim(humobj) has less health than the attacker then
-			if victim.Health < attacker.Health then
+			-- if victim(humobj) has less health than the attacker then; Hum is optional (Combatant), so a Humanoid-less attacker (SimpleEntity, the world train) never qualifies
+			if victim and attacker and victim.Health < attacker.Health then
 				-- deal 15% less
 				attack.dmgMult = math.max(0, attack.dmgMult - 0.15)
 			end

@@ -41,7 +41,7 @@ function module.wield(self:myself&any)
 	model.mtr.Part1 = model.Hold
 	model.Parent = char
 
-	humobj.cooldowns:setCooldown("heavy", 10)
+	humobj.cooldowns:setCooldown("heavy", 8)
 	baseWep.wield(self)
 end
 

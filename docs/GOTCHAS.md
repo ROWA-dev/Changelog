@@ -126,6 +126,7 @@ Footguns, silent failures and "why is this not working" traps.
   * `beforeAttack` is the ATTACKER's twin of it, fired first: outgoing damage
     cards (Frontliner) belong there, incoming ones (Underdog) in beforeAttacked.
   * `HandleAttack` returns `aborted` if the target `isDead`.
+  * The ATTACKER can be Humanoid-less too (SimpleEntity: mobs, the world train's hazard): victim-side code must not assume `attack.myEntity.Hum` (Underdog did, and aborted every train hit).
   * `grab` is NOT in Combatant: a Mob or a Boss has none. Gate a grab on `enemy.grab`
     before it starts; every current caller does.
   * `parryH` / `dodgeH` are ADDED to the defender's window. NEGATIVE = harder

@@ -5,7 +5,7 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "ToshiCounter",
-	manaUse = 20,
+	--manaUse = 10,
 }
 module.__tostring = baseClass.__tostring
 module.__index = module
@@ -18,6 +18,7 @@ end
 local dmgUtils = require(game.ServerScriptService.Utils.DmgUtils)
 local dmgFlag = dmgUtils.dmgFlags
 local fireVFX = require(game.ServerStorage.ROWA.Modules.fireVFX)
+local REACH, MAX_STEP = 5, 6 -- studs: past REACH the counterer steps in, at most MAX_STEP
 local function useFunc(this:myself)
 	local cooldownID = "ToshiCounter"
 	if this:canTriggerCD(cooldownID) ~= true then return end
@@ -27,6 +28,10 @@ local function useFunc(this:myself)
 	if this:counterStartup() then return end
 
 	local anim = this:PlayAnim(script.Init, 0, 1, 1)
+
+	local indicator = script.Highlight:Clone()
+	indicator.Enabled = true
+	indicator.Parent = humObj.Hum.Parent
 	
 	local triggeredBy = nil
 	local atkHook = humObj.beforeAttacked:Connect(function(atk) 
@@ -40,6 +45,7 @@ local function useFunc(this:myself)
 	end
 	
 	atkHook:Destroy()
+	indicator:Destroy()
 	
 	if anim then
 		anim:Stop(0.1)
@@ -70,6 +76,11 @@ local function useFunc(this:myself)
 	sound:Play()
 	game.Debris:AddItem(sound, 4)
 	
+	local gap = (triggeredBy.HRootPart.Position - humObj.HRootPart.Position) * Vector3.new(1, 0, 1)
+	if gap.Magnitude > REACH then
+		this:bodyForce(gap.Unit * math.min(gap.Magnitude - REACH, MAX_STEP), 0.2)
+	end
+
 	this:atkWait(0.6)
 	
 	local hitboxOffset = CFrame.new(0, 0, -3)

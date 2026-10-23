@@ -161,16 +161,13 @@ hit landed. WepBase itself only reads `prevHits`.
 
 1. asserts `atkFunc` is function|nil, warns + returns if no `_humObj`
 2. bails if `attacking.Value` is true or `:canAttack() == false`
-3. sets `_atkType` **before** `attacking.Value = true` — Changed fires
-   synchronously, so an observer waking on that flag must not read the previous
-   swing's type
-4. `ChangeBlocking(false)`, enables `_trail` (versioned, so overlapping swings
+3. `ChangeBlocking(false)`, enables `_trail` (versioned, so overlapping swings
    don't kill it early)
-5. **pcalls** the attack; an error warns with a traceback, it is not a crash
-6. on success only, `prevHits == 0` means the swing WHIFFED ->
+4. **pcalls** the attack; an error warns with a traceback, it is not a crash
+5. on success only, `prevHits == 0` means the swing WHIFFED ->
    `atkRate:SetMod("antiASwing", 0.1)` until 0.4s after the LATEST whiff
    (versioned like the trail, so a second whiff is not cut short by the first)
-7. always clears `attacking`; disables the trail 0.4s later if still the latest
+6. always clears `attacking`; disables the trail 0.4s later if still the latest
    version
 
 Whiffing is what a weapon is punished with. An ability is punished by its
