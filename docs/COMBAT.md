@@ -66,7 +66,8 @@ window, and moving INTO the blow widens it by up to 0.1, running with it
 narrows it as much (VELOCITY_NUDGE in HumObj).
 
 BLOCK. Costs posture equal to damage * posMult, plus force^0.8 if the hit
-carries knockback. From behind it fails. Hit 0 posture and you
+carries knockback, halved within 1s of the attacker's feint (weapon or
+ability). From behind it fails. Hit 0 posture and you
 GUARD BREAK: 1.6s true stun, 1.9s stun, and the breaking attack still
 lands. Roughly two seconds of being a target.
 
@@ -389,7 +390,8 @@ posture, not damage. You stop trying to hit them and start spending their
 blocked heavy still stuns the blocker (5.6). Guard break closes it (5.3).
 
 So the move is not the cancel: the feint CONVERTS a parry mixup into a
-posture race, and the posture race favours the attacker. The rate limit
+posture race, and the posture race favours the attacker, but not
+immediately: hits blocked within 1s of any feint do half posture. The rate limit
 is what stops it being the whole game: feint cd 2s (8.2) against a 1.2s
 parry, so you choose which swing carries it.
 
@@ -516,6 +518,7 @@ mobility economy, and 5.5 is how you lose it.
     whiff              next swing 0.1 slower for 0.4s
     weapon feint       0.15 slower for 0.2s, no dash 0.1s
     early feint        up to 0.4s lockout, less the longer you hold
+    any feint          your blocked hits do half posture for 1s
     parry in stun      -0.08 window        from behind -0.06
     parry vs touch     -0.1 window (attacker isMobile)
     heavy blocked      blocker stunned 0.1 and locked 0.1

@@ -19,6 +19,7 @@ local rowaRagdoll   = require(script.RowaRagdoll)
 local statusEffects = require(game.ServerStorage.ROWA.Class.StatusEffects)
 local grabClass     = require(script.Grab)
 local dragBody      = require(script.dragBody)
+local aiTap         = require(game.ServerStorage.ROWA.Class.HumanAI.tap)
 
 local knockForce = require(game.ServerScriptService.Knockback)
 
@@ -244,7 +245,11 @@ local function regenLoop(self: any, changedSignal: any, isBelowMax: () -> boolea
 				if self.isActive ~= true then return end
 				if step(dt) == false then return end
 			end
-			if self.isActive then changedSignal:Wait() end
+			if self.isActive then -- Once, not :Wait: a teardown drops it silently, a :Wait gets cancelled with a traceback
+				local co = coroutine.running()
+				changedSignal:Once(function() task.spawn(co) end)
+				coroutine.yield()
+			end
 		end
 	end)
 end
@@ -534,11 +539,13 @@ function module.StopEmote(self:myself&any)
 	self._emoteInstance = nil
 end
 
+local torn = setmetatable({}, { __mode = "k" }) :: { [any]: true } -- once each: onDeath leaves a corpse inactive, so isActive can't gate it
 function module.destroy(self:myself&any)
 	self:UnwieldWeapon()
-	if self.isActive ~= true then
+	if torn[self] then
 		return
 	end
+	torn[self] = true
 	self.isActive = false
 	releaseWep(self.heldWeapon)
 	self.heldWeapon = nil
@@ -562,7 +569,7 @@ function module.destroy(self:myself&any)
 		self.parryAnim:Destroy()
 	end
 	self:StopEmote()
-	if self.plrObj then
+	if self.plrObj and self.plrObj.HumObj == self then -- a respawn may have linked the next one already
 		self.plrObj.HumObj = nil
 	end
 	self.onAttackWindup:Destroy()
@@ -894,20 +901,15 @@ function module.isDodge(self:myself, atk:atkTyp?, offset:number?)
 end
 
 function module.isBlock(self:myself, atk:atkTyp?)
-	local isBlockingValue = self.blocking.Value
-	if atk and atk.myEntity and isBlockingValue then
-		local facing = facingWhenAligned(self, atk.myEntity)
-		if facing then
-			return facing > 0 -- is in front via position
-		end
-	end
 	if self.ragdoll:inRagdoll() then -- cannot block in ragdoll
 		return false
 	end
-
-	return 
-		isBlockingValue
-		or tick() <= self.cooldowns:lastUsedAt("parry") + self.parryWindow.Value + 0.2 -- 0.2s of ending block frames...
+	local guarding = self.blocking.Value or tick() <= self.cooldowns:lastUsedAt("parry") + self.parryWindow.Value + 0.2 -- 0.2s of ending block frames...
+	if guarding and atk and atk.myEntity then
+		local facing = facingWhenAligned(self, atk.myEntity)
+		if facing and facing <= 0 then return false end -- from behind fails, held or in the ending frames
+	end
+	return guarding
 end
 
 function module.canAttack(self:myself)
@@ -1013,6 +1015,8 @@ function module.feint(self:myself): boolean
 end
 
 function module.Heal(self: myself, amt: number): number
+	local see = aiTap.see
+	if see then see("heal", self) end -- the heal fx: a heal, not regen
 	local myTorso: BasePart = self.Model:FindFirstChild("Torso") :: any
 	local cloud: ParticleEmitter = myTorso:FindFirstChild("healCloud") :: any or script.HealFx.healCloud:Clone()
 	local cross: ParticleEmitter = myTorso:FindFirstChild("healCross") :: any or script.HealFx.healCross:Clone()
@@ -1196,9 +1200,6 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 		if self._wantblock == false then
 			return self.blocking.Value
 		end
-		if self:canBlock() == false then
-			return false
-		end
 	end
 	if self.blocking.Value ~= setTo then
 		self._lastBlocked = tick()
@@ -1212,6 +1213,8 @@ function module.ChangeBlocking(self:myself&any, setTo:boolean): boolean									
 	local wep:weaponBase.myself = self.wielding_weapon
 	local blockAnim = self:getBlockAnim()
 	if setTo == true and self.cooldowns:canTrigger("parry") then self.cooldowns:trigger("parry")
+		local see = aiTap.see
+		if see then see("parry", self) end -- the parry anim: anyone watching knows it's spent
 		if wep and blockAnim and self.parryAnim then
 			blockAnim:Stop()
 			self:PlayTrack(self.parryAnim)

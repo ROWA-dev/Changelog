@@ -186,7 +186,7 @@ function module.new(hum: Humanoid):myself
 	self.onCombatChanged = Signal.new()
 
 	self._lastAttack = 0
-	self._numClimb = 0
+	self._numClimb = 2 -- full like landed: a body spawned standing never lands (CharController refills on Landed)
 	self._lastDashed = 0
 	self._lastJumped = 0
 	self._lastBlocked = 0

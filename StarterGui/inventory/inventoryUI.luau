@@ -52,25 +52,28 @@ local function resetSelectionLook()
 	selection.UIStroke.Thickness = 0.5
 end
 
--- put a held item back in the slot it came from. closing the inventory mid-drag
--- used to leave the frame parented to `selection`, so the item read as deleted
--- (empty slot) AND `carrying` stayed set, which wedged every later drag.
+-- nil for a chest that has since closed
+local function uiOf(c:any): any
+	return if c == hotbarContainer then hotbarUI elseif c == inventoryContainer then inventoryUI elseif c == outsideContainer then outsideContainerUI else nil
+end
+
+local function clearSweep(held:any)
+	local sweep = held.sweep
+	held.sweep = nil
+	if sweep then for _, s in sweep do s[3]:Destroy() end end
+end
+
+-- a carry never leaves its slot server-side (its slot just draws less, ContainerUI:hold),
+-- so dropping one is pure UI: nothing to put back.
 local function cancelCarry()
 	local held = carrying
 	if held == nil then return end
 	carrying = nil
 	resetSelectionLook()
-
-	local itemUI = held.item
-	local frame = itemUI and itemUI.Frame
-	if frame == nil or frame.Parent == nil then return end -- a server update already ate it
-
-	local home = held.sourceFrame and held.sourceFrame.Frame
-	if home and home.Parent then
-		frame.Parent = home
-	else
-		frame:Destroy() -- home is gone (chest closed under us), don't leak it into `selection`
-	end
+	clearSweep(held)
+	held.ghost:destroy()
+	local ui = uiOf(held.sourceContainer)
+	if ui then ui:release(held) end
 end
 
 local function closeOutsideContainer()
@@ -311,6 +314,12 @@ local function hotbarUse(index:number)
 	end]]
 end
 
+-- the whole-slot verb: same container moves, otherwise transfers
+local function moveArgs(from:any, fromIndex:number, to:any, toIndex:number): ...any
+	if from == to then return "moveItem", from.replicationID, fromIndex, toIndex end
+	return "transferItem", from.replicationID, to.replicationID, fromIndex, toIndex
+end
+
 -- minecraft's "hover a slot, press a hotbar number": that item goes to hotbar
 -- slot `index`, and whatever was in it comes back to the slot you're pointing at.
 -- Pointing at an EMPTY slot pulls the hotbar item out instead, also like mc.
@@ -329,11 +338,7 @@ local function hotbarSwap(index:number): boolean
 
 	-- deliberately NOT optimistic, same as quickMove: move/transfer replicate back
 	-- and the normal redraw is what moves the frames.
-	if from == to then
-		remoteFunc:InvokeServer("moveItem", from.replicationID, fromIndex, toIndex)
-	else
-		remoteFunc:InvokeServer("transferItem", from.replicationID, to.replicationID, fromIndex, toIndex)
-	end
+	remoteFunc:InvokeServer(moveArgs(from, fromIndex, to, toIndex))
 	return true
 end
 
@@ -370,14 +375,23 @@ local function setSelection(itemFrame)
 	end
 end
 
-local function startCarry(slotFrame:interface.itemFrame, sourceContainerId, sourceIndex)
-	if carrying then
-		local held = carrying.item
-		if held and held.Frame and held.Frame.Parent then return end -- genuinely still carrying
-		cancelCarry() -- stale: a server update destroyed the frame under us
-	end
-	if not slotFrame or not slotFrame.item then return end
-	
+local itemUI = require(class:WaitForChild("ItemUI"))
+local containerUI = require(class:WaitForChild("ContainerUI"))
+local MB1, MB2 = Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2
+
+-- client stacks match on name, and only counted ones merge
+local function sameStack(a:any, b:any): boolean
+	return a ~= nil and b ~= nil and a.stack ~= nil and a.name == b.name
+end
+
+-- the cursor stack. Pickup sends nothing: its slot draws `shown` (stack - amount)
+-- and a ghost rides `selection`. Each placement is one RF call.
+local function startCarry(from:any, index:number, half:boolean, button:Enum.UserInputType)
+	local serial = from.slots[index]
+	if carrying or serial == nil then return end
+	local stack = serial.stack or 1
+	local amount = if half then math.ceil(stack / 2) else stack
+
 	selection.BackgroundColor3 = Color3.new(0.494118, 0.764706, 1)
 	selection.UIStroke.Color = Color3.new(0.494118, 0.764706, 1)
 	selection.UIStroke.Thickness = 1
@@ -396,69 +410,99 @@ local function startCarry(slotFrame:interface.itemFrame, sourceContainerId, sour
 	rotateOut.Completed:Connect(function()
 		rotateBack:Play()
 	end)
-	
 
-	--slotFrame:setItem(nil)
-	slotFrame.item.Frame.Parent = selection
+	local ghost = itemUI.new()
+	ghost.Frame.TextButton.Text = containerUI.label(serial, amount)
+	ghost.Frame.Parent = selection
 	carrying = {
-		sourceContainer = sourceContainerId,
-		sourceIndex = sourceIndex,
-		sourceFrame = slotFrame,
-		item = slotFrame.item,
-		--quantity = slotFrame.item.quantity or 1,
+		sourceContainer = from, sourceIndex = index, button = button, t = tick(),
+		amount = amount, shown = stack - amount, ghost = ghost, sticky = false,
 	}
+	uiOf(from):hold(carrying, index, stack - amount)
 end
 
-local function stopCarryAndSendRequest(prevFrame:interface.itemFrame, refContainer, refIndex)
-	if not carrying then return end
-	resetSelectionLook()
-	
-	if refContainer and refIndex then
-		if carrying.sourceContainer == refContainer then
-			local prevParent = carrying.sourceFrame.Frame
-			local parentTo = prevFrame.Frame
-			
-			carrying.item.Frame.Parent = parentTo -- ghost it
-			local prevItem = prevFrame.item
-			if prevItem then
-				prevItem.Frame.Parent = carrying.sourceFrame.Frame
-			end
-			local success = remoteFunc:InvokeServer("moveItem", refContainer.replicationID, carrying.sourceIndex, refIndex)
-			-- TODO maybe item might be moved somewhere else whilest this is waiting? race condition
-			if success then
-				carrying.item.Frame.Parent = parentTo
-				if prevItem then
-					prevItem.Frame.Parent = carrying.sourceFrame.Frame
-				end
-			else
-				if prevItem then
-					prevItem.Frame.Parent = prevFrame.Frame
-				end
-				if carrying then -- TODO this errored so added carrying but might need to check for carrying.item too?
-					carrying.item.Frame.Parent = prevParent
-				end
-			end
-		else
-			local prevParent = carrying.sourceFrame.Frame
-			local parentTo = prevFrame.Frame
-			print("move into another contianer!", carrying.sourceIndex, refIndex)
-			
-			local success = remoteFunc:InvokeServer("transferItem",
-				carrying.sourceContainer.replicationID, -- from container
-				refContainer.replicationID, -- to container
-				carrying.sourceIndex, -- from index
-				refIndex -- toindex
-			)
-			if success then
-			else
-				carrying.item.Frame.Parent = prevParent
-			end
-		end
-	else
-		carrying.item.Frame.Parent = carrying.sourceFrame.Frame
-	end
-	carrying = nil
+-- moves units between the cursor and its own slot: no server, they never left it
+local function setAmount(held:any, amount:number)
+	local serial = held.sourceContainer.slots[held.sourceIndex]
+	if serial == nil or amount <= 0 then cancelCarry() return end
+	held.shown += held.amount - amount
+	held.amount = amount
+	held.ghost.Frame.TextButton.Text = containerUI.label(serial, amount)
+	uiOf(held.sourceContainer):hold(held, held.sourceIndex, held.shown)
 end
+
+-- one placement off the cursor. The last one ends the carry but keeps the ghost
+-- (parked on `at`) and the slot's claim until the server's redraw has landed.
+local function spend(held:any, used:number, at:any?, ...:any)
+	held.amount -= used
+	local last = held.amount <= 0
+	if last then
+		if carrying == held then carrying = nil resetSelectionLook() end
+		held.ghost.Frame.Parent = if at then at.Frame else nil
+	else
+		held.ghost.Frame.TextButton.Text = containerUI.label(held.sourceContainer.slots[held.sourceIndex], held.amount)
+	end
+	remoteFunc:InvokeServer(...)
+	if last then
+		held.ghost:destroy()
+		local ui = uiOf(held.sourceContainer)
+		if ui then ui:release(held) end
+	end
+end
+
+-- everything on the cursor into one slot. A whole stack moves/swaps/merges; a
+-- partial one only lands on empty or the same item. False = nothing sent.
+local function placeAll(held:any, to:any, toIndex:number): boolean
+	local from, fromIndex = held.sourceContainer, held.sourceIndex
+	local src, dst = from.slots[fromIndex], to.slots[toIndex]
+	if src == nil or (to == from and toIndex == fromIndex) then return false end
+	local at = uiOf(to).slots[toIndex]
+	if sameStack(dst, src) or (dst == nil and held.amount < (src.stack or 1)) then
+		spend(held, held.amount, at, "splitItem", from.replicationID, fromIndex, held.amount, to.replicationID, toIndex)
+	elseif held.amount >= (src.stack or 1) then
+		spend(held, held.amount, at, moveArgs(from, fromIndex, to, toIndex))
+	else
+		return false -- a partial can't swap
+	end
+	return true
+end
+
+-- a sticky carry's press starts a sweep: every empty / same-item slot the mouse crosses joins
+local function sweepAdd(held:any, to:any, toIndex:number)
+	local list = held.sweep
+	if #list >= held.amount or (to == held.sourceContainer and toIndex == held.sourceIndex) then return end
+	for _, s in list do
+		if s[1] == to and s[2] == toIndex then return end
+	end
+	local dst = to.slots[toIndex]
+	-- the pressed slot always joins: a plain click on another item is a swap
+	if #list > 0 and dst ~= nil and not sameStack(dst, held.sourceContainer.slots[held.sourceIndex]) then return end
+	local mark = selection.UIStroke:Clone()
+	mark.Parent = uiOf(to).slots[toIndex].Frame
+	table.insert(list, {to, toIndex, mark})
+end
+
+-- left: one slot = place all, several = split evenly. right: one each. The rest stays on the cursor
+local function sweepEnd(held:any, button:Enum.UserInputType)
+	local list = held.sweep
+	clearSweep(held)
+	local src = held.sourceContainer.slots[held.sourceIndex]
+	if src == nil then cancelCarry() return end
+	if #list == 1 and button == MB1 then placeAll(held, list[1][1], list[1][2]) return end
+	local args = {}
+	for _, s in list do
+		local dst = s[1].slots[s[2]]
+		if dst == nil or sameStack(dst, src) then
+			table.insert(args, s[1].replicationID)
+			table.insert(args, s[2])
+		end
+	end
+	local n = #args // 2
+	if n == 0 then return end
+	local per = if button == MB2 then 1 else held.amount // n
+	spend(held, per * n, nil, "splitItem", held.sourceContainer.replicationID, held.sourceIndex, per, table.unpack(args))
+end
+
 
 local uis = game:GetService("UserInputService")
 
@@ -528,6 +572,8 @@ uis.InputChanged:Connect(function(input: InputObject, gameProcessedEvent: boolea
 	if inputType == Enum.UserInputType.MouseMovement or inputType == Enum.UserInputType.Touch then
 		local inputP = input.Position
 		hoverHit = hoverAt(Vector2.new(inputP.X, inputP.Y))
+		local held = carrying
+		if held and held.sweep and hoverHit then sweepAdd(held, refContainer, refIndex) end
 	end
 end)
 
@@ -541,40 +587,71 @@ local touchDown:{t:number, index:number?, container:any}? = nil
 local lastTap = {t = 0, index = 0, container = nil::any}
 local hotbarPress:{input:InputObject, index:number}? = nil -- a closed-bag press: its lift is the charge release
 
+-- Mouse: left picks up the stack, right half. Released on its own slot the carry
+-- goes STICKY (minecraft's click-to-pick-up): a press then sweeps slots, a press
+-- on its own slot puts it back (right: one), a quick second click there collects.
+-- Touch: drag as before, a long-press takes half.
+local LONG_PRESS = 0.45
 uis.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean) 
 	local inputType = input.UserInputType
 	local isTouch = inputType == Enum.UserInputType.Touch
-	if inputType == Enum.UserInputType.MouseButton1 or isTouch then
-		if isTouch then
-			local inputP = input.Position
-			-- no hover on touch: resolve on press. a miss records nothing, so the
-			-- closed-bag hotbar tap below stays the only thing that fires.
-			local hit = hoverAt(Vector2.new(inputP.X, inputP.Y))
-			touchDown = if hit then {t = tick(), index = refIndex, container = refContainer} else nil
+	if inputType ~= MB1 and inputType ~= MB2 and not isTouch then return end
+	if isTouch then
+		local inputP = input.Position
+		-- no hover on touch: resolve on press. a miss records nothing, so the
+		-- closed-bag hotbar tap below stays the only thing that fires.
+		hoverHit = hoverAt(Vector2.new(inputP.X, inputP.Y))
+		touchDown = if hoverHit then {t = tick(), index = refIndex, container = refContainer} else nil
+	end
+
+	local held = carrying
+	if held then
+		if not held.sticky or held.sweep then return end -- a drag or sweep already owns the pointer
+		if not hoverHit then cancelCarry() return end -- clicked off the grid
+		if refContainer == held.sourceContainer and refIndex == held.sourceIndex then
+			if inputType == MB2 then setAmount(held, held.amount - 1) return end
+			local src = refContainer.slots[refIndex]
+			cancelCarry()
+			if src and src.stack and tick() - held.t < DOUBLE_TAP then
+				remoteFunc:InvokeServer("collectItem", refContainer.replicationID, refIndex)
+			end
+			return
 		end
+		held.sweep, held.sweepBtn = {}, inputType
+		sweepAdd(held, refContainer, refIndex)
+		return
+	end
 
-		if prevFrame and prevFrame.item then
-			if isTouch == false and shiftHeld() then
-				quickMove(refContainer, refIndex)
-				return
-			end
-			startCarry(prevFrame, refContainer, refIndex)
-		else -- default
-			local inputP = input.Position
-			local p = Vector2.new(inputP.X, inputP.Y)
+	if hoverHit and prevFrame and prevFrame.item then
+		if inputType == MB1 and shiftHeld() then
+			quickMove(refContainer, refIndex)
+			return
+		end
+		startCarry(refContainer, refIndex, inputType == MB2, inputType)
+		local c, down = carrying, touchDown
+		if isTouch and c then
+			task.delay(LONG_PRESS, function()
+				if carrying ~= c or touchDown ~= down or refIndex ~= c.sourceIndex or refContainer ~= c.sourceContainer then return end
+				local src = c.sourceContainer.slots[c.sourceIndex]
+				if src and src.stack then setAmount(c, math.ceil(src.stack / 2)) end
+			end)
+		end
+	elseif inputType ~= MB2 then -- default
+		local inputP = input.Position
+		local p = Vector2.new(inputP.X, inputP.Y)
 
-			local hotbarIndex = hotbarUI:getGridIndex(p)
-			if hotbarIndex ~= 0 then
-				hotbarUse(hotbarIndex)
-				hotbarPress = {input = input, index = hotbarIndex}
-			end
+		local hotbarIndex = hotbarUI:getGridIndex(p)
+		if hotbarIndex ~= 0 then
+			hotbarUse(hotbarIndex)
+			hotbarPress = {input = input, index = hotbarIndex}
 		end
 	end
 end)
 uis.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean) 
 	local inputType = input.UserInputType
 	local isTouch = inputType == Enum.UserInputType.Touch
-	if inputType == Enum.UserInputType.MouseButton1 or isTouch then
+	if inputType ~= MB1 and inputType ~= MB2 and not isTouch then return end
+	if inputType ~= MB2 then
 		-- that finger, wherever it lifts (a mouse may not hand back the same object)
 		local press = hotbarPress
 		if press and (press.input == input or (not isTouch and press.input.UserInputType == inputType)) then
@@ -602,12 +679,21 @@ uis.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 			end
 			return
 		end
+	end
 
-		if prevFrame then
-			stopCarryAndSendRequest(prevFrame, refContainer, refIndex)
-		else
-			cancelCarry() -- released with no slot under the pointer
-		end
+	local held = carrying
+	if held == nil then return end
+	if held.sweep then
+		if held.sweepBtn == inputType then sweepEnd(held, inputType) end
+		return
+	end
+	if held.sticky or held.button ~= inputType then return end
+	if not hoverHit then
+		cancelCarry() -- released with no slot under the pointer
+	elseif refContainer == held.sourceContainer and refIndex == held.sourceIndex then
+		if isTouch then cancelCarry() else held.sticky = true end -- a click picks it up
+	elseif not placeAll(held, refContainer, refIndex) then
+		cancelCarry()
 	end
 end)
 

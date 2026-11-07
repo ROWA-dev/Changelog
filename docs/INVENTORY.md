@@ -23,8 +23,11 @@ at `slot:Serialize()`.
   ServerStorage/ROWA/Class/plrObj.luau              openChest/closeChest, LoadSlot
   ServerScriptService/Core.luau                     Inventory RemoteEvent handler
   ServerScriptService/Core/RFHandler/
-      {moveItem,transferItem,quickMoveItem}.luau    the 3 RF verbs
-      resolveContainer.luau                         their shared auth lookup
+      {moveItem,transferItem,quickMoveItem,         the 5 RF verbs
+       splitItem,collectItem}.luau
+      resolveContainer.luau                         their shared auth + bounds lookup
+  ServerStorage/ROWA/Modules/chest.luau             world chest prompt + lid, (model, container, onOpen?)
+  Workspace/Dev/TestChest                           a normal chest (keeps items, 50 bananas) to test with
   ReplicatedStorage/Modules/TopbarIcons.luau        topbar button registry
   ReplicatedStorage/Modules/CooldownClaims.luau     who draws which cooldown
   ReplicatedStorage/Modules/ShiftLock.luau          camera lock + suppression
@@ -86,6 +89,11 @@ Ownership chain:
   * `insertItem(item) -> leftover?`: first-fit. Unique items take the first
     nil slot. Returns the item back if there's no room; EVERY caller
     currently just `leftover:destroy()`s it, i.e. overflow = deletion.
+  * `absorb(i, from, n) -> moved` + `settle(i)`: THE stack primitive. absorb
+    moves up to n off `from` into slot i (tops up the same id, or splits a
+    Clone into an empty slot) without replicating `from`; settle then
+    replicates `from`'s slot once, deleting it (unEquip first) if drained.
+    insertItem, the split/collect/quickMove verbs and bananaItem.eat use them.
   * `Serialize` / `deSerialize(data, w, h)` / `ToClient`.
   * `initReplicateServer(remote, containerID, plr)`: see §5.
 
@@ -132,11 +140,15 @@ Ownership chain:
   replays set/move/onEquip locally. It validates nothing; it is a mirror,
   never a source of truth.
 
-  ### The three RemoteFunction verbs (RFHandler manifold)
+  ### The five RemoteFunction verbs (RFHandler manifold)
     moveItem(replicationID, prevIndex, newIndex)
     transferItem(fromId, toId, fromIndex, toIndex)
     quickMoveItem(fromId, fromIndex)              -- shift-click
-  All three resolve ids through `RFHandler/resolveContainer`, which returns
+    splitItem(fromId, fromIndex, per, toId, toIndex, ...)  -- `per` into EACH target
+    collectItem(toId, toIndex)                    -- double-click
+  splitItem is every partial move (drop, one, merge, spread); a full or
+  wrong target just absorbs less, and `per * targets <= stack` caps a call.
+  All five resolve ids through `RFHandler/resolveContainer`, which returns
   `{loadedSlot.hotbar, loadedSlot.inventory, loadedSlot.openContainer}` and
   the plrObj. A player can only ever name containers they personally have
   loaded or open. That lookup IS the auth model here, and it is sound. It
@@ -148,17 +160,14 @@ Ownership chain:
   `quickMoveItem` names NO destination. The server routes it:
     chest open : hotbar/inventory -> chest,  chest -> inventory then hotbar
     no chest   : hotbar <-> inventory
-  and drops it in the first free slot, so it is the only verb that cannot
-  be handed an out-of-range index (see the bounds-check gotcha in §8). It
-  is also the only one the client does NOT optimistically mirror: it just
-  waits for the two itemUpdated that `transfer` fires. If the destination
-  is full it returns false and nothing moves, same as minecraft.
+  and tops up matching stacks, then drops the rest in the first free slot.
+  If the destination is full it returns false and nothing moves, same as
+  minecraft.
   Moving an EQUIPPED item into a chest unequips it first, and a refusing
   `unEquip` (wepItem mid-swing) vetoes the whole move.
 
-  Client uses RF (not RE) because drag-and-drop needs a yes/no back: it
-  optimistically reparents the item frame, then rolls the reparent back if
-  the server returns falsy. The source already flags the race window.
+  No verb is optimistic on the client; see the carry in §6 for why it
+  still looks instant.
 
 ## 6. FULL LIFECYCLES
   ### Login -> inventory on screen
@@ -226,7 +235,9 @@ Ownership chain:
                     unEquips itself
       toolItem   -> reparents the Tool into the character and watches
                     AncestryChanged to auto-unEquip; unEquip puts it back in
-                    the Backpack (or ServerScriptService if the char is gone)
+                    the Backpack (or ServerScriptService if the char is gone),
+                    no-op if not equipped. Tools in UNEQUIP_ON_STUN (glider)
+                    also drop on onStunned and refuse to equip while stunned
 
   ### An ability's cooldown landing on its slot
     The cooldown is NOT matched by name on the client. It cannot be: the id is
@@ -264,28 +275,35 @@ Ownership chain:
     so the list can win the race on the very first use of an ability; that is
     what `setOnClaim` cleans up.
 
-  ### Dragging an item (the client's `carrying`)
-    All of this is inventoryUI.luau; nothing about it is replicated.
-      hover   InputChanged (MouseMovement OR Touch) -> hoverAt(p) -> sets
-              refContainer/refIndex/prevFrame + moves the `selection` frame.
-      press   startCarry: reparents the item's Frame INTO `selection` (so it
-              rides the highlight) and records sourceFrame/sourceIndex.
-      release stopCarryAndSendRequest: moveItem or transferItem, optimistic
-              reparent first, rolled back if the server returns falsy.
-      abort   cancelCarry: puts the Frame back in sourceFrame and clears
-              `carrying`.
-    `cancelCarry` is the one to remember. A carried Frame lives in `selection`,
-    NOT in its slot, so anything that hides or rebuilds the grid while a drag
-    is live has to call it or the item reads as deleted. It is wired into
-    triggerbackpack (closing), closeOutsideContainer, and release-over-nothing.
-    startCarry also self-heals: if `carrying` exists but its Frame was
-    destroyed under it (a server itemUpdated for that slot), it cancels the
-    stale carry instead of refusing forever.
+  ### The carry (the client's `carrying`, minecraft controls)
+    All of this is inventoryUI.luau. A carry is `{sourceContainer,
+    sourceIndex, amount}` and NEVER leaves its slot server-side: pickup sends
+    nothing, the slot draws `stack - amount` (ContainerUI:hold, hidden at 0)
+    and a ghost ItemUI rides `selection`. So cancelCarry is pure UI and
+    nothing can be lost on close/death. Each placement is ONE RF call
+    (`spend`); the last one parks the ghost on the target slot and keeps the
+    hold until the reply, which is what makes it look instant.
+      left press / right press   pick up all / half (ceil)
+      release elsewhere          placeAll: whole stack -> move/transfer
+                                 (swap) or merge; partial -> splitItem onto
+                                 empty or the same item, never a swap
+      release on its own slot    STICKY (click-to-pick-up). Then a press
+                                 starts a sweep over empty/same slots:
+                                 left = 1 slot placeAll, more = even split;
+                                 right = one each. Remainder stays held.
+      press its own slot         put back (right: one); within DOUBLE_TAP of
+                                 the pickup = collectItem
+      press off the grid         cancel
+    Client stacks match on `name` + a `stack` field (sameStack); the server
+    re-checks by id. A recount of the same stack relabels the ItemUI in
+    place instead of rebuilding it.
 
     TOUCH has no hover, so press does double duty: hoverAt runs on the press
     itself, and the release decides what it was. Same slot + under TAP_TIME =
     a tap (equip, via the same hotbarUse); moved = a drag; second tap on the
     same slot inside DOUBLE_TAP = quickMoveItem, since there is no shift key.
+    Holding still for LONG_PRESS takes half, touch's right-click. Touch
+    never goes sticky.
     ### Hover + a number key (minecraft's slot swap)
     `hotbarSwap(index)` in inventoryUI.luau, tried by the hotbar1..10 binds
     BEFORE hotbarUse; returning false is what falls back to equipping. Only
@@ -322,7 +340,7 @@ Ownership chain:
     exception: never stocked, destroyed if put in, because
     ROWA/Modules/defaultWep grants it to a slot exactly while nothing else
     in its hotbar/inventory passes `req` (re-checked on load, item change,
-    stat patch). ProximityPrompt (16 stud recheck) ->
+    stat patch). Prompt + lid are ROWA/Modules/chest. ProximityPrompt (16 stud recheck) ->
     plrObj:openChest(container)
       -> closeChest() first, slot.openContainer = container,
          container.replicationId = 3 (HARDCODED),
@@ -383,8 +401,9 @@ Ownership chain:
   comment on that command.
 
   ### A new chest
-    NamedContainer.new(w, h, name) at script scope, `:insertItem(...)`,
-    `plrObj:openChest(it)` from your prompt. Set `.OnClosed` for lid VFX.
+    Copy Workspace/Dev/TestChest: NamedContainer.new(w, h, name) at script
+    scope, `:insertItem(...)`, then `require(Modules.chest)(model, it)`. It
+    owns `.OnClosed`; restock-style logic goes in the 3rd arg, `onOpen`.
 
 ## 8. GOTCHAS
   * A chest is one server-wide container; two players inside it edit the
@@ -395,22 +414,20 @@ Ownership chain:
   * `replicationId` (server, lowercase d) vs `replicationID` (client,
     capital D) are DIFFERENT FIELD NAMES on different classes. Not a typo to
     "fix". Grep before renaming either.
-  * NO INDEX BOUNDS CHECK on move/transfer, client-side or server-side.
-    `newIndex` comes from the client and is written straight into `slots`.
-    An index outside 1..sz silently parks the item where Serialize/ToClient
-    never iterate. It still exists in memory but is invisible and
-    unsaveable. Clamp in `moveItem`/`transferItem` if you harden anything.
+  * Any verb that WRITES a client index into `slots` must pass
+    `resolve.slot(c, i)` first; an index outside 1..sz parks the item where
+    Serialize/ToClient never iterate (invisible, unsaveable). Reads are safe.
   * `moveItem` returns `true` whenever a slot is loaded, even if no container
-    matched the id, so the client's optimistic reparent sticks on a no-op.
-    `transferItem` returns the real boolean.
+    matched the id. `transferItem` returns the real boolean.
   * `set()` DESTROYS the displaced item. It is not a swap. Use `move` /
     `transfer` for anything you want to keep.
   * Overflow deletes. `insertItem` hands the item back and every caller
     destroys it. There is no "drop on the floor" path.
   * STACKING IS WIRED (bananaItem, id 4). `insertItem`'s fill-empty branch
     places the ORIGINAL item straight into an empty slot when the whole
-    stack fits (no clone, no RAM churn); `:Clone()` is called ONLY when a
-    stack bigger than `maxStack` has to split across multiple empty slots.
+    stack fits (no clone, no RAM churn); `:Clone()` (via absorb) runs only
+    when a stack is split. Clone copies `id` and `temp`; anything else a
+    leaf needs on a split it must copy itself.
     `stackItem.deSerialize`/`Serialize`/`ToClient`/`Clone` are generic and
     correct to inherit; `new`/`deSerialize` are NOT for a leaf that overrides
     behaviour (`equip` etc) -- they hardcode the target metatable, so a leaf
@@ -448,8 +465,10 @@ Ownership chain:
     `data.name` while deSerialize demanded `data.aId`, and every giver set
     `.temp = true`, which Container.Serialize skips outright.
   * `toolItem.deSerialize` finds its Tool by NAME scanning
-    `ServerStorage/ROWA/Tools:GetDescendants()` and indexes nil if the Tool
-    was renamed or removed. Renaming a Tool breaks every save holding it.
+    `ServerStorage/ROWA/Tools:GetDescendants()` and errors (item dropped) if
+    it's missing. Renaming a Tool deletes it from every save; any other Tool
+    source (e.g. `/weapon`'s Template, used for unregistered weps) must be
+    inserted `temp`.
   * `plrObj.equippedItem` is written in Core.luau, is NOT in plrObj's type,
     and is NOT cleared on death or UnloadSlot. Expect a stale reference.
   * The client mirror stores SERIAL TABLES, not item objects. `.equipped`,
@@ -457,10 +476,12 @@ Ownership chain:
   * Grid sizes are duplicated: `Container.new(10,3)/(10,1)` in slotSS and
     `container.new(10,3)/(10,1)` in inventoryUI.luau, plus CELL_SIZE 65 in
     Inventory/HotbarUI and 60 in the ContainerUI base. Change one, change all.
-  * A slot cooldown dies with its ItemUI. ContainerUI destroys and rebuilds
-    the ItemUI on every itemUpdated, so moving an item mid-cooldown loses
-    the wipe. Equipping does NOT rebuild it (that path is onEquipped), and
-    an ability self-unequips, so the common case survives.
+  * A slot cooldown dies with its ItemUI. ContainerUI rebuilds the ItemUI on
+    every itemUpdated except a same-name recount, so moving an item
+    mid-cooldown loses the wipe. Equipping does NOT rebuild it (that path is
+    onEquipped), and an ability self-unequips, so the common case survives.
+    The recount exception keys on the SLOT: swapping two same-name stacks
+    across containers leaves an equip border where it was.
   * CooldownClaims is PERMANENT for the session and has no release. An id
     that has ever been drawn on a slot never returns to the list, even if
     the item is gone. That is intentional; don't add a release without

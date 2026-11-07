@@ -74,7 +74,7 @@ Adds the state both sides need to read/predict.
     healthHeal (AdditiveValue, 1 -- UPRIGHT health regen multiplier, server
     only since health regen is; KNOCKED_REGEN ignores it on purpose),
     canAtkThreshold, dodgeThreshold, dodgeWindow (0.3), attackAt
-  Extra cooldowns registered in .new(): feint 2, feint2 2, parry 1.2
+  Extra cooldowns registered in .new(): feint 2, feint2 3, parry 1.2
   Signals: onAttackWindup(t), onStunned(t)
 
   Key methods:
@@ -411,7 +411,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
     LAZY, reading one allocates it, so test with rawget. `_mods` is nil
     until the first SetMod.
   How buffs/debuffs/cards stack without stomping each other. Common mod keys:
-  "feint", "Ifeint", "antiASwing", "stopMoving", "landhit", "wep".
+  "feint", "antiASwing", "stopMoving", "landhit", "wep".
 
 ## 9. Other server classes
   Class/StatusEffects.luau   :apply(effect, duration, ...) / :remove(effect),

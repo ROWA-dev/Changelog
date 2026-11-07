@@ -254,6 +254,7 @@ under the cd id, pays mana + the hit tier, then runs the startup with nothing sh
 or stun in it stuffs the counter silently (miss tier). Play anims/VFX only after it.
 Call `this:counterMissed()` on the whiff branch (miss tier); a read keeps the hit tier.
 Tiers are `COUNTER_HIT_CD` / `COUNTER_MISS_CD` in AbilityBase.
+Flag it `counter = <stance secs>` on the module: HumanAI presses it as a guess, timed off that + the 0.2 startup.
 
 ## 9. How an ability reaches a player
 

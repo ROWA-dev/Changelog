@@ -57,6 +57,6 @@ function module:unwield()
 end
 
 --- attack
-module.attack = require(script.attack)
+module.attacks = require(script.attack)
 
 return table.freeze(module)

@@ -9,6 +9,7 @@ type humObj = baseClass.humObj
 
 local module = {
 	Name = "Prediction",
+	counter = 0.5, -- its stance secs (past the startup): flags a counter for HumanAI
 	manaUse = 20,
 }
 module.__tostring = baseClass.__tostring

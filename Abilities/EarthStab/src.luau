@@ -178,6 +178,7 @@ local function useFunc(this:myself)
 	local hurtbox = humObj.HurtBox
 	local anim = this:PlayAnim(script.Anim, 0, 1, 1)
 	humObj.walkSpeed:SetMod(cooldownID, -100)
+	game.ReplicatedStorage.RemoteEvents.VFX:FireAllClients("hshock", humObj.HRootPart)
 
 	if this:feintWait(WINDUP) then
 		if anim then anim:Stop(0.1) end

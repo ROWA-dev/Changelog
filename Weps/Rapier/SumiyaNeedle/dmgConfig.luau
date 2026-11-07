@@ -24,37 +24,23 @@ local config:configs = {
 		posMult  = 1,
 		onHit    = require(script.punch)
 	},
-	firstHeavy = {
+	lunge = { -- hooks on a hit or block
 		weight   = weighEnum.Light,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 4,
-		stun     = 0.55,
+		dmg      = 9,
+		stun     = 0.8,
 		posMult  = 0.8,
-		onHit    = require(script.slash),
-		stunMeOnParried = 0,
-		dodgeH   = -0.1,
-		parryH   = -0.05,
+		dodgeH   = -0.08,
+		onHit    = require(script.slash)
 	},
-	lastHeavy = {
+	reel = { -- the slash they are reeled into: light, its stun is what sets up the follow-up
 		weight   = weighEnum.Light,
 		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
 		dmg      = 5,
-		stun     = 0.55,
-		posMult  = 0.8,
-		onHit    = require(script.slash),
-		dodgeH   = -0.1,
-		parryH   = 0.3--0.12
-	},
-	heavy = {
-		weight   = weighEnum.Light,
-		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 5,
-		stun     = 0.55,
-		posMult  = 0.8,
-		onHit    = require(script.slash),
-		stunMeOnParried = 0,
-		dodgeH   = -0.1,
-		parryH   = 0.3--0.12
+		stun     = 0.8,
+		posMult  = 1,
+		dodgeH   = -0.08,
+		onHit    = require(script.slash)
 	},
 }
 

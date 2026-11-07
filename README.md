@@ -1,11 +1,8 @@
-# small balancing
-new human like ai for future npcs/fighters
+# light weapons
+daggers now have a shared running heavy attack
 
-lionfall active frames same as every counter now
+earthstab barely any windup fx
 
-toshing counter mana use 20 -> 10 default
+swimming now resets climb
 
-frenzied form no longer works on true stunned (gbd) opponents and its posture downside from -20 -> -15
-
-scimitar wiff crit cooldown 4s -> 6s
-
+new heavy attack for Sumiya Needle rapier

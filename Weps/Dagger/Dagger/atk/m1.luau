@@ -84,9 +84,9 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 		Vector3.new(6,6,6), -- hitbox sz
 		indicator,
 		-- anim stuff
-		0.1, -- fadetime
-		1,   -- weight
-		1.2  -- speed
+		0.05, -- fadetime
+		1, -- weight
+		1  -- speed
 		-- endlag
 	)
 end

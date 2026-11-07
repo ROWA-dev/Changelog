@@ -10,7 +10,13 @@ export type myself = {
 	uiFrame: Frame,
 	container: container.myself,
 	slots: {[number]: interface.itemFrame},
+	holder: any, -- the carry claiming `held` (see hold)
+	held: number?,
+	shown: number?,
 	
+	draw: (self:myself, i:number)->(),
+	hold: (self:myself, owner:any, i:number, shown:number)->(),
+	release: (self:myself, owner:any)->(),
 	update: (self:myself)->(),
 	updateUI: (self:myself)->(),
 	setOpen: (self:myself, open:boolean)->(),
@@ -26,18 +32,18 @@ local module = {
 module.__index = module
 
 local itemUI = require(script.Parent:WaitForChild("ItemUI"))
-local function newItemUI(containerItem:any)
-	local newItmUI = itemUI.new()
-	local itemName = tostring(containerItem)
-	local toName = containerItem.name
-	if toName then
-		itemName = toName
-	end
-	if containerItem.stack then
-		itemName = itemName.." x"..containerItem.stack
-	end
-	newItmUI.Frame.TextButton.Text = itemName
-	return newItmUI
+
+-- "Banana x12". `n` overrides the count (the cursor's share, or what it leaves behind)
+function module.label(serial:any, n:number?): string
+	local count = n or serial.stack
+	local name = serial.name or tostring(serial)
+	return if count then name.." x"..count else name
+end
+
+local function build(itmFrame:interface.itemFrame, serial:any?)
+	local itmUI:any = if serial then itemUI.new() else nil
+	if itmUI then itmUI.name = serial.name end -- what a recount is matched on
+	itmFrame:setItem(itmUI)
 end
 
 function module.new(container:container.myself, uiFrame: Frame, frameClass:anyFrame):myself
@@ -57,18 +63,13 @@ function module.new(container:container.myself, uiFrame: Frame, frameClass:anyFr
 	end
 	
 	container.ItemUpdated:Connect(function(index: number, newItm: any?)
-		print("ITEM UPDATED so UPD UI", index, newItm)
 		local itmFrame:interface.itemFrame = slots[index]
-		if itmFrame.item then
-			itmFrame.item:destroy()
-			itmFrame.item = nil
+		local old:any = itmFrame.item
+		-- a recount of the same stack keeps its ItemUI, so the equip border and cd wipe survive
+		if not (old and newItm and newItm.stack and old.name == newItm.name) then
+			build(itmFrame, newItm)
 		end
-		if newItm then
-			local newItmUI = newItemUI(newItm)
-			itmFrame:setItem(newItmUI)
-		else
-			itmFrame:setItem(nil)
-		end
+		self:draw(index)
 		self:updateUI()
 	end)
 	
@@ -90,6 +91,8 @@ function module.new(container:container.myself, uiFrame: Frame, frameClass:anyFr
 				moveToFrame:setItem(thisItmUI) 
 			end
 		end
+		self:draw(prev)
+		self:draw(moveTo)
 		self:updateUI()
 	end)
 	
@@ -148,21 +151,36 @@ function module.updateUI(self:myself)
 end
 
 function module.update(self:myself)
-	local slots = self.slots
 	for i = 1,self.container.sz do
-		local containerItem = self.container.slots[i]
-		local itmFrame:interface.itemFrame = slots[i]
-		
-		if itmFrame.item then
-			itmFrame.item:destroy()
-			itmFrame.item = nil
-		end
-		if containerItem ~= nil then
-			local newItmUI = newItemUI(containerItem)
-			itmFrame:setItem(newItmUI)
-		end
+		build(self.slots[i], self.container.slots[i])
+		self:draw(i)
 	end
 	self:updateUI()
+end
+
+-- one slot's label, minus the cursor's claim on it; a fully claimed slot hides
+function module.draw(self:myself, i:number)
+	local itmUI = self.slots[i].item
+	local serial = self.container.slots[i]
+	if itmUI == nil or serial == nil then return end
+	local shown = if self.held == i then self.shown else nil
+	itmUI.Frame.Visible = shown ~= 0
+	itmUI.Frame.TextButton.Text = module.label(serial, shown)
+end
+
+-- inventoryUI's carry claims part of slot i: it draws `shown` until release(owner)
+function module.hold(self:myself, owner:any, i:number, shown:number)
+	local prev = self.held
+	self.holder, self.held, self.shown = owner, i, shown
+	if prev and prev ~= i then self:draw(prev) end
+	self:draw(i)
+end
+
+function module.release(self:myself, owner:any)
+	local i = self.held
+	if self.holder ~= owner or i == nil then return end
+	self.holder, self.held, self.shown = nil, nil, nil
+	self:draw(i)
 end
 
 

@@ -153,6 +153,8 @@ An unmapped type passes `nil`, WepBase falls back to `defaultAttacks`, and that
 no-ops on anything it does not map either. **Mapping nothing is legal and
 silent** — a missing `heavyEnd` is a dead key, not an error.
 
+Exception: the Dagger family owns `:attack`, so daggers set `module.attacks` to the bare table; heavy while sprinting routes to `Light/Dagger/sprintHeavy` instead.
+
 `self.basicAtks` exposes the parameterised `m1` / `sprint` / `arial` helpers.
 They return `hitLanded`, which is the `atkResult` convention: return true when a
 hit landed. WepBase itself only reads `prevHits`.

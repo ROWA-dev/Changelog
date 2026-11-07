@@ -5,9 +5,8 @@ type wepTyp = wepType.myself
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
 return function(this:wepTyp&any): wepType.atkResult	
-	local humObj = this._humObj
 	local function indicator()
-		humObj.limbTrails:indicatorLeft()
+		this:indicateAtk()
 	end
 	
 	return this.basicAtks.sprint(

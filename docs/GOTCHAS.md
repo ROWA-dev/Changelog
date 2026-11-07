@@ -10,14 +10,9 @@ Footguns, silent failures and "why is this not working" traps.
   * Heavy / Medium / Light are inherited weight bases, not concrete weapons.
     The chain is WepBase -> weight -> family -> weapon. Every layer requires
     its parent, so reparenting silently changes inheritance and behaviour.
-  * `Abilities/AbilityBase/feintwait` and `Weps/Utils/feintwait` are NO LONGER
-    separate copies. Both are thin frozen configs over the one implementation,
-    `ROWA/Modules/sharedFeintWait`. Fix bugs THERE, once.
-    They still differ on purpose (P-6, abilities are more cancel-friendly):
-      weapon  cdId "feint",  gates dashing 0.1s, postFeintSlow 0.15 for 0.2s,
-              bumpThresholdOnFeint true, stopAnim -> wep:stopLastAnim()
-      ability cdId "feint2", does NOT gate dashing, no postFeintSlow,
-              bumpThresholdOnFeint false, stopAnim -> ability:StopAnim()
+  * `Abilities/AbilityBase/feintwait` and `Weps/Utils/feintwait` are thin
+    configs over `ROWA/Modules/sharedFeintWait`. Fix bugs THERE, once; its
+    header has the deliberate weapon/ability differences.
   * `WepBase/defaultAttacks` (dispatch table, zero-arg per-type impls) vs
     `WepBase/attackHelpers` (parameterised helpers weapons call with windup /
     hitbox / dmgTbl args). Different jobs.
