@@ -70,6 +70,7 @@ local abilityList:list = {
 	[58] = manifold.Healing,
 	[59] = manifold.Balance,
 	[60] = manifold.EarthStab,
+	[61] = manifold.Terralift,
 }
 table.freeze(abilityList)
 
@@ -316,6 +317,10 @@ local abilityMeta: {[ModuleScript]: meta} = {
 	[manifold.EarthStab] = {
 		desc = "A rupture burrows to your target and a spike of the ground erupts at them.",
 		req = { earth = 4 },
+	},
+	[manifold.Terralift] = {
+		desc = "Tear up the ground you stand on and fly it for a minute: move to steer, jump and crouch to climb and sink. Cast again to drop it.",
+		req = { earth = 10 },
 	},
 	[manifold.Meteor] = {
 		desc = "Call a meteor down where you aim, up to 140 studs. It comes in at an angle and leaves a crater.",

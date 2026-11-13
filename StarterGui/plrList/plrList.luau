@@ -186,12 +186,7 @@ local function openViewFrame(newUI:TextButton)
 		end
 	end)
 	
-	local otherTxt = viewFrame.other
-	otherTxt.Text = ""
-	local ok, plrFriends = pcall(plr.GetFriendsOnlineAsync, plr)
-	if plrFriends and #plrFriends > 0 then
-		otherTxt.Text ..= "friends online: "..tostring(#plrFriends)
-	end
+	viewFrame.other.Text = if plr:GetAttribute("nc") then "can't chat" else ""
 end
 
 
@@ -233,17 +228,22 @@ local function onPlrChange()
 			-- 3/24/2026 fixed mem leak holding plr as attribute
 			local conn
 
-			local function attChange()
-				local value = plr:GetAttribute("t")
+			local function attChange(att: string)
+				local value = plr:GetAttribute(att)
 				if value == nil then return end
 
-				local title: TextLabel = newUI:FindFirstChild("title") or script.title:Clone()
-				title.Text = tostring(value)
-				title.Parent = newUI
+				if att == "nc" then -- can't chat: dim
+					newUI.TextTransparency = 0.5
+				elseif att == "t" then
+					local title: TextLabel = newUI:FindFirstChild("title") or script.title:Clone()
+					title.Text = tostring(value)
+					title.Parent = newUI
+				end
 			end
 
-			attChange()
-			conn = plr:GetAttributeChangedSignal("t"):Connect(attChange)
+			attChange("t")
+			attChange("nc")
+			conn = plr.AttributeChanged:Connect(attChange)
 
 			plr.AncestryChanged:Connect(function(_, parent)
 				if parent == nil and conn then

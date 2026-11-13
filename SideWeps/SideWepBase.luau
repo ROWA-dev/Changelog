@@ -25,8 +25,7 @@ export type myself = {
 
 	-- AdditiveValues, matching WepBase and AbilityBase, so a card can target these too.
 	atkRate: additiveVal.myself,
-	atkRateOffset: additiveVal.myself,
-	knockbackMult: additiveVal.myself,
+	knockbackMult: number, -- class constant
 	range: additiveVal.myself,
 	isFeinted: boolean,
 
@@ -55,20 +54,13 @@ end
 local CombatAction = require(game.ServerStorage.ROWA.Class.CombatAction)
 setmetatable(module, { __index = CombatAction })
 
--- subclass constants
--- TODO these might be redundant
-module.FEINT_CD_ID = "feint2"          -- shares the ability id: does NOT gate dashing
-module.KNOCKBACK_USES_CHARSIZE = false -- like an ability, not a weapon
+-- subclass constants, the ability values: "feint2" does NOT gate dashing, and knockback ignores charSize
+module.FEINT_CD_ID = "feint2"
+module.KNOCKBACK_USES_CHARSIZE = false
 
 function module.new(humObj: humObj): myself
-	local self = setmetatable({
-		atkRateOffset = additiveVal.new(0),
-		atkRate       = additiveVal.new(1),
-		knockbackMult = additiveVal.new(1),
-		range         = additiveVal.new(0),
-		_humObj = humObj,
-		isFeinted = false,
-	}, module) :: any & myself
+	local self = setmetatable(CombatAction.new(humObj), module) :: any & myself
+	self.isFeinted = false
 
 	-- a swing or a cast takes over the body, so the sidearm pose goes with it. Rising edge only, the same hook and shape emotes use to cancel themselves.
 	-- our OWN use() takes the lock before its useFunc plays anything, so this never eats the anim it is about to draw.
@@ -87,13 +79,7 @@ function module.destroy(self: any)
 	end
 	self:StopAnim()
 	self:detach()
-	if self.atkRate then self.atkRate:destroy() end
-	if self.atkRateOffset then self.atkRateOffset:destroy() end
-	if self.knockbackMult then self.knockbackMult:destroy() end
-	if self.range then self.range:destroy() end
-	self._humObj = nil
-	table.clear(self)
-	setmetatable(self, nil)
+	CombatAction.destroy(self)
 end
 
 -- the arm everything hangs off. R6, same assumption as Shield and Haki.
@@ -137,29 +123,10 @@ function module.hasAction(self: any): boolean
 	return self.use ~= module.use
 end
 
---- THE action, same guards as AbilityBase.use minus mana. Subclasses pass their body in.
+--- THE action: AbilityBase.use minus mana. Subclasses pass their body in.
 function module.use(self: any, useFunc: useFunc): boolean
-	local humObj = self._humObj
-	if humObj == nil then return false end
-	local attacking = humObj.attacking
-	if attacking.Value == true or humObj:canAttack() == false then
-		return false
-	end
-
-	attacking.Value = true
-	humObj:ChangeBlocking(false)
-
-	local ok, err
-	if useFunc then
-		ok, err = pcall(useFunc, self)
-	end
-	if ok == false then
-		warn("sideWep use err:", err)
-	end
-
-	if humObj.attacking then
-		attacking.Value = false
-	end
+	if not self:canAct() then return false end
+	self:locked(useFunc)
 	return true
 end
 
@@ -172,7 +139,7 @@ function module.PlayAnim(self: any, anim: Animation, speed: number?): AnimationT
 	track.Priority = Enum.AnimationPriority.Action4
 	self._track = track
 	humObj:PlayTrack(track, nil, nil,
-		((speed or 1) - self.atkRateOffset.Value) / self.atkRate.Value)
+		(speed or 1) / self.atkRate.Value)
 	return track
 end
 
@@ -202,7 +169,5 @@ local SIDEWEP_HITBOX_OPTS = table.freeze({
 function module.hitbox(self: any, cf: CFrame, sz: Vector3, op: OverlapParams?, isRelativeToWorldSpace: boolean?)
 	return HitboxQuery.query(self, cf, sz, SIDEWEP_HITBOX_OPTS, op, isRelativeToWorldSpace)
 end
-
--- makeAtk / executeAttack / knockback / bodyForce / projectile / cooldowns: CombatAction.
 
 return table.freeze(module)

@@ -1,6 +1,9 @@
 # COMBAT - how a pro fight plays, and every number that shapes it
 (index: parent ServerStorage/README.md)
 
+!! LEGACY, VERY OLD: needs a full rework. Numbers and claims drift from the code (verify there first); only the
+!! fake rule (4.6, 4.7) and the parried lock (8.2) were touched up on 2026-11-10.
+
 Assumes BOTH players are skilled: they know the matchup and take the
 correct defensive option whenever one exists. Skill decides WHICH option
 you take; latency decides whether it was available at all (4.16).
@@ -135,19 +138,22 @@ every hit that connects. Aggression funds itself, which is why a fight
 that starts going one way accelerates. Blocking still feeds the attacker,
 so blocking is not a way to slow someone down.
 
-4.6 WHIFFING IS THE ONLY THING THAT SLOWS YOU
-A swing that hits nothing makes your NEXT swing 0.1 slower for 0.4s.
-Combined with 4.5, spacing is the entire skill floor: hit and speed up,
-miss and bog down. Abilities are exempt.
+4.6 A FAKE RIGHT AFTER YOUR PARRY IS SLOWED
+A weapon swing with nobody in its box (a dodge isn't a whiff) is a fake, like a
+feint (4.7). Begun after your parry, it holds your next hit to no sooner than
+0.98s after that parry. Anywhere else a whiff costs no speed. Abilities are exempt.
 
 4.7 FEINTING EARLY COSTS MORE THAN FEINTING LATE
 Cancel lockout is 0.4s minus how long you held it, floored around 0.1s:
     feint immediately     0.40s lockout
     feint at 0.2s         0.20s lockout
     feint at 0.3s or more 0.10s lockout
-Twitch cancelling is punished, committing then reading is not. Weapon
-feints also cost a 0.15 attack rate penalty for 0.2s and block dashing
-for 0.1s. Ability feints cost neither, so abilities are the cheap bait.
+Twitch cancelling is punished, committing then reading is not. Any feint
+(weapon or ability) is a fake: begun after your parry, your next hit lands no
+sooner than 0.98s after that parry (sharedFeintWait FAKE), so who you parried
+punishes a read out of their lock with the shared uppercut, and a whiff (4.6) is
+never the better feint. In neutral the read uppercut is thrown as the swing starts.
+Weapon feints also block dashing for 0.1s.
 What this costs you in the actual mixup is 5.7.
 
 Feints under 0.18s do not show the feint effect, so the fastest cancel is
@@ -302,10 +308,8 @@ The largest reward in the game, and why posture pressure is worth playing
 for even when your damage is bad.
 
 5.4 WHIFFS ARE READABLE AND PUNISHABLE
-A missed swing slows the next one by 0.1 for 0.4s, so a whiffing opponent
-is slower for their recovery AND their follow up. Against a whiffed heavy
-that is often a free parry, and by 4.16 the extra 0.1 of windup is real
-reaction time rather than a wider guess.
+A missed swing still runs its windup and recovery, and right after their parry
+it also holds their next hit back (4.6).
 
 5.5 PANIC OPTIONS
 Dashing while attacking, and dashing out of a block, both burn dashcancel
@@ -326,7 +330,7 @@ The real mixup at any windup. Three options, each beats exactly one:
     parry     beats commit   4.1: not a hit, a gutted guard
 
 The payoffs are NOT symmetric. Eating a hit during a feint costs one hit.
-Being parried costs stun, 0.4-0.5 lockout, most of a guard bar, and a
+Being parried costs stun, 0.4 lockout, most of a guard bar, and a
 break on the next blocked hit. Commit is the only option with unbounded
 downside, which is why holding the attack button feels strong: it never
 loses more than tempo.
@@ -352,9 +356,8 @@ SWING BE PARRIED. Windup answers it (4.16). Feint the attacks that clear
 the reaction floor, commit the ones that do not. Weight class matters
 only because it tracks windup.
 
-Never a speed option. A weapon feint costs its lockout PLUS 0.15 rate for
-0.2s, about 0.69s to the next hit in the cheapest light case, slower than
-an uninterrupted string. Ability feints skip both penalties (4.7).
+Never a speed option: the 0.4s lockout (4.7) lands the real hit later than not
+feinting, and after your parry no sooner than 0.98s past it.
 
 The free answer to a held attack button is the string itself: it arrives
 at the flourish on a fixed schedule, and 4.16 makes that finisher the
@@ -505,8 +508,8 @@ mobility economy, and 5.5 is how you lose it.
     parry cd 1.2, reset on success     feint cd 2
     dash cd 1.5, reset on landed hit   dashcancel 1.5, slide 2
     vault cd 0.4, climb cd 0.4, climbs per airtime 2
-    block raises attack lockout 0.4    parried: attacker locked 0.4-0.5
-    ability parried: attacker locked 0.2
+    block raises attack lockout 0.4    parried: attacker locked 0.4 (any weapon)
+    a move's own stunMeOnParried skips that lock (an ability's: 0.2)
     dash blocked 0.1s post stun, 0.3s if you attacked within 1s
     dash blocked 0.1s after a feint and 0.1s after the last dash
     block AND parry blocked 0.3s after a dash (3.1), input queues
@@ -515,8 +518,8 @@ mobility economy, and 5.5 is how you lose it.
     movement specials blocked within 0.1s of your last hit landing
 
 8.3 PENALTIES
-    whiff              next swing 0.1 slower for 0.4s
-    weapon feint       0.15 slower for 0.2s, no dash 0.1s
+    fake after a parry next hit no sooner than 0.98s after that parry (feint, whiff)
+    weapon feint       no dash 0.1s
     early feint        up to 0.4s lockout, less the longer you hold
     any feint          your blocked hits do half posture for 1s
     parry in stun      -0.08 window        from behind -0.06
@@ -558,7 +561,7 @@ large against a 0.3 window; -10 is a statement, i-frames do not answer it.
 8.8 ABILITIES
     manaUse 10 by default, 6 to 120 overridden, spent at the commit
     cooldowns mostly 6 to 22s, the big moves 40 to 60s
-    no whiff penalty (4.6), no air hitbox growth (4.11), cheap feints (4.7)
+    no whiff penalty (4.6), no air hitbox growth (4.11)
 
 8.9 CARDS AND STATUS
     not listed per item: the numbers are each card's `desc` in ROWA/Cards
@@ -575,14 +578,12 @@ Listed so nobody "fixes" one without deciding it is a balance change.
     name, so that half of the release does nothing.
 ## 10. WHAT A KILL PAYS OUT
 HumObj/onDeath -> ProcessDmgRecord builds ONE `enemyLog` from the victim's
-dmgRecord (Class/HumObj/damageRecord, entries live 60s, weak keys), and
+dmgRecord (Class/HumObj/damageRecord, entries live 60s, weak keys; fed by resolveHit and HumObj:Damage(amt, source) for DoT), and
 everything reads that log:
+    rating+K/D onDeath/processRating <- FIRST, before the webhook yields (a leaver saves next). novelCombatReview
     heal      the killers, by `myDmgToEnemy` (health pack, inline)
     death msg topRecent / topDmg / topFair killer, FireAllClients
-    xp        onDeath/processXp   <- per contributor
-    elo+W/L   onDeath/processElo  <- needs BOTH sides to hold a slot
-processXp runs BEFORE the `no plrObj or loadedSlot -> return` guard so a
-slotless NPC kill still levels you; processElo runs after it on purpose.
+    xp        onDeath/processXp   <- per contributor, a slotless NPC kill still levels you
 
 THE DYING THING ANSWERS, ONE SITE DIVIDES. `victim:xpWorth()` is the pot
 (Combatant contract, inert 0); processXp splits it by damage share and knows
@@ -609,5 +610,5 @@ with no slot is skipped.
 
 `/s xpdummy` is `dummy` + `xpLevel = 1`: solo pays 2 levels, split 1 each.
 Never fake a plrObj on a dummy: plrObj IS the is-a-player discriminator
-(ChangeState, FireVFXClient, cards, processElo branch on it), so a fake
+(ChangeState, FireVFXClient, cards, processRating branch on it), so a fake
 without a real .Plr misroutes silently and can throw mid-onDeath.

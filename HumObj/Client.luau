@@ -511,7 +511,7 @@ end
 
 -- bypassArmour pierces hyper armour. only TrueStun passes it.
 function module:Stun(stunTime:number, bypassArmour:boolean?)
-	if not bypassArmour and tick() < self._hyperUntil then return end
+	if not bypassArmour and self:inHyperArmour() then return end
 
 	if stunTime > 0 then
 		self:stopDash()

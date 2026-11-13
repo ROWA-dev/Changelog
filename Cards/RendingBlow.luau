@@ -20,7 +20,7 @@ function module.new(humObj):myself
 		local victim = attack.enemyEntity
 		if victim == nil then return end
 		-- deferred past this hit's other cards, so Bloodletting/DeepWound only act on a bleed that was already there
-		task.defer(victim.statusEffects.apply, victim.statusEffects, humObj.statusEffects.Bleed, DURATION, DAMAGE)
+		task.defer(victim.statusEffects.apply, victim.statusEffects, humObj.statusEffects.Bleed, DURATION, DAMAGE, humObj)
 	end))
 
 	return self

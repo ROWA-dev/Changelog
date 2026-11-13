@@ -13,7 +13,7 @@ writing anything.
 | CLASSES.md | Entity -> HumObjClient -> HumObj, combat primitives |
 | WEAPONS.md | Weps tree, WepBase, authoring a weapon |
 | ABILITIES.md | Abilities tree, the CombatAction/AbilityBase split, authoring an ability |
-| COMBAT.md | the fight from the player's side. read before touching any feel number |
+| COMBAT.md | the fight from the player's side. LEGACY, needs a full rework: verify numbers in code |
 | VFX.md | inline VFX vs the networked Quiver |
 | DATASTORE.md | plrDataV3, PlrData + Slots serialization, migration |
 | Progression.md | level, point investment and draft gate |
@@ -44,11 +44,11 @@ The four moving parts:
   3. Ability (AbilityBase subclass): bound to a HumObj at construction.
      Entry point: `ability:use(useFunc)`.
 
-     WepBase and AbilityBase BOTH inherit `ROWA/Class/CombatAction`, which
-     owns everything an attacker does regardless of what it is holding:
-     cooldowns, the timing helpers, feintWait/windup, sweep, channelBreak,
-     makeAtk/executeAttack, knockback, bodyForce, projectile. If a change
-     would suit both, it belongs there and not in either subclass.
+     WepBase, AbilityBase and SideWepBase ALL inherit `ROWA/Class/CombatAction`,
+     which owns everything an attacker does regardless of what it is holding:
+     the stat values, the attack lock, cooldowns, the timing helpers,
+     feintWait/windup, sweep, channelBreak, makeAtk/executeAttack, knockback,
+     bodyForce, projectile. If a change would suit all three, it belongs there.
 
   4. Attack (AttackClass): one discrete "hit". A weapon/ability builds it
      with `:makeAtk(dmgTbl, enemyHum, atkDir)` then fires it with
@@ -142,9 +142,9 @@ be seen at a time so thats why we try to keep it efficient.
                                               nothing. Keep it that way,
                                               see ARCHITECTURE.md
   ServerStorage/ROWA/Class/CombatAction.luau  THE shared attacker base, under
-                                              BOTH WepBase and AbilityBase.
-                                              Read its header before adding a
-                                              method to either.
+                                              WepBase, AbilityBase and
+                                              SideWepBase. Read its header before
+                                              adding a method to any of them.
   ServerStorage/ROWA/Modules/sharedFeintWait  the one windup impl; the two
                                               old paths forward to it
   ServerStorage/ROWA/Class/plrObj/DataStore   PLAYER DATA's DataStoreService

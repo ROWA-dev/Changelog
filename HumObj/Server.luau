@@ -53,6 +53,8 @@ export type myself = baseClass.myself & {
 	-- LAZY card knob (Sure Footing), nil = 1: scales slows others put on me through :slow.
 	slowMult: number?,
 	canAtkThreshold: number,
+	_fakeAt: number?, -- start of its latest fake (a feint, a whiff): after a parry, sharedFeintWait holds its next hit back
+	_parryLandedAt: number?, -- its latest landed parry: FAKE counts from it (sharedFeintWait)
 	dodgeThreshold: number,
 
 	dodgeWindow: number,
@@ -332,6 +334,7 @@ function module.new(hum: Humanoid): myself
 			)
 		elseif attack:isParried() then
 			self._lastBlocked = tick() -- see isBlocked branch above
+			self._parryLandedAt = tick()
 			self.cooldowns:Reset("parry")
 			self.stun.Value = 0    -- reset stun so they can attack back
 			self.canAtkThreshold = 0
@@ -942,7 +945,7 @@ end
 function module.Stun(self:myself, stunTime:number, bypassArmour:boolean?)
 	if self.isActive ~= true then return end
 	-- hooked here, not in baseClass, because statusEffects is server-only; via activeEffects because a raw _hyperUntil write has no effect object.
-	if not bypassArmour and tick() < self._hyperUntil then
+	if not bypassArmour and self:inHyperArmour() then
 		local armour:statusEffects.anyEffect = self.statusEffects.activeEffects
 			and self.statusEffects.activeEffects.HyperArmour
 		if armour then
@@ -1059,7 +1062,9 @@ module.stopDrag  = dragBody.stop
 	Combatant contract needs nothing.
 	Setting Health = 0 rather than calling :Die() keeps the kill flowing
 	through onAttacked -> onDied, so the killer still gets credit. ]]
-function module.Damage(self:myself&any, amt:number)
+function module.Damage(self:myself&any, amt:number, source:any?)
+	-- non-attack damage (DoT, rips) credits its source like a hit, before health drops so a finishing tick counts. Attacks credit in resolveHit
+	if source and source ~= self then self.dmgRecord:addEntry(source, amt) end
 	if amt <= 0 or self.isDead then
 		return baseClass.Damage(self, amt)
 	end

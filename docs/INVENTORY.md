@@ -23,10 +23,11 @@ at `slot:Serialize()`.
   ServerStorage/ROWA/Class/plrObj.luau              openChest/closeChest, LoadSlot
   ServerScriptService/Core.luau                     Inventory RemoteEvent handler
   ServerScriptService/Core/RFHandler/
-      {moveItem,transferItem,quickMoveItem,         the 5 RF verbs
-       splitItem,collectItem}.luau
-      resolveContainer.luau                         their shared auth + bounds lookup
+      {moveItem,transferItem,quickMoveItem,         the 6 RF verbs
+       splitItem,collectItem,dropItem}.luau
+      resolveContainer.luau                         their shared auth + bounds + unequip
   ServerStorage/ROWA/Modules/chest.luau             world chest prompt + lid, (model, container, onOpen?)
+  ServerStorage/ROWA/Modules/groundItem.luau        an item on the floor: model copy, walk-over pickup, 120s despawn
   Workspace/Dev/TestChest                           a normal chest (keeps items, 50 bananas) to test with
   ReplicatedStorage/Modules/TopbarIcons.luau        topbar button registry
   ReplicatedStorage/Modules/CooldownClaims.luau     who draws which cooldown
@@ -79,9 +80,10 @@ Ownership chain:
   pick one of those two shapes; don't invent a third signal.
 
 ## 4. Container (SERVER) - what it adds
-  * `_container` back-pointer bookkeeping. `set`/`transfer`/`destroy` are
-    overridden ONLY to keep `item._container` pointing at its owner. Items
-    need it because `item:equip()` fires `self._container.onEquipped`.
+  * `_container` back-pointer bookkeeping. `set`/`transfer` are overridden
+    ONLY to keep `item._container` pointing at its owner (a destroyed item
+    clears its own). Items need it because `item:equip()` fires
+    `self._container.onEquipped`.
   * `onEquipped: Signal<equipping:boolean, item>`: the third signal, server
     only. Fired BY THE ITEM, not by the container.
   * `onCooldown: Signal<item, seconds, cdId>`: the fourth, server only.
@@ -94,6 +96,8 @@ Ownership chain:
     Clone into an empty slot) without replicating `from`; settle then
     replicates `from`'s slot once, deleting it (unEquip first) if drained.
     insertItem, the split/collect/quickMove verbs and bananaItem.eat use them.
+  * `take(i, n) -> item?`: the inverse, up to n off slot i as a LOOSE item
+    (the original if it all goes, else a split Clone), never destroyed. dropItem uses it.
   * `Serialize` / `deSerialize(data, w, h)` / `ToClient`.
   * `initReplicateServer(remote, containerID, plr)`: see §5.
 
@@ -128,7 +132,7 @@ Ownership chain:
   Handled at the bottom of ServerScriptService/Core.luau.
 
   `Container:initReplicateServer` is the ONLY thing that writes to the wire:
-  it stamps `self.replicationId` and connects all four server signals to
+  it stamps `self.replicationId` (first feed only: the owner's) and connects all four server signals to
   `FireClient(plr, containerID, <enum>, ...)`, returning a handle whose
   `:Disconnect()` drops all four. The ItemUpdated payload goes
   through `itm:ToClient()` first. onEquipped carries no index, so it LINEAR
@@ -140,20 +144,37 @@ Ownership chain:
   replays set/move/onEquip locally. It validates nothing; it is a mirror,
   never a source of truth.
 
-  ### The five RemoteFunction verbs (RFHandler manifold)
+  ### The six RemoteFunction verbs (RFHandler manifold)
     moveItem(replicationID, prevIndex, newIndex)
     transferItem(fromId, toId, fromIndex, toIndex)
     quickMoveItem(fromId, fromIndex)              -- shift-click
     splitItem(fromId, fromIndex, per, toId, toIndex, ...)  -- `per` into EACH target
     collectItem(toId, toIndex)                    -- double-click
+    dropItem(n, fromId?, fromIndex?)              -- bind `drop` (Backspace); no slot = the equipped hotbar item
   splitItem is every partial move (drop, one, merge, spread); a full or
   wrong target just absorbs less, and `per * targets <= stack` caps a call.
-  All five resolve ids through `RFHandler/resolveContainer`, which returns
+  dropItem only takes from your own hotbar/inventory, never abilities or Fist.
+  The client sends the carried stack, else the hovered slot, else (bag shut)
+  no slot and the server finds the equipped item. Shift = whole stack (Ctrl slides). Touch: drag
+  it out of the bag. Pickup is groundItem's zone Touched by the root (the only
+  touchable body part), reach-checked server-side against the picker's hurtbox
+  because a touch is the client's word. Never saved; the timings and caps are
+  groundItem's constants. It tosses from the dropper's hurtbox too, and landing
+  on a part an anchored root carries (a train car) welds it to that root, so it
+  rides whatever moves the root; itmpick then animates in that root's space.
+  Both ends are client fx off tags, attribute `by` = who, one module
+  (ReplicatedStorage/VFXQuiver/itmpick, itmdrop aliases it): `itmdrop` the toss,
+  untagged after it lands so stream-ins don't replay it, `itmpick` the fly-in.
+  A dropped Tool is CLONED to the ground and the original parked in PlayerGui
+  for a few seconds: nil'ing it kills its LocalScript before Unequipped runs.
+  All six resolve ids through `RFHandler/resolveContainer`, which returns
   `{loadedSlot.hotbar, loadedSlot.inventory, loadedSlot.openContainer}` and
   the plrObj. A player can only ever name containers they personally have
   loaded or open. That lookup IS the auth model here, and it is sound. It
   used to be copy-pasted into each verb; a new verb calls `resolve.all` +
-  `resolve.byId` and does NOT grow a fourth copy.
+  `resolve.byId` and does NOT grow a fourth copy. byId is POSITIONAL (its
+  `AT` table), never the container's `replicationId` field: a viewed
+  inventory is its owner's 1 too.
   `resolve.canHold` keeps ability items (`aId`) in the slot's own hotbar/
   inventory; transferItem checks both legs of a swap, quickMoveItem its dest.
 
@@ -163,8 +184,10 @@ Ownership chain:
   and tops up matching stacks, then drops the rest in the first free slot.
   If the destination is full it returns false and nothing moves, same as
   minecraft.
-  Moving an EQUIPPED item into a chest unequips it first, and a refusing
-  `unEquip` (wepItem mid-swing) vetoes the whole move.
+  An item crossing owners (into or out of a chest) goes through
+  `resolve.cross` -> `release`: unequipped and dropped from its holder's
+  wielded set, same as dropItem. A refusing `unEquip` (wepItem mid-swing)
+  vetoes the whole move. transferItem checks both legs.
 
   No verb is optimistic on the client; see the carry in §6 for why it
   still looks instant.
@@ -313,8 +336,7 @@ Ownership chain:
     closes. The hovered slot is the source; hover an EMPTY slot and the roles
     flip so the hotbar item comes to you instead. Same container -> moveItem,
     otherwise transferItem, and like quickMove it is NOT optimistic.
-    Works over a chest too, which inherits transferItem's hole: it does NOT
-    unEquip on the way in (quickMoveItem is the only verb that does).
+    Works over a chest too, released like any crossing (resolve.cross).
 
     hoverAt returns FALSE on a miss and the press records nothing on a miss,
     because refIndex is sticky and would otherwise aim a tap at whatever was
@@ -329,21 +351,18 @@ Ownership chain:
 
     Opening also calls `shiftLock.block("inventory", true)`. Shift belongs to
     shift-click while the bag is open, so the camera lock is turned off AND
-    the shift key is unbound for the duration; closing restores whatever the
+    the shiftlock bind is sunk for the duration; closing restores whatever the
     player had. See ReplicatedStorage/Modules/ShiftLock.
 
   ### Opening a chest
-    Workspace/MAP/IslandMain/Systems/Chest/chest builds ONE NamedContainer
-    and is THE weapon source: every open restocks any missing wepList id,
-    at most once per REGEN seconds (lazy, no timer), and destroys anything
-    put in that isn't a first copy of a weapon. Fist (`Weps.DEFAULT`) is the
-    exception: never stocked, destroyed if put in, because
-    ROWA/Modules/defaultWep grants it to a slot exactly while nothing else
-    in its hotbar/inventory passes `req` (re-checked on load, item change,
-    stat patch). Prompt + lid are ROWA/Modules/chest. ProximityPrompt (16 stud recheck) ->
+    No real world chest exists yet. Both are TEMP DEV chests, don't build on them:
+    Workspace/MAP/IslandMain/Systems/Chest/chest hands out every wepList weapon
+    (restocked on open, at most once per REGEN s; anything else put in is
+    destroyed, Fist too since ROWA/Modules/defaultWep grants it), and
+    Workspace/Dev/TestChest keeps items. The flow below is the real one.
+    Prompt + lid are ROWA/Modules/chest. ProximityPrompt (16 stud recheck) ->
     plrObj:openChest(container)
       -> closeChest() first, slot.openContainer = container,
-         container.replicationId = 3 (HARDCODED),
       -> S2C newContainer with containerID=nil + container:ToClient()
       -> container:initReplicateServer(remote, 3, plr), handle kept as
          plrObj connection "chest"
@@ -354,6 +373,13 @@ Ownership chain:
     closeContainer -> plrObj:closeChest() -> calls `container.OnClosed()` if
     present (the chest scripts hang their lid-close tween off it), drops the
     "chest" connection and nils openContainer.
+    A newContainer replacing an open one does NOT echo closeContainer: the
+    server already closed it, and the echo used to close the NEW one.
+    `/viewInv` `/viewHotbar` (admin) open a player's LIVE container down this
+    same path, editable. Their slot unloading closes it server-side (else
+    drags land in a destroyed container); the client window goes stale, inert.
+    Taken items leave the owner's `equippedItem` stale, which only bites if
+    the taker equips it before the owner's next hotbar press (it gets put away).
 
 ## 7. AUTHORING
   ### A new item type
@@ -408,7 +434,7 @@ Ownership chain:
 ## 8. GOTCHAS
   * A chest is one server-wide container; two players inside it edit the
     same slots with no locking.
-  * replicationId 3 is hardcoded in THREE places (plrObj.openChest,
+  * replicationId 3 is hardcoded in THREE places (resolveContainer's `AT`,
     plrObj.replicateChestOpen, inventoryUI.openOutsideContainer). Only one
     outside container can exist per player because of it.
   * `replicationId` (server, lowercase d) vs `replicationID` (client,
@@ -422,7 +448,10 @@ Ownership chain:
   * `set()` DESTROYS the displaced item. It is not a swap. Use `move` /
     `transfer` for anything you want to keep.
   * Overflow deletes. `insertItem` hands the item back and every caller
-    destroys it. There is no "drop on the floor" path.
+    destroys it. Only dropItem puts things on the floor.
+  * "drop" is overloaded: `slotSS:dropAbility` DELETES, `HumObj:DropWeapon`
+    un-wields, the client's cancelCarry is UI only. The world drop is
+    dropItem/groundItem.
   * STACKING IS WIRED (bananaItem, id 4). `insertItem`'s fill-empty branch
     places the ORIGINAL item straight into an empty slot when the whole
     stack fits (no clone, no RAM churn); `:Clone()` (via absorb) runs only

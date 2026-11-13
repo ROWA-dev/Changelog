@@ -55,9 +55,10 @@ Bad definitions fail at server start.
     complete(ctx, spec)   -> { string }                     optional
     static                -> boolean                        the list never changes at runtime
 
-One-value types return the value, not a list. `plr` rejects several matches.
+One-value types return the value, not a list. `plr` and `entity` reject several matches.
 Static lists ship IN the manifest (zero round trips); only selector/players/plr ask the server.
 A new "list of things" type is a `resource({ label, enumerate })`.
+A fixed set of words is `type = "choice"` with `choices = {...}` on the arg, no new type.
 
 ## PERMS
 2^n bitfield, never change the values. Read via `PERMS.of(userId)`; `test` passes on ANY shared bit.

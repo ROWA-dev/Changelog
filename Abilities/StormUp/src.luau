@@ -114,7 +114,7 @@ local function useFunc(this:myself)
 		if attack:isParried() then
 			parried = true
 		elseif attack:isHit() or attack:isBlocked() or attack:isDodged() then
-			attack.enemyEntity.statusEffects:apply(enemy.statusEffects.Shock, 1.5, 1)
+			attack.enemyEntity.statusEffects:apply(enemy.statusEffects.Shock, 1.5, 1, humObj)
 			if not attack:isDodged() then startAirCombo(humObj, enemy, STORM.stun) end
 		end
 	end

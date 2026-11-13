@@ -44,12 +44,14 @@ never renumber, never reuse.
 
 ## 3. The class split
 
-`Class/CombatAction.luau` is the shared attacker base. **WepBase and AbilityBase
-both inherit it**, so a fix lands once. Read its header before adding anything to
-AbilityBase: if weapons would want it too, it goes one level down.
+`Class/CombatAction.luau` is the shared attacker base. **WepBase, AbilityBase and
+SideWepBase all inherit it**, so a fix lands once. Read its header before adding
+anything to AbilityBase: if weapons would want it too, it goes one level down.
 
 On CombatAction:
 
+- `new` / `destroy` — the two AdditiveValues below
+- `canAct` / `locked` — the attack gate and the attack lock, see `:use` internals
 - `canTriggerCD` / `triggerCD` — cooldowns, plus the hotbar slot forward
 - `scaledTime` / `atkWait` / `endLag`
 - `feintWait` / `windup` — the cancellable windup
@@ -59,11 +61,12 @@ On CombatAction:
 - `makeAtk` / `executeAttack` — `enemy` is an **entity**, not a Humanoid
 - `feint` / `bodyForce` / `knockback` / `projectile`
 
-Two subclass constants drive it. Forget them and you get the weapon defaults,
+Three subclass constants drive it. Forget them and you get the weapon defaults,
 which are the conservative ones:
 
 - `FEINT_CD_ID` — `"feint2"` for abilities, does **not** gate dashing
 - `KNOCKBACK_USES_CHARSIZE` — false for abilities, true for weapons
+- `knockbackMult` — 1, a plain number: nothing mods it
 
 AbilityBase overrides, all on purpose:
 
@@ -76,19 +79,20 @@ AbilityBase overrides, all on purpose:
 - `onParried` — pushes `canAtkThreshold` to at least `tick()+0.2`, where WepBase
   only warns
 
-`.new(humObj)` gives `atkRate` 1, `atkRateOffset` 0, `knockbackMult` 1, `range` 0
-— all AdditiveValues, so `self.atkRate.Value`, mutate with `:SetMod`. `destroy`
-destroys all four; `table.clear` alone leaks their mod lists.
+`.new(humObj)` gives `atkRate` 1, `range` 0 — both
+AdditiveValues, so `self.atkRate.Value`, mutate with `:SetMod`. `destroy`
+destroys both; `table.clear` alone leaks their mod lists.
 
 ### `:use` internals
 
-1. false if `humObj.attacking` or `:canAttack() == false`
+1. false if `humObj.attacking` or `:canAttack() == false` (`:canAct`)
 2. false if `notWepClass` matches the wielded weapon **family**
 3. false if `:manaNow() < :manaCost(manaUse)` (scaled by the caster's `manaCostMult`),
    and broadcasts the `noMana` tell, throttled to one per 0.3s because UseAbility retry-loops
-4. `using_ability = self`, `attacking = true`, `ChangeBlocking(false)`
-5. **pcalls** useFunc and *warns* on error — your errors are not crashes
-6. clears `using_ability`, `attacking = false`, returns true
+4. `using_ability = self`, then `:locked(useFunc)`: `attacking = true`,
+   `ChangeBlocking(false)`
+5. **pcalls** useFunc and *warns* `<Name> err:` on error — your errors are not crashes
+6. `attacking = false`, clears `using_ability`, returns true
 
 **Mana is not spent here.** Call `this:useMana()` yourself, at the commit point,
 after the windup. An ability that never calls it is free, and unless its header

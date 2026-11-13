@@ -50,7 +50,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	if this:canTriggerCD("heavy") == false then return end
 
 	local humObj  = this._humObj
-	local hurtbox = humObj.HurtBox
+	local hurtbox, root = humObj.HurtBox, humObj.HRootPart
 	local model   = this._model
 	local hold    = model:FindFirstChild("Hold")
 	local blade   = model:FindFirstChild("Blade", true)
@@ -58,7 +58,7 @@ return function(this:wepTyp&any): wepType.atkResult
 	local anim = this:PlayAnim(script.Heavy, 0.08, 1, 1.18)
 	this:indicateAtk()
 	playSound(hold, "heavier", 0.2)
-
+	fireVFX("hshock", root)
 	--[[ 0.847, NOT 1: rowa1's heavy windup is a RAW 1.0s with no AtkRate on
 		it, so it is already final. scaledTime would scale it (x1.18), and
 		0.847*1.18 = 1.0. The declared Attacking.Time of 1.4 is unusable. ]]

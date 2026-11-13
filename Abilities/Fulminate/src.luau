@@ -140,7 +140,8 @@ local function useFunc(this:myself)
 						hitEnemy.statusEffects:apply(
 							hitEnemy.statusEffects.Shock,
 							1.5, -- duration
-							1 -- strength
+							1, -- strength
+							humObj
 						)
 					end
 					hcount += 1

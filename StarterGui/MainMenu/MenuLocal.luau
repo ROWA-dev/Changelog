@@ -135,10 +135,9 @@ local function openSlotCard(anchorGui: GuiObject, id: number, entry: any)
 	-- summary stub satisfies it and the formula stays in the slot class.
 	local need = slotClass.nextLevelXp({ lvl = lvl } :: any)
 
-	-- slot.wins is KILL CREDIT, not match wins: processElo bumps it on whoever
+	-- slot.wins is KILL CREDIT, not match wins: processRating bumps it on whoever
 	-- dealt top damage. Settings > Slot labels it the same way.
 	local rows = {
-		{ "elo",      comma(entry.elo) },
 		{ "kills",    comma(entry.wins) },
 		{ "deaths",   comma(entry.loss) },
 		{ "k/d",      ratio(entry.wins, entry.loss) },

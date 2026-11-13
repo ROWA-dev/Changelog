@@ -189,7 +189,8 @@ local function useFunc(this:myself)
 		attack.enemyEntity.statusEffects:apply(
 			humObj.statusEffects.Bleed,
 			BLEED_T,
-			BLEED_DMG
+			BLEED_DMG,
+			humObj
 		)
 
 		fireVFX("bchainYank", myRoot, eroot)

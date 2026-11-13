@@ -27,17 +27,19 @@ Footguns, silent failures and "why is this not working" traps.
     ids to modules. Those ids are saved on player items. Only APPEND.
   * StatusEffects module NAMES are saved in slot `snap`; renaming one drops it from saves.
 
-## STATS: AdditiveValue on BOTH now
-  * WepBase AND AbilityBase: atkRate / range / atkRateOffset / knockbackMult
-    are all AdditiveValue objects -> `self.atkRate.Value`, mutate via
-    `:SetMod(key, n)`.
+## STATS: AdditiveValue on every CombatAction
+  * Weapons, abilities AND side weapons: atkRate / range are
+    AdditiveValue objects built by CombatAction.new -> `self.atkRate.Value`,
+    mutate via `:SetMod(key, n)`.
+  * `knockbackMult` is NOT one: a plain class constant (1), read with no
+    `.Value`. Nothing mods it; promote it when something does.
   * They used to differ (AbilityBase held plain numbers), and were unified.
     Old notes saying "abilities are plain numbers" are STALE.
   * `AdditiveValue.Value` is READ-ONLY. Assigning throws
     "Value is readonly you stupid, use:setMod instead".
   * Mods are keyed strings. Setting the same key twice REPLACES it, it doesn't
-    stack. Two systems using the same key ("feint", "stopMoving", "landhit",
-    "antiASwing", "wep") clobber each other.
+    stack. Two systems using the same key ("stopMoving", "landhit", "wep")
+    clobber each other.
   * The module warns it's prone to float drift. Keep mods to integers.
 
 ## FEINTWAIT SEMANTICS (the #1 source of stuck states)
@@ -49,12 +51,13 @@ Footguns, silent failures and "why is this not working" traps.
     you created. Nothing does it for you.
   * It also returns true if the humObj vanished, entered stun, or can no
     longer attack, not just on an actual player feint.
-  * All wait helpers scale by `(t + atkRateOffset) * atkRate / timeScale`.
-    Your literal seconds are NOT wall-clock seconds.
-    THE ONE EXCEPTION IS `:sweep`, whose window scales by atkRate/timeScale
-    but NOT by atkRateOffset -- that offset is a flat-seconds penalty and
-    adding it would DOUBLE a 0.15s window, handing a punished player more
-    hitbox forgiveness. A window is a tolerance, not a beat.
+  * After a fake (a feint, a weapon whiff: `humObj._fakeAt`) that began after its
+    latest parry (`_parryLandedAt`) sharedFeintWait lengthens the next windup so its hit
+    lands FAKE (0.98s) after that parry,
+    and slows its anim to match. attackAt and the AI's windup tap get the new one.
+  * All wait helpers scale by `t * atkRate / timeScale` (CombatAction.scaledTime),
+    `:sweep`'s window too. Your literal seconds are NOT wall-clock seconds.
+    There is no flat-seconds offset any more: a slowed follow-up is FAKE's job.
   * !! `isFeinted` IS ONLY EVER CLEARED BY feintWait AND channelBreak, and
     feintWait's clear is at the TOP of it (sharedFeintWait,
     "actor.isFeinted = false" before the loop). `CombatAction.feint` sets it;
@@ -83,7 +86,7 @@ Footguns, silent failures and "why is this not working" traps.
     HRootPart if the HurtBox query returns zero. AbilityBase:hitbox does NONE
     of that (scaleByCharSize/floatBonus/retryOnMiss all off, no +1). Ability
     hitboxes must be authored at absolute size. Abilities also skip the
-    antiASwing whiff penalty (trackPrevHits false) -- and that is NOT a
+    whiff fake (trackPrevHits false) -- and that is NOT a
     balance knob: `prevHits` is read by WepBase's whiff detection and by
     nothing else, so turning it on for abilities writes a field nobody
     reads. An ability is punished for whiffing by its COOLDOWN. Both
@@ -207,9 +210,9 @@ Footguns, silent failures and "why is this not working" traps.
     there would make emote a requirement bypass.
   * `WepBase:onParried` WARNS if you don't override it ("must be implemented
     by <name> you noob"). Every concrete weapon needs one.
-  * Whiff detection reads `self.prevHits`, which `:hitbox` sets. If your
-    attack never calls `:hitbox`, EVERY swing counts as a whiff and eats the
-    `antiASwing` atkRate debuff.
+  * Whiff detection reads `self.prevHits`, which `:hitbox` sets. Each swing starts
+    it at -1, so one that never reaches a `:hitbox` (gated, feinted, stunned, a
+    throw) is no whiff. Only a box that ran and found nobody is: a fake (FAKE).
   * Trails use `_trailVersion` so overlapping swings don't disable early.
     If you touch `_trail` manually, respect the version counter.
   * `:PlayAnim` calls `stopAbilityAnims()`, so a weapon swing kills an
@@ -302,10 +305,10 @@ Footguns, silent failures and "why is this not working" traps.
         activeMouseLockController, so EnableMouseLock/OnMouseLockToggled
         cannot be called.
     ReplicatedStorage/Modules/ShiftLock therefore NEUTRALISES it (CAS sink
-    on shift + a RenderPriority.Last step that out-writes MouseBehavior and
+    on its bind + a RenderPriority.Last step that out-writes MouseBehavior and
     RotationType) rather than turning it off. Anything that needs the
     cursor back goes through `shiftLock.block(reason, true)`.
-  * PlayerModule is FORKED: `ControlModule/TouchJump` ignores JumpPower (CharController zeroes it every block/attack/stun, which hid the button). Re-apply if you ever replace PlayerModule.
+  * PlayerModule is FORKED: `ControlModule/TouchJump` ignores JumpPower (CharController zeroes it every block/attack/stun, which hid the button), and `CameraModule/CameraInput.panWith` lets a touch sunk by a mobileUI button still pan. Re-apply if you ever replace PlayerModule.
   * `stun` / `dodgeThreshold` / `canAtkThreshold` / `attackAt` / `_hyperUntil`
     are absolute `tick()` timestamps, not durations.
   * CLIENT `trueStun` USED TO BE PERMANENTLY 0. `:TrueStun` routes through

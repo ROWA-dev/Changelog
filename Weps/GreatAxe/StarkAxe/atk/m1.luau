@@ -2,68 +2,14 @@
 local wepBase = require(game.ServerStorage.ROWA.Weps.WepBase)
 local dmgConfig = require(script.Parent.Parent.dmgConfig)
 
-function flourish(this:wepBase.myself&any)
-	-- reset m1 cycle if took too long
-	this.lastAttacked = tick()
-
-	local humObj   = this._humObj
-	local hurtbox  = humObj.HurtBox
-
-
-	local anim = script.swing3
-	local track = this:PlayAnim(anim, 0,1,1.1)
-	track.Priority = Enum.AnimationPriority.Action2
-
-	this.m1cycle = (this.m1cycle+1)%3
-	if this.m1cycle == 0 and this.flourishHook then
-		if this:flourishHook() == true then return end
-	end
-
-	humObj.limbTrails:indicatorLeftLeg()
-
-	if this:feintWait(0.46) then return end
-	
-
-	local hitbox, hits = this:hitbox(
-		CFrame.new(0, 0, -2), 
-		Vector3.new(5.5,6,5.5)
-	)
-
-
-	local hitLanded = false
-	for _,enemy in pairs(hits) do
-		local attack = this:makeAtk(
-			dmgConfig.kick,
-			enemy,
-			hurtbox.CFrame.LookVector
-		)
-
-		attack.hitbox = hitbox
-
-		local enemyRoot:any = enemy.HRootPart
-
-		local offset = enemyRoot.Position - hurtbox.Position
-		local forward = hurtbox.CFrame.LookVector
-		local signedDist = offset:Dot(forward)
-
-		local newkb = this:knockback(forward*(16 + (4-signedDist)*0.8), 0.3)
-		attack.knockback = newkb
-
-		this:executeAttack(attack)
-
-		if attack:isParried() then
-			this:stopLastAnim()
-		elseif attack:isHit() then
-			hitLanded = true
-		end
-	end
-
-	if this.m1cycle == 0 then -- flourish endlag
-		this.m1last = tick() + 0.6
-	end
-
-	return hitLanded
-end
+local FLOURISH = table.freeze({
+	anim = script.swing3, cycle = 3, speed = 1.1,
+	windup = 0.46,
+	cf = CFrame.new(0, 0, -2),
+	sz = Vector3.new(5.5,6,5.5),
+	dmg = dmgConfig.kick,
+	leftLeg = true,
+})
 
 return function(this:wepBase.myself&any): wepBase.atkResult
 	local function indicator()
@@ -74,7 +20,7 @@ return function(this:wepBase.myself&any): wepBase.atkResult
 	if tick() > this.lastAttacked + this.atkRate.Value then this.m1cycle = 0 end
 
 	if this.m1cycle == 2 then 
-		return flourish(this)
+		return this.basicAtks.flourish(this, FLOURISH)
 	end
 
 	return this.basicAtks.m1(

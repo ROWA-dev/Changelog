@@ -1,5 +1,5 @@
 --!strict
--- Settings > Slot. Shows what the inventory charInfoUI does NOT: kills, elo,
+-- Settings > Slot. Shows what the inventory charInfoUI does NOT: kills, rating,
 -- lives, credits, cards, flags, and the account-wide combat counters.
 --
 -- Numbers arrive by PULL (plrObj:requestSlotInfo -> S2C.SlotInfo). plrStats ticks
@@ -31,9 +31,11 @@ local STAT_COLORS = {
 
 local isOpen = false
 local order = 0
+local nameCon: any = nil -- the Name box's patch listener, lives as long as the render
 
 local function clear()
 	order = 0
+	if nameCon then nameCon:Disconnect(); nameCon = nil end
 	-- wipeBtn is the one GuiObject in here that is NOT a per-render clone, so it is
 	-- skipped and re-ordered at the end of render instead of being rebuilt.
 	wipeBtn.Visible = false
@@ -96,6 +98,28 @@ local function addRow(key: string, val: string)
 	order += 1
 	r.Visible = true
 	r.Parent = list
+	return r
+end
+
+-- the rename field: a TextBox wearing the val label's look. Same commit shape as the menu card.
+local VAL_PROPS = {"BackgroundTransparency", "FontFace", "Position", "Size", "TextColor3", "TextSize", "TextTruncate", "TextXAlignment"}
+local function addNameRow(slotData: any)
+	local r = addRow("Name", "")
+	local box = Instance.new("TextBox")
+	for _, p in VAL_PROPS do (box :: any)[p] = r.val[p] end
+	r.val:Destroy()
+	box.Name = "val"
+	box.ClearTextOnFocus = false
+	box.Text = slotData.name
+	box.FocusLost:Connect(function(enter: boolean)
+		local typed = box.Text
+		box.Text = slotData.name -- server filters; its {name} patch is what redraws
+		if enter and typed ~= slotData.name then plrObj:renameSlot(plrObj.loadedSlotId, typed) end
+	end)
+	box.Parent = r
+	nameCon = slotData.onStatChange:Connect(function(patch)
+		if patch.name and not box:IsFocused() then box.Text = patch.name end
+	end)
 end
 
 local function sumDmg(rows: {any}?): number
@@ -176,12 +200,11 @@ local function render(info: any)
 	local slotData = if data then data.slots[plrObj.loadedSlotId] else nil
 
 	addHeader("CHARACTER")
-	if slotData then addRow("Name", tostring(slotData.name)) end
-	-- slot.wins IS the kill counter: processElo credits it to the top-damage killer
+	if slotData then addNameRow(slotData) end
+	-- slot.wins IS the kill counter: processRating credits it to the top-damage killer
 	addRow("Kills",    comma(live.kills))
 	addRow("Deaths",   comma(live.loss))
 	addRow("K/D",      ratio(live.kills, live.loss))
-	addRow("Elo",      comma(live.elo))
 	addRow("Lives",    comma(live.lives))
 	addRow("Credits",  comma(live.credits))
 	addRow("Progress", comma(live.prog))
@@ -202,7 +225,7 @@ local function render(info: any)
 	end
 
 	addHeader("ACCOUNT")
-	addRow("Elo",          comma(acct.elo))
+	addRow("Rating",       if acct.rating then comma(acct.rating) else "unranked")
 	addRow("Wins",         comma(acct.wins))
 	addRow("Losses",       comma(acct.loss))
 	addRow("Playtime",     duration(acct.playtime))

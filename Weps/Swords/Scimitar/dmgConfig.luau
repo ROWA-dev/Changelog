@@ -23,7 +23,7 @@ local config:configs = {
 		dmg      = 12,
 		stun     = 0.8,
 		posMult  = 1,
-		dodgeH   = -0.08,
+		dodgeH   = -0.06,
 		onHit    = function(attack) fireVFX("scimHvy", 2, attack.enemyEntity.HRootPart) end
 	},
 	heavy2 = { -- the uppercut follow-up, stun of the house launcher. its lift is in attack/heavy (blocked lifts too)
@@ -32,7 +32,7 @@ local config:configs = {
 		dmg      = 12,
 		stun     = 1,
 		posMult  = 1,
-		dodgeH   = -0.08,
+		dodgeH   = -0.06,
 		onHit    = function(attack) fireVFX("scimHvy", 2, attack.enemyEntity.HRootPart) end
 	},
 	punch = {

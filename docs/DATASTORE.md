@@ -54,7 +54,7 @@ UNUSED (there is no session lock, see GOTCHAS).
 ## 2. THE OBJECT GRAPH
   plrObj                     (per Player, ServerScriptService/PlrHandler registry)
    |- .Data      : PlrData   (the whole account)
-   |   |- version, err, seed, elo, wins, loss
+   |   |- version, err, seed, rating (buffer, ROWA/Modules/rating), wins, loss
    |   |- flags    : SparseBitSet  (flagEnums: TutorialDone/Moderator/Admin/VIP/BloodEnabled)
    |   |- meta     : { first, last, totalPlaytime, clientInfo?, followedIds?, regionsData? }
    |   |- plrStats : PlrStats      (StatPair per Parry/Block/Dodge/Dmg... + feints)
@@ -67,7 +67,7 @@ UNUSED (there is no session lock, see GOTCHAS).
 Account-level stuff (elo/wins/loss/flags/keybinds) lives on PlrData.
 Per-character stuff (inventory, hotbar, lvl/exp, baseStats, cards, lives)
 lives on the slot. `snap` {hp, mana, x, y, z, yaw, effects?} is parked by plrObj:snapChar on
-an out-of-combat unload and consumed by loadChar; server-only, never in ToClient. An
+an out-of-combat unload and consumed by loadChar (a bad number is skipped; a bad spot or y < -40 loads at spawn); server-only, never in ToClient. An
 effect over 30s persists as {name, secondsLeft or -1 = infinite, last numeric amp}; see
 GOTCHAS "IDS ARE PERSISTED".
 
@@ -131,7 +131,7 @@ GOTCHAS "IDS ARE PERSISTED".
   (for setSlot) recompresses. Cheap to store, NOT cheap to poll in a loop.
 
   ToClient variants are separate and censored:
-    PlrData:ToClient()  -> version, slots:ToClient(), elo/wins/loss, keybinds,
+    PlrData:ToClient()  -> version, slots:ToClient(), wins/loss, keybinds,
                            touch, emoteData
     Slots:ToClient()    -> compressed array of just `{ name = ... }` per slot
     slot:ToClient()     -> full slot, sent only for the slot you actually loaded
@@ -140,7 +140,7 @@ GOTCHAS "IDS ARE PERSISTED".
   client cannot see any of them by default; see the SlotInfo pull in section 7.
 
 ## 6. VERSIONING & MIGRATION
-  CURRENT_PLR_DS_VERSION = 52   (PlrData.luau, line 2)
+  CURRENT_PLR_DS_VERSION = 53   (PlrData.luau, line 2). 53: elo -> rating, novelCombatReview SHIP
   CURRENT_SLOT_VERSION   = 6    (Slots/slotSS.luau, line 2)
 
   PlrData.deSerialize rebuilds a fresh object, copies fields across, then
@@ -213,12 +213,12 @@ GOTCHAS "IDS ARE PERSISTED".
   READ-ONLY but still client-triggered: C2S.RequestSlotInfo -> S2C.SlotInfo,
   the settings Slot tab's data source (replication.luau buildSlotInfo).
   Returns account plrStats as two labelled groups (taken/dealt), account
-  elo/wins/loss/playtime, live slot elo/kills/lives/credits, resolved card
+  rating (nil = unranked)/wins/loss/playtime, live slot kills/lives/credits, resolved card
   NAMES and flag names. Rate-gated to 1s per player by one float.
 
   It is a PULL on purpose. plrStats increments on EVERY hit (loadChar's
   onAttack/onAttacked hooks), so pushing it would cost a packet per swing.
-  It also carries elo/wins/loss/lives/credits, which never go through
+  It also carries rating/wins/loss/lives/credits, which never go through
   applyPatch and are otherwise frozen at slot-load time on the client.
 
   The payload is assembled server-side because SparseBitSet, ROWA/Cards and

@@ -27,6 +27,7 @@ local LNING = {
 	dmg      = 16,
 	stun     = 1.2,
 	posMult  = 2,
+	parryH   = 0.1,
 	onHit    = function(attack)
 		hitSfx(attack.enemyEntity.HRootPart, "LightningRelease")
 	end,
@@ -102,7 +103,7 @@ local function useFunc(this:myself)
 
 		if attack:isHit() then
 			-- Shock = blue lightning only (Fulminate, Lightning, StormUp).
-			attack.enemyEntity.statusEffects:apply(enemy.statusEffects.Shock, 3, 1)
+			attack.enemyEntity.statusEffects:apply(enemy.statusEffects.Shock, 3, 1, humObj)
 
 			if enemy.HRootPart then
 				fireVFX("pauseF2", char, enemy.HRootPart.Parent)

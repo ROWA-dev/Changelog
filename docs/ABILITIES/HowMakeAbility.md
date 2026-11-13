@@ -134,6 +134,7 @@ output and an ability that silently does nothing. Check the console first.
 | to aim at the cursor | `aimLock` quiver id in the windup, `aimPoint.ask` + `.clamp` at release | Meteor, Modules/aimPoint |
 | burn / freeze / shock / bleed | `enemy.statusEffects:apply(effect, t, n)`, Burn takes `humObj` last | Class/StatusEffects |
 | to break the map | `Destruction.Sphere / OBB / Cylinder / Ellipsoid` | DESTRUCTION.md |
+| something people ride | anchored `base` moved by `Modules/glide`, client registers it with `init/train/ride`, a RemoteEvent on it to pilot | Terralift |
 | to freeze / scorch the map for a while | `partFx.apply(part, partFx.Burn, t)` | Modules/partFx |
 | ice on the ground | `layIce(pos, normal, size, partHit)` | Modules/layIce, VFXQuiver/placeSnow |
 | to hold somebody | `grab` welds them to a limb, `pinTo` drags them to a point | §10 |

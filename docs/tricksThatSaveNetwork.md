@@ -90,8 +90,8 @@ this fire per second per player". That question alone kills most designs.
   wakes at the deadline the client is counting to, notices time is left,
   and re-sends the remainder -- so the correction always lands on exactly
   the frame the client needed it, at one packet per TTL per enemy.
-  ONLY THE MODEL GOES DOWN. Health, posture, name and position are read
-  off the Model, which is already replicated. Client-side `combatDeadline`
+  ONLY THE MODEL GOES DOWN. Health, name and position are read off the
+  Model, which is already replicated. Posture is owner-only. Client-side `combatDeadline`
   is ONE float (the max), not a per-enemy table, because combat ends when
   the last entry expires.
   `onEdge` is nil by default, so NPC-vs-NPC arms no timer and sends
@@ -184,6 +184,9 @@ this fire per second per player". That question alone kills most designs.
   A rider is lerped in its car's space, else the lerp trails a moving car.
   UNRELIABLE IS CORRECT HERE: a dropped pose is superseded by the next
   one, so retransmission would deliver stale news late.
+  FastRemotes/CamFeed (/watch cam) rides on it: the camera goes root-relative,
+  so only turning costs packets (plus fps once a second: a send-on-change fps
+  was lost for good on any capped frame rate), and only while an admin watches.
   HitboxQuery queries the hurtbox FIRST ("it is the fast-replicated
   box") and only retries from the real root on a miss -- lag comp bought
   with a second local query instead of more traffic.

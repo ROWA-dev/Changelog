@@ -75,7 +75,8 @@ this is also used for things that would clobber up the network stream... instead
 
   ### ReplicatedStorage/VFXQuiver - ALWAYS available on the client
     camShake, dash, dbri, dragIK, feintfx, grabWeld, hideArms, hideTool, kb,
-    kbd, parry, postureBreak, projSteer, ragdollc, systemMsg
+    kbd, parry, postureBreak, projSteer, ragdollc, systemMsg, itmpick (+ its
+    itmdrop alias: ground items, one shared sound, a first fetch showed as a snap)
   The hot-path / bootstrap-critical ones. `kb`/`kbd` are how knockback movers
   get created and destroyed on the owning client. `projSteer` is hot because
   its first use is the frame something got PARRIED. hideTool/hideArms, so a cold fetch cannot land a hide AFTER its showArms.

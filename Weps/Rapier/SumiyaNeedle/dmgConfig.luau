@@ -33,15 +33,6 @@ local config:configs = {
 		dodgeH   = -0.08,
 		onHit    = require(script.slash)
 	},
-	reel = { -- the slash they are reeled into: light, its stun is what sets up the follow-up
-		weight   = weighEnum.Light,
-		type     = bit32.bor(dmgFlag.slash, dmgFlag.weaponHeavy),
-		dmg      = 5,
-		stun     = 0.8,
-		posMult  = 1,
-		dodgeH   = -0.08,
-		onHit    = require(script.slash)
-	},
 }
 
 deepFreeze(config)

@@ -1,4 +1,5 @@
 local clientData = require(game.ReplicatedFirst:WaitForChild("ClientData"))
+local codec = require(game.ReplicatedFirst.ClientData.ClientClass.Keybinds)
 local keybindEnums = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("keybindEnums"))
 local uis = game:GetService("UserInputService")
 
@@ -9,25 +10,7 @@ local resetBtn = frame:WaitForChild("reset")
 local isOpen = false
 local open -- forward declared: capture handlers re-render through it
 
-local function inputToValue(input:InputObject)
-	if input.KeyCode and input.KeyCode.Value ~= 0 then
-		return input.KeyCode.Value
-	end
-	return input.UserInputType.Value
-end
-local function valueToInput(value:number):Enum.UserInputType | Enum.KeyCode
-	for _, keyCode in ipairs(Enum.KeyCode:GetEnumItems()) do
-		if keyCode.Value == value and keyCode ~= Enum.KeyCode.Unknown then
-			return keyCode
-		end
-	end
-	for _, inputType in ipairs(Enum.UserInputType:GetEnumItems()) do
-		if inputType.Value == value then
-			return inputType
-		end
-	end
-	return Enum.KeyCode.Unknown
-end
+local inputToValue, valueToInput = codec.inputToValue, codec.valueToInput
 
 local function inputValueToName(value:number?)
 	if value == nil or value == -1 then

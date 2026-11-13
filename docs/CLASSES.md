@@ -411,7 +411,7 @@ One discrete hit. Built via `wep/ability:makeAtk(dmgTbl, enemyHum, atkDir?)`.
     LAZY, reading one allocates it, so test with rawget. `_mods` is nil
     until the first SetMod.
   How buffs/debuffs/cards stack without stomping each other. Common mod keys:
-  "feint", "antiASwing", "stopMoving", "landhit", "wep".
+  "stopMoving", "landhit", "wep".
 
 ## 9. Other server classes
   Class/StatusEffects.luau   :apply(effect, duration, ...) / :remove(effect),

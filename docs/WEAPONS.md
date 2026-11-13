@@ -106,10 +106,9 @@ evicts held AND active before posing.
 
 ## 5. What WepBase adds
 
-`Class/CombatAction.luau` is the shared attacker base — **WepBase and AbilityBase
-both inherit it**, so a fix lands once. Its own header lists what is shared and
-what stays overridden and why; ABILITIES.md §3 lists the methods. Read either,
-not a third copy here.
+`Class/CombatAction.luau` is the shared attacker base — **WepBase, AbilityBase and
+SideWepBase all inherit it**, so a fix lands once. Its header says what
+stays per-subclass and why; ABILITIES.md §3 lists the methods. No third copy here.
 
 Subclass constants: `FEINT_CD_ID = "feint"` (weapons **do** gate dashing) and
 `KNOCKBACK_USES_CHARSIZE = true`.
@@ -124,7 +123,7 @@ Lifecycle, the weapon-only half:
 
 | call | does |
 |---|---|
-| `.new()` | `prevHits = 0` + four AdditiveValues (`atkRateOffset` 0, `atkRate` 1, `range` 0, `knockbackMult` 1). **Clone your model here, never in `:wield`** |
+| `.new()` | `prevHits = 0` + CombatAction's two AdditiveValues (`atkRate` 1, `range` 0). **Clone your model here, never in `:wield`** |
 | `:equip(humObj)` | baselines `_baseScale` once then scales to `charSize`, sets `_humObj`, unwields |
 | `:wield()` | preloadAnims, evicts the previous active AND held weapon, `setWieldingWeapon(self)`, idle track, block/parry defaults. Honours `_holdOnly` |
 | `:holdOut()` | HELD pose. Re-runs the weapon's OWN `:wield()` with `_holdOnly` set, so the state half short-circuits and the grip re-centres. One weld impl, two poses — do **not** write a parallel weld |
@@ -132,7 +131,7 @@ Lifecycle, the weapon-only half:
 | `:putAway()` | `:unwield()` + take the model off the character |
 | `:stow()` | what the ITEM layer calls: holster if committed, putAway if merely held. Picks for you |
 | `:holsterAt(i)` | back-slot offset applied on top of the C0 authored in Studio (captured once into `_strapC0`), indexed by position in `equippedWeapons` |
-| `:unequip()` / `:destroy()` | `destroy` destroys all four AdditiveValues; `table.clear` alone leaks their mod lists |
+| `:unequip()` / `:destroy()` | `destroy` is CombatAction's: it destroys both AdditiveValues; `table.clear` alone leaks their mod lists |
 
 `sprintAnim` (inherited like `idleAnim`) is sent as its asset id on wield change and plays at Action2, over the weapon's idle.
 
@@ -155,20 +154,22 @@ silent** — a missing `heavyEnd` is a dead key, not an error.
 
 Exception: the Dagger family owns `:attack`, so daggers set `module.attacks` to the bare table; heavy while sprinting routes to `Light/Dagger/sprintHeavy` instead.
 
-`self.basicAtks` exposes the parameterised `m1` / `sprint` / `arial` helpers.
+`self.basicAtks` exposes the parameterised `m1` / `sprint` / `arial` helpers, and
+`flourish(this, cfg)`: the kick that ends a string, for a weapon whose last swing
+is not just another `m1` (frozen cfg, see `Medium/Swords/Sword/attack/m1`).
 They return `hitLanded`, which is the `atkResult` convention: return true when a
 hit landed. WepBase itself only reads `prevHits`.
 
 ### `:attack` internals
 
 1. asserts `atkFunc` is function|nil, warns + returns if no `_humObj`
-2. bails if `attacking.Value` is true or `:canAttack() == false`
-3. `ChangeBlocking(false)`, enables `_trail` (versioned, so overlapping swings
-   don't kill it early)
-4. **pcalls** the attack; an error warns with a traceback, it is not a crash
-5. on success only, `prevHits == 0` means the swing WHIFFED ->
-   `atkRate:SetMod("antiASwing", 0.1)` until 0.4s after the LATEST whiff
-   (versioned like the trail, so a second whiff is not cut short by the first)
+2. bails if `attacking.Value` is true or `:canAttack() == false` (`:canAct`)
+3. enables `_trail` (versioned, so overlapping swings don't kill it early), then
+   `:locked(...)`: `attacking = true`, `ChangeBlocking(false)`
+4. **pcalls** the attack; an error warns `<Name> err:`, it is not a crash
+5. on success only, `prevHits == 0` (reset to -1 at the swing's start: a box ran, nobody
+   in it) means the swing WHIFFED -> `humObj._fakeAt`
+   = its start: a fake, after a parry sharedFeintWait holds the next hit back (FAKE)
 6. always clears `attacking`; disables the trail 0.4s later if still the latest
    version
 

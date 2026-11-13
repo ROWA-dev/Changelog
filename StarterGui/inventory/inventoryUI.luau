@@ -64,7 +64,7 @@ local function clearSweep(held:any)
 end
 
 -- a carry never leaves its slot server-side (its slot just draws less, ContainerUI:hold),
--- so dropping one is pure UI: nothing to put back.
+-- so cancelling one is pure UI: nothing to put back.
 local function cancelCarry()
 	local held = carrying
 	if held == nil then return end
@@ -76,7 +76,7 @@ local function cancelCarry()
 	if ui then ui:release(held) end
 end
 
-local function closeOutsideContainer()
+local function closeOutsideContainer(serverClosed: boolean?)
 	cancelCarry() -- might be holding something FROM this chest
 	otherContainerFrame.Visible = false
 	if outsideContainerUI then
@@ -85,7 +85,7 @@ local function closeOutsideContainer()
 	end
 	if outsideContainer then
 		if refContainer == outsideContainer then hoverHit = false end -- never aim a key at a dead chest
-		inventoryRemote:FireServer(inventoryEnums.closeContainer, outsideContainer.replicationID)
+		if not serverClosed then inventoryRemote:FireServer(inventoryEnums.closeContainer, outsideContainer.replicationID) end
 		outsideContainer:destroy()
 		outsideContainer = nil
 	end
@@ -103,6 +103,7 @@ local refreshInvestmentPrompt: () -> () = function() end
 local shiftLock = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("ShiftLock"))
 
 -- topbar button. keyboard has the ` key; touch had NO way in at all before this
+local triggerbackpack: () -> () -- defined below; the icon and the prompt call it first
 local topbar = require(game.ReplicatedStorage:WaitForChild("Modules"):WaitForChild("TopbarIcons"))
 local bagIcon = topbar.register({
 	name      = "inventory",
@@ -133,57 +134,12 @@ function triggerbackpack()
 	inventoryRemote:FireServer(inventoryEnums.openInventory, isOpen)
 end
 
--- Persistent CTA while a point pair is blocking the next draft. The actual
+-- Persistent CTA while a point pair is blocking the next draft (authored in Studio). The
 -- investment coaching lives inside charInfoUI once this opens the inventory.
-local ACCENT = Color3.fromRGB(255, 217, 103) -- the draft LevelButton's gold
-local investPrompt = Instance.new("Frame")
-investPrompt.Name = "SpendPointsPrompt"
-investPrompt.AnchorPoint = Vector2.new(1, 0)
-investPrompt.Position = UDim2.new(1, -40, 0, 20)
-investPrompt.Size = UDim2.fromOffset(270, 62)
-investPrompt.BackgroundColor3 = Color3.new(0, 0, 0)
-investPrompt.BackgroundTransparency = 0.6
-investPrompt.BorderSizePixel = 0
-investPrompt.ZIndex = 40
-investPrompt.Visible = false
-investPrompt.Parent = script.Parent
-
-local promptTitle = Instance.new("TextLabel")
-promptTitle.Name = "Title"
-promptTitle.Position = UDim2.fromOffset(10, 8)
-promptTitle.Size = UDim2.new(1, -20, 0, 20)
-promptTitle.BackgroundTransparency = 1
-promptTitle.Font = Enum.Font.SourceSans
-promptTitle.Text = "points ready"
-promptTitle.TextColor3 = ACCENT
-promptTitle.TextSize = 16
-promptTitle.TextXAlignment = Enum.TextXAlignment.Left
-promptTitle.ZIndex = 41
-promptTitle.Parent = investPrompt
-
-local promptBody = Instance.new("TextLabel")
-promptBody.Name = "Body"
-promptBody.Position = UDim2.fromOffset(10, 28)
-promptBody.Size = UDim2.new(1, -20, 0, 26)
-promptBody.BackgroundTransparency = 1
-promptBody.Font = Enum.Font.SourceSans
-promptBody.Text = "open stats to unlock your next draft."
-promptBody.TextColor3 = Color3.new(0.87, 0.87, 0.87)
-promptBody.TextSize = 14
-promptBody.TextWrapped = true
-promptBody.TextXAlignment = Enum.TextXAlignment.Left
-promptBody.TextYAlignment = Enum.TextYAlignment.Top
-promptBody.ZIndex = 41
-promptBody.Parent = investPrompt
-
-local promptButton = Instance.new("TextButton")
-promptButton.Name = "OpenStats"
-promptButton.Size = UDim2.fromScale(1, 1)
-promptButton.BackgroundTransparency = 1
-promptButton.Text = ""
-promptButton.ZIndex = 42
-promptButton.Parent = investPrompt
-promptButton.MouseButton1Up:Connect(function()
+local investPrompt = script.Parent:WaitForChild("SpendPointsPrompt")
+local promptTitle = investPrompt:WaitForChild("Title")
+local promptBody = investPrompt:WaitForChild("Body")
+investPrompt:WaitForChild("OpenStats").MouseButton1Up:Connect(function()
 	if not isOpen then triggerbackpack() end
 end)
 
@@ -229,7 +185,7 @@ local function openOutsideContainer(newContainer:container.myself, name:string?)
 		triggerbackpack()
 	end
 	
-	closeOutsideContainer()
+	closeOutsideContainer(true) -- the server closed it before sending this; echoing would close the NEW one
 	
 	local cellSz = 65
 	local widthSz = newContainer.width * cellSz
@@ -241,25 +197,16 @@ local function openOutsideContainer(newContainer:container.myself, name:string?)
 	otherContainerFrame.Position = UDim2.new(0.5,0,0.5,0) -- reset cuz dragable(might be outside view..)
 	otherContainerFrame.Visible = true
 	
-	print("opening outside container:", newContainer)
-	local replicationId = 3
-	newContainer:initReplicateClient(inventoryRemote, replicationId)
+	newContainer:initReplicateClient(inventoryRemote, 3) -- hardcoded 3, INVENTORY §8
 	
-	outsideContainerUI = require(script:WaitForChild("InventoryUI")).new(
-		newContainer,
-		outsideFrame
-	)
-	
-	if outsideContainerUI then
-		outsideContainerUI:setOpen(true)
-		outsideContainerUI:update()
-	end
-	
+	local ui = require(script:WaitForChild("InventoryUI")).new(newContainer, outsideFrame)
+	ui:setOpen(true)
+	ui:update()
+	outsideContainerUI = ui
 	outsideContainer = newContainer
 end
 
 inventoryRemote.OnClientEvent:Connect(function(_containerID:number, id:number, ...) 
-	--warn(_containerID, id, ...)
 	if _containerID == hotbarContainer.replicationID then
 		hotbarContainer.SubscribedEventCB(id, ...)
 	elseif _containerID == inventoryContainer.replicationID then
@@ -269,9 +216,6 @@ inventoryRemote.OnClientEvent:Connect(function(_containerID:number, id:number, .
 	elseif id == inventoryEnums.newContainer then
 		local serialData = ...
 		local newContainer = container.new(serialData.width, serialData.height)
-		
-		print("opening outside serial:", serialData)
-		
 		newContainer:uploadSerialData(serialData)
 		openOutsideContainer(newContainer, serialData.name)
 	else
@@ -281,12 +225,9 @@ end)
 
 local replicationInit = false
 plrObj.slotLoaded:Connect(function(slotData, serialData) 
-	--print(slotData, serialData)
 	local slotInventory = serialData.inventory
 	local slotHotbar = serialData.hotbar
-	--print("SLOT LOADED REUPLOAD!", serialData)
 	if replicationInit == false then replicationInit = true
-		--print("INIT REPLICATE", slotHotbar, slotInventory)
 		inventoryContainer:initReplicateClient(inventoryRemote, slotInventory.replicationId)
 		hotbarContainer:initReplicateClient(inventoryRemote, slotHotbar.replicationId)
 	end
@@ -304,14 +245,8 @@ local function hotbarRelease(index:number)
 	inventoryRemote:FireServer(inventoryEnums.releaseHotbar, index)
 end
 
-local function hotbarUse(index:number)	
-	--equipItem(hotbarObj:GetItem(number))
+local function hotbarUse(index:number)
 	inventoryRemote:FireServer(inventoryEnums.selectHotbar, index)
-	--[[local itemFrame = hotbarUI.slots[index]
-	local item = itemFrame.item
-	if item then
-		item:select(true)
-	end]]
 end
 
 -- the whole-slot verb: same container moves, otherwise transfers
@@ -364,7 +299,6 @@ local function setSelection(itemFrame)
 		if itemFrame ~= nil then
 			selection.Visible = true
 			local absolutePos = itemFrame.Frame.AbsolutePosition
-			--selection.Position = UDim2.fromOffset(absolutePos.X, absolutePos.Y)
 			game.TweenService:Create(selection, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 				Position = UDim2.fromOffset(absolutePos.X, absolutePos.Y)
 			}):Play()
@@ -397,19 +331,9 @@ local function startCarry(from:any, index:number, half:boolean, button:Enum.User
 	selection.UIStroke.Thickness = 1
 
 	selection.Rotation = 0 -- ensure starting rotation
-	
-	local ts = game.TweenService
-	local rot = math.random(1, 2) * 2 - 3
-	local rotateOut = ts:Create(selection, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Rotation = rot*8
-	})
-	local rotateBack = ts:Create(selection, TweenInfo.new(0.1, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-		Rotation = 0
-	})
-	rotateOut:Play()
-	rotateOut.Completed:Connect(function()
-		rotateBack:Play()
-	end)
+	game.TweenService:Create(selection, TweenInfo.new(0.08, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, true), { -- tilts out and back
+		Rotation = (math.random(1, 2) * 2 - 3) * 8
+	}):Play()
 
 	local ghost = itemUI.new()
 	ghost.Frame.TextButton.Text = containerUI.label(serial, amount)
@@ -520,6 +444,33 @@ local function shiftHeld(): boolean
 	return uis:IsKeyDown(Enum.KeyCode.LeftShift) or uis:IsKeyDown(Enum.KeyCode.RightShift)
 end
 
+-- the cursor stack onto the ground (RFHandler/dropItem)
+local function tossHeld(held:any)
+	clearSweep(held)
+	spend(held, held.amount, nil, "dropItem", held.amount, held.sourceContainer.replicationID, held.sourceIndex)
+end
+
+-- touch's drop: a drag let go over none of the bag's own frames (bedrock's drag-out)
+local function outsideBag(p: Vector3): boolean
+	for _, g in lplr.PlayerGui:GetGuiObjectsAtPosition(p.X, p.Y) do
+		if g:IsDescendantOf(script.Parent) then return false end
+	end
+	return true
+end
+
+-- carried stack, else hovered slot, else (bag shut) the equipped item. Shift = the whole stack (Ctrl is a slide bind)
+bindFuncs[keybindEnums.drop] = function(down)
+	if not down then return end
+	local n = if shiftHeld() then math.huge else 1
+	if carrying then
+		tossHeld(carrying)
+	elseif not isOpen then
+		remoteFunc:InvokeServer("dropItem", n)
+	elseif hoverHit and refContainer.slots[refIndex] then
+		remoteFunc:InvokeServer("dropItem", n, refContainer.replicationID, refIndex)
+	end
+end
+
 uis.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed == true then return end
 	if input.KeyCode == Enum.KeyCode.Backquote then
@@ -528,43 +479,24 @@ uis.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 
--- reset binds?
-clientData:setupBinds()
+clientData:setupBinds() -- after every bindFuncs entry above: it reads them once
 
 -- point -> the slot under it, returns false if the point hit no grid. TOUCH
 -- calls this too now: the hover used to be MouseMovement-only, so on mobile
 -- refContainer/refIndex/prevFrame never got set and every drag was dead on
 -- arrival. The boolean matters because refIndex is STICKY -- on a miss it
 -- still points at the last slot hovered, which a tap must not act on.
+local function hitIn(ui:any, c:any, p: Vector2): boolean
+	local i = if ui then ui:getGridIndex(p) else 0
+	if i == 0 then return false end
+	refContainer, refIndex = c, i
+	setSelection(ui.slots[i])
+	return true
+end
 local function hoverAt(p: Vector2): boolean
 	if isOpen == false then return false end
-
-	local hotbarIndex = hotbarUI:getGridIndex(p)
-	local inventoryIndex = inventoryUI:getGridIndex(p)
-	local outsideIndex = if outsideContainerUI then outsideContainerUI:getGridIndex(p) else 0
-	if hotbarIndex ~= 0 then
-		--print("hotbar:", hotbarIndex, hotbarUI.slots[hotbarIndex])
-		local slot = hotbarUI.slots[hotbarIndex]
-		refContainer = hotbarContainer
-		refIndex = hotbarIndex
-		setSelection(slot)
-		return true
-	elseif inventoryIndex ~= 0 then
-		--print("inventory:", inventoryIndex, inventoryUI.slots[inventoryIndex])
-		local slot = inventoryUI.slots[inventoryIndex]
-		refContainer = inventoryContainer
-		refIndex = inventoryIndex
-		setSelection(slot)
-		return true
-	elseif outsideIndex ~= 0 and outsideContainer then
-		local slot = outsideContainerUI.slots[outsideIndex]
-		refContainer = outsideContainer
-		refIndex = outsideIndex
-		--warn("OUTSIDE CONTAINER!", slot, refContainer, refIndex)
-		setSelection(slot)
-		return true
-	end
-	return false
+	return hitIn(hotbarUI, hotbarContainer, p) or hitIn(inventoryUI, inventoryContainer, p)
+		or hitIn(outsideContainerUI, outsideContainer, p)
 end
 
 uis.InputChanged:Connect(function(input: InputObject, gameProcessedEvent: boolean) 
@@ -689,7 +621,7 @@ uis.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 	end
 	if held.sticky or held.button ~= inputType then return end
 	if not hoverHit then
-		cancelCarry() -- released with no slot under the pointer
+		if isTouch and outsideBag(input.Position) then tossHeld(held) else cancelCarry() end -- released with no slot under the pointer
 	elseif refContainer == held.sourceContainer and refIndex == held.sourceIndex then
 		if isTouch then cancelCarry() else held.sticky = true end -- a click picks it up
 	elseif not placeAll(held, refContainer, refIndex) then
@@ -697,10 +629,9 @@ uis.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 	end
 end)
 
-otherContainerFrame:WaitForChild("exit").MouseButton1Up:Connect(closeOutsideContainer)
+otherContainerFrame:WaitForChild("exit").MouseButton1Up:Connect(function() closeOutsideContainer() end) -- not direct: (x, y) would land in serverClosed
 
 plrObj.onDataRecieve:Connect(function(data: clientData.plrObjData) 
-	--warn("on data rec",data)
 	closeOutsideContainer()
 	local empty = {}
 	inventoryContainer:uploadSerialData(empty)
@@ -713,5 +644,5 @@ end)
 local startergui = game:GetService("StarterGui")
 repeat
 	local load = pcall(function() startergui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false) end)
-	wait(0.2)
+	task.wait(0.2)
 until load

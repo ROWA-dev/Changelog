@@ -1,5 +1,5 @@
 --!strict
--- SumiyaNeedle heavy: a lunge that carries you THROUGH them and hooks the line on a hit or block; a heavy while hooked reels them onto a slash.
+-- SumiyaNeedle heavy: a lunge that carries you THROUGH them and hooks the line on a hit or block; a heavy while hooked reels them in.
 local wepType = require(game.ServerStorage.ROWA.Weps.WepBase.types)
 type wepTyp = wepType.myself
 
@@ -10,23 +10,22 @@ local kb = require(game.ServerScriptService.Knockback)
 
 local LINE = "sumiyaLine" -- stages: 1 hook, 2 reel, 3 let go (snapped?)
 local MISS_CD = 6 -- a whiff or parry. A hook pays the registered 10 (SumiyaNeedle:wield) and lives as long as it; a reel restarts it
-local SNAP = 50 -- studs apart and the line breaks
+local SNAP = 80 -- studs apart and the line breaks
 local RIP_DMG, RIP_STUN = 5, 0.4 -- what a snap tears out of them
 local HOOKED = game.ServerStorage.ROWA.Class.StatusEffects.Hooked
 
 local LUNGE_T = 0.5 -- the thrust's hit frame, so the anim runs at 1
-local DASH = Vector3.new(0, 0, -14) -- ~10 studs on a whiff
+local DASH = Vector3.new(0, 0, -18) -- ~13 studs on a whiff
 local BOX_CF, BOX_SIZE = CFrame.new(0, 0, -5), Vector3.new(5, 6, 8)
 local ACTIVE = table.freeze({ window = 0.15, lead = 0.07 })
-local BEHIND = 5 -- a hook carries you this far past them
+local BEHIND = 8 -- a hook carries you this far past them
 local PASS = table.freeze({ axes = Vector3.new(1, 0, 1), maxSpeed = 60, stopWithin = 1.5, maxTime = 0.35 })
 
-local YANK, SLASH = 0.33, 0.73 -- the reel anim's two whips
-local STOP = 4 -- they land this far from you
-local REACH = 8 -- the slash lands if the pull got them this close
-local PULL = table.freeze({ axes = Vector3.new(1, 0, 1), maxSpeed = 130, stopWithin = 1, maxTime = SLASH - YANK + 0.1 }) -- 130 lands a SNAP-range pull by the slash
-local HOP = Vector3.new(0, 7, 0)
-local SLASH_KB = 2 -- barely a nudge, so they stay in reach
+local YANK, REELED = 0.33, 0.73 -- the reel anim's two whips, both pulls
+local STOP = 4 -- they land this far in front of you
+local HELD = 0.8 -- still stunned this long after they land
+local PULL_T = 0.8 -- they arrive this long after the yank, at any range
+local HOP = Vector3.new(0, workspace.Gravity * PULL_T / 12, 0) -- one kick whose arc lands on arrival (kb x5; /12 not /10 pays for the 0.05s hold and falling flat)
 
 local function bail(this: any, humObj: any)
 	this:stopLastAnim(true)
@@ -40,7 +39,7 @@ local function release(this: any, enemy: any, snapped: boolean)
 	enemy.statusEffects:remove(HOOKED)
 	if not snapped then return end
 	-- raw, not an attack: a parried snap would stun you from SNAP studs away
-	enemy:Damage(RIP_DMG)
+	enemy:Damage(RIP_DMG, this._humObj)
 	enemy:Stun(RIP_STUN)
 	fireVFX("slash", enemy.HRootPart)
 end
@@ -75,6 +74,8 @@ local function lunge(this: any): boolean?
 	-- cds only go up, so the whiff price now and a hook pays the full one
 	this:triggerCD("heavy", MISS_CD)
 	model.Hold.arrowwoosh:Play()
+	model.Hold.dash:Play()
+	fireVFX("sumiyaWind", root)
 	local dash = this:bodyForce(DASH, 0.3, true, 0.3)
 
 	local hitbox, hits = this:sweep(BOX_CF, BOX_SIZE, ACTIVE)
@@ -97,6 +98,8 @@ local function lunge(this: any): boolean?
 	end
 
 	if hooked then
+		model.Hold.chainsawpull:Play()
+		model.Hold.lassowhip:Play()
 		dash:destroy()
 		this:triggerCD("heavy")
 		local eroot = hooked.HRootPart
@@ -116,7 +119,7 @@ local function lunge(this: any): boolean?
 		pinTo(root, function() return behind end, PASS)
 	end
 
-	this:endLag(if hooked then 0.2 else 0.3)
+	this:endLag(if hooked then 0.1 else 0.3)
 	humObj.walkSpeed:RemoveMod("stopMoving")
 	return hitLanded
 end
@@ -125,14 +128,16 @@ local function reel(this: any): boolean?
 	local humObj = this._humObj
 	local root = humObj.HRootPart
 	local model = this._model
-	-- claimed, so a lapse mid-windup cannot eat an in-time press. A feint lets it go, or feinting would re-stun them every feint cd
+	-- claimed, so a lapse mid-windup cannot eat an in-time press. A feint lets it go
 	local enemy = this._hooked
 	this._hooked, this._hookUntil = nil, nil
 	if enemy.isActive ~= true then release(this, enemy, false) return end
 
 	this:PlayAnim(script.sumiyahvyreelin, 0.08, 1, 1)
+	model.Hold.lassopickup:Play()
 	model.Hold.fishingrodcast:Play()
-	enemy:Stun(this:scaledTime(SLASH)) -- reeled from the first frame; a stun still blocks and parries, so the slash stays answerable
+	model.Hold.fishingrodcast.TimePosition = 0.1
+	fireVFX(LINE, 2, model.Blade.Top, YANK, PULL_T) -- at the press, so the spool sparks through the windup; every exit below sends a 3
 	humObj.walkSpeed:SetMod("stopMoving", -100)
 	if this:feintWait(YANK) then
 		bail(this, humObj)
@@ -146,42 +151,33 @@ local function reel(this: any): boolean?
 		return
 	end
 	enemy.statusEffects:remove(HOOKED)
+	enemy:Stun(PULL_T + HELD) -- from the yank, so the windup is their tell
 	this:triggerCD("heavy")
-	fireVFX(LINE, 2, model.Blade.Top, SLASH - YANK)
 
 	local unpin = nil
 	if not enemy.unlaunchable then -- a Boss's brain owns its body
-		unpin = pinTo(eroot, function()
+		enemy.ragdoll:ragdoll(60, true) -- limp on the line; ends on the ground, 0.5s min
+		local hurtbox = humObj.HurtBox
+		-- STOP in front of you, live so turning steers it; from behind, the arc carries them over you
+		local function spot(): Vector3?
 			if root.Parent == nil then return nil end
-			local d = eroot.Position - root.Position
-			local flat = Vector3.new(d.X, 0, d.Z)
-			if flat.Magnitude <= STOP then return nil end
-			return root.Position + flat.Unit * STOP
-		end, PULL)
-		kb(HOP, eroot, 0.25, false, 0.25)
+			local look = hurtbox.CFrame.LookVector
+			return root.Position + Vector3.new(look.X, 0, look.Z).Unit * STOP
+		end
+		local gap = ((eroot.Position - (spot() :: Vector3)) * Vector3.new(1, 0, 1)).Magnitude
+		unpin = pinTo(eroot, spot, { axes = Vector3.new(1, 0, 1), maxSpeed = math.max(gap, 1) / PULL_T, maxTime = PULL_T + 0.1 })
+		kb(HOP, eroot, 0.05)
 	end
-	local cancelled = this:feintWait(SLASH - YANK)
-	if unpin then unpin() end
-	if cancelled then bail(this, humObj) return end
+	-- the pin outlives the swing and lets go on arrival; only a cancel drops them early
+	if this:feintWait(REELED - YANK) then
+		if unpin then unpin() end
+		bail(this, humObj)
+		release(this, enemy, false)
+		return
+	end
 
 	model.Hold.Swing1:Play()
-	-- no :hitbox, the line is the hitbox; without this every reel reads as a whiff (GOTCHAS)
-	this.prevHits = 0
-	local hitLanded = false
-	local d = eroot.Position - root.Position
-	if d.Magnitude <= REACH and enemy.isActive then
-		this.prevHits = 1
-		local flat = Vector3.new(d.X, 0, d.Z)
-		local dir = if flat.Magnitude > 0.1 then flat.Unit else humObj.HurtBox.CFrame.LookVector
-		local attack = this:makeAtk(dmgConfig.reel, enemy, dir)
-		attack.knockback = this:knockback(dir * SLASH_KB, 0.3)
-		this:executeAttack(attack)
-		hitLanded = attack:isHit()
-	end
-
-	this:endLag(if hitLanded then 0.2 else 0.3)
 	humObj.walkSpeed:RemoveMod("stopMoving")
-	return hitLanded
 end
 
 return function(this: wepTyp & any): wepType.atkResult

@@ -120,7 +120,8 @@ local function useFunc(this:myself&any)
 			attack.enemyEntity.statusEffects:apply(
 				humObj.statusEffects.Bleed,
 				BLEED_T,
-				BLEED_DMG
+				BLEED_DMG,
+				humObj
 			)
 			humObj:Heal(attack:CalculateDamage() * 0.5)
 			landed = true
